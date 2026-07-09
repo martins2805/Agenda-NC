@@ -56,9 +56,10 @@ interface ActivityFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editing: Atividade | null;
+  onCreated?: (id: string) => void;
 }
 
-export function ActivityForm({ open, onOpenChange, editing }: ActivityFormProps) {
+export function ActivityForm({ open, onOpenChange, editing, onCreated }: ActivityFormProps) {
   const {
     lookups,
     addLookupItem,
@@ -100,6 +101,7 @@ export function ActivityForm({ open, onOpenChange, editing }: ActivityFormProps)
       updateAtividade(editing.id, toSave);
     } else {
       addAtividade(toSave);
+      onCreated?.(toSave.id);
     }
     onOpenChange(false);
   }

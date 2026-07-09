@@ -7,10 +7,11 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { Atividade, LookupItem, LookupKind } from "./types";
+import type { Atividade, LookupItem, LookupKind, Registro } from "./types";
 import {
   SEED_AMOSTRAGENS,
   SEED_ASSUNTOS,
+  SEED_CATEGORIAS_REGISTRO,
   SEED_EMPRESAS,
   SEED_ESCOPOS,
   SEED_SERVICOS_PRODUTO,
@@ -26,17 +27,22 @@ interface LookupState {
   servicoProduto: LookupItem[];
   escopo: LookupItem[];
   amostragem: LookupItem[];
+  categoriaRegistro: LookupItem[];
 }
 
 interface AppDataContextValue {
   lookups: LookupState;
   atividades: Atividade[];
+  registros: Registro[];
   addLookupItem: (kind: LookupKind, name: string) => string;
   renameLookupItem: (kind: LookupKind, id: string, name: string) => void;
   deactivateLookupItem: (kind: LookupKind, id: string) => void;
   addAtividade: (atividade: Atividade) => void;
   updateAtividade: (id: string, patch: Partial<Atividade>) => void;
   deleteAtividade: (id: string) => void;
+  addRegistro: (registro: Registro) => void;
+  updateRegistro: (id: string, patch: Partial<Registro>) => void;
+  deleteRegistro: (id: string) => void;
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -56,8 +62,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     servicoProduto: SEED_SERVICOS_PRODUTO,
     escopo: SEED_ESCOPOS,
     amostragem: SEED_AMOSTRAGENS,
+    categoriaRegistro: SEED_CATEGORIAS_REGISTRO,
   });
   const [atividades, setAtividades] = useState<Atividade[]>([]);
+  const [registros, setRegistros] = useState<Registro[]>([]);
 
   const addLookupItem = useCallback((kind: LookupKind, name: string) => {
     const id = makeId(kind);
@@ -103,26 +111,48 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setAtividades((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
+  const addRegistro = useCallback((registro: Registro) => {
+    setRegistros((prev) => [registro, ...prev]);
+  }, []);
+
+  const updateRegistro = useCallback((id: string, patch: Partial<Registro>) => {
+    setRegistros((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, ...patch } : r))
+    );
+  }, []);
+
+  const deleteRegistro = useCallback((id: string) => {
+    setRegistros((prev) => prev.filter((r) => r.id !== id));
+  }, []);
+
   const value = useMemo(
     () => ({
       lookups,
       atividades,
+      registros,
       addLookupItem,
       renameLookupItem,
       deactivateLookupItem,
       addAtividade,
       updateAtividade,
       deleteAtividade,
+      addRegistro,
+      updateRegistro,
+      deleteRegistro,
     }),
     [
       lookups,
       atividades,
+      registros,
       addLookupItem,
       renameLookupItem,
       deactivateLookupItem,
       addAtividade,
       updateAtividade,
       deleteAtividade,
+      addRegistro,
+      updateRegistro,
+      deleteRegistro,
     ]
   );
 
@@ -147,4 +177,12 @@ export function makePropostaId() {
 
 export function makeChecklistItemId() {
   return makeId("checklist");
+}
+
+export function makeRegistroId() {
+  return makeId("registro");
+}
+
+export function makeRegistroTabId() {
+  return makeId("registroTab");
 }

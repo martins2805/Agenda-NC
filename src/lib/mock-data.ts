@@ -99,3 +99,14 @@ export const SEED_ASSUNTOS = toItems("assunto", [
   "Levantamento de indicadores",
   "Alinhamento de escopo",
 ]);
+
+export const SEED_CATEGORIAS_REGISTRO = toItems("categoriaRegistro", [
+  "Reunião",
+  "Processos Internos",
+  "Propostas",
+  "Treinamentos",
+  "Procedimentos",
+  "Dados",
+  "Produtos/Serviços",
+  "Alinhamentos",
+]);

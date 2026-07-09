@@ -5,7 +5,8 @@ export type LookupKind =
   | "tipoAtividade"
   | "servicoProduto"
   | "escopo"
-  | "amostragem";
+  | "amostragem"
+  | "categoriaRegistro";
 
 export interface LookupItem {
   id: string;
@@ -67,5 +68,23 @@ export interface Atividade {
   status: StatusConclusao;
   prioridade: Prioridade;
   checklist: ChecklistItem[];
+  createdAt: string; // ISO datetime
+}
+
+export interface RegistroTab {
+  id: string;
+  titulo: string;
+  conteudo: string; // TipTap HTML
+}
+
+export interface Registro {
+  id: string;
+  empresaId: string | null;
+  unidadeId: string | null;
+  contato: string;
+  assuntoId: string | null;
+  categoriaIds: string[];
+  tabs: RegistroTab[];
+  atividadeId: string | null;
   createdAt: string; // ISO datetime
 }
