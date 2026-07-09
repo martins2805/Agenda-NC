@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -14,17 +15,6 @@ import type {
   Planilha,
   Registro,
 } from "./types";
-import {
-  SEED_AMOSTRAGENS,
-  SEED_ASSUNTOS,
-  SEED_CATEGORIAS_PLANILHA,
-  SEED_CATEGORIAS_REGISTRO,
-  SEED_EMPRESAS,
-  SEED_ESCOPOS,
-  SEED_SERVICOS_PRODUTO,
-  SEED_TIPOS_ATIVIDADE,
-  SEED_UNIDADES,
-} from "./mock-data";
 
 interface LookupState {
   empresa: LookupItem[];
@@ -38,11 +28,24 @@ interface LookupState {
   categoriaPlanilha: LookupItem[];
 }
 
+const EMPTY_LOOKUPS: LookupState = {
+  empresa: [],
+  unidade: [],
+  assunto: [],
+  tipoAtividade: [],
+  servicoProduto: [],
+  escopo: [],
+  amostragem: [],
+  categoriaRegistro: [],
+  categoriaPlanilha: [],
+};
+
 interface AppDataContextValue {
   lookups: LookupState;
   atividades: Atividade[];
   registros: Registro[];
   planilhas: Planilha[];
+  loading: boolean;
   addLookupItem: (kind: LookupKind, name: string) => string;
   renameLookupItem: (kind: LookupKind, id: string, name: string) => void;
   deactivateLookupItem: (kind: LookupKind, id: string) => void;
@@ -59,34 +62,71 @@ interface AppDataContextValue {
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
 
-let runtimeIdCounter = 0;
-function makeId(prefix: string) {
-  runtimeIdCounter += 1;
-  return `${prefix}-new-${runtimeIdCounter}`;
+function makeId() {
+  return crypto.randomUUID();
+}
+
+function groupLookups(items: (LookupItem & { kind: LookupKind })[]): LookupState {
+  const grouped = { ...EMPTY_LOOKUPS };
+  for (const item of items) {
+    grouped[item.kind] = [
+      ...grouped[item.kind],
+      { id: item.id, name: item.name, active: item.active },
+    ];
+  }
+  return grouped;
 }
 
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
-  const [lookups, setLookups] = useState<LookupState>({
-    empresa: SEED_EMPRESAS,
-    unidade: SEED_UNIDADES,
-    assunto: SEED_ASSUNTOS,
-    tipoAtividade: SEED_TIPOS_ATIVIDADE,
-    servicoProduto: SEED_SERVICOS_PRODUTO,
-    escopo: SEED_ESCOPOS,
-    amostragem: SEED_AMOSTRAGENS,
-    categoriaRegistro: SEED_CATEGORIAS_REGISTRO,
-    categoriaPlanilha: SEED_CATEGORIAS_PLANILHA,
-  });
+  const [lookups, setLookups] = useState<LookupState>(EMPTY_LOOKUPS);
   const [atividades, setAtividades] = useState<Atividade[]>([]);
   const [registros, setRegistros] = useState<Registro[]>([]);
   const [planilhas, setPlanilhas] = useState<Planilha[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const [lookupsRes, atividadesRes] = await Promise.all([
+          fetch("/api/lookups"),
+          fetch("/api/atividades"),
+        ]);
+        if (cancelled) return;
+
+        if (lookupsRes.ok) {
+          const data = await lookupsRes.json();
+          setLookups(groupLookups(data));
+        }
+        if (atividadesRes.ok) {
+          const data = await atividadesRes.json();
+          setAtividades(data);
+        }
+      } catch (error) {
+        console.error("Falha ao carregar dados iniciais", error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const addLookupItem = useCallback((kind: LookupKind, name: string) => {
-    const id = makeId(kind);
+    const id = makeId();
     setLookups((prev) => ({
       ...prev,
       [kind]: [...prev[kind], { id, name, active: true }],
     }));
+    fetch("/api/lookups", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, kind, name }),
+    }).catch((error) => console.error("Falha ao criar item", error));
     return id;
   }, []);
 
@@ -98,6 +138,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           item.id === id ? { ...item, name } : item
         ),
       }));
+      fetch(`/api/lookups/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      }).catch((error) => console.error("Falha ao renomear item", error));
     },
     []
   );
@@ -109,20 +154,42 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         item.id === id ? { ...item, active: false } : item
       ),
     }));
+    fetch(`/api/lookups/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: false }),
+    }).catch((error) => console.error("Falha ao desativar item", error));
   }, []);
 
   const addAtividade = useCallback((atividade: Atividade) => {
     setAtividades((prev) => [atividade, ...prev]);
+    fetch("/api/atividades", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(atividade),
+    }).catch((error) => console.error("Falha ao criar atividade", error));
   }, []);
 
   const updateAtividade = useCallback((id: string, patch: Partial<Atividade>) => {
-    setAtividades((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, ...patch } : a))
-    );
+    setAtividades((prev) => {
+      const next = prev.map((a) => (a.id === id ? { ...a, ...patch } : a));
+      const updated = next.find((a) => a.id === id);
+      if (updated) {
+        fetch(`/api/atividades/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updated),
+        }).catch((error) => console.error("Falha ao atualizar atividade", error));
+      }
+      return next;
+    });
   }, []);
 
   const deleteAtividade = useCallback((id: string) => {
     setAtividades((prev) => prev.filter((a) => a.id !== id));
+    fetch(`/api/atividades/${id}`, { method: "DELETE" }).catch((error) =>
+      console.error("Falha ao excluir atividade", error)
+    );
   }, []);
 
   const addRegistro = useCallback((registro: Registro) => {
@@ -159,6 +226,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       atividades,
       registros,
       planilhas,
+      loading,
       addLookupItem,
       renameLookupItem,
       deactivateLookupItem,
@@ -177,6 +245,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       atividades,
       registros,
       planilhas,
+      loading,
       addLookupItem,
       renameLookupItem,
       deactivateLookupItem,
@@ -204,25 +273,25 @@ export function useAppData() {
 }
 
 export function makeAtividadeId() {
-  return makeId("atividade");
+  return makeId();
 }
 
 export function makePropostaId() {
-  return makeId("proposta");
+  return makeId();
 }
 
 export function makeChecklistItemId() {
-  return makeId("checklist");
+  return makeId();
 }
 
 export function makeRegistroId() {
-  return makeId("registro");
+  return makeId();
 }
 
 export function makeRegistroTabId() {
-  return makeId("registroTab");
+  return makeId();
 }
 
 export function makePlanilhaId() {
-  return makeId("planilha");
+  return makeId();
 }

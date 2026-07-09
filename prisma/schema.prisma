@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum LookupKind {
+  empresa
+  unidade
+  assunto
+  tipoAtividade
+  servicoProduto
+  escopo
+  amostragem
+  categoriaRegistro
+  categoriaPlanilha
+}
+
+enum StatusConclusao {
+  Pendente
+  AguardandoRetornoInterno
+  AguardandoRetornoCliente
+  Concluido
+}
+
+enum Prioridade {
+  Urgente
+  Importante
+  Medio
+  Baixo
+}
+
+model LookupItem {
+  id        String     @id @default(cuid())
+  kind      LookupKind
+  name      String
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+
+  @@index([kind])
+}
+
+model Atividade {
+  id                String           @id @default(cuid())
+  empresaId         String?
+  unidadeId         String?
+  assuntoId         String?
+  tipoAtividadeIds  String[]
+  emailConteudo     String           @default("")
+  oportunidadeTexto String           @default("")
+  contato           String           @default("")
+  prazo             DateTime?
+  descricao         String           @default("")
+  status            StatusConclusao  @default(Pendente)
+  prioridade        Prioridade       @default(Medio)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  propostas Proposta[]
+  checklist ChecklistItem[]
+}
+
+model Proposta {
+  id                String    @id @default(cuid())
+  atividadeId       String
+  atividade         Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  numero            Int
+  servicoProdutoIds String[]
+  escopoIds         String[]
+  amostragemIds     String[]
+  quantidade        Float?
+  valorUnitario     Float?
+  valorTotal        Float?
+
+  @@index([atividadeId])
+}
+
+model ChecklistItem {
+  id          String    @id @default(cuid())
+  atividadeId String
+  atividade   Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  texto       String
+  concluido   Boolean   @default(false)
+  ordem       Int       @default(0)
+
+  @@index([atividadeId])
+}
+
+model Registro {
+  id           String        @id @default(cuid())
+  empresaId    String?
+  unidadeId    String?
+  contato      String        @default("")
+  assuntoId    String?
+  categoriaIds String[]
+  atividadeId  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  tabs RegistroTab[]
+}
+
+model RegistroTab {
+  id         String   @id @default(cuid())
+  registroId String
+  registro   Registro @relation(fields: [registroId], references: [id], onDelete: Cascade)
+  titulo     String
+  conteudo   String   @default("")
+  ordem      Int      @default(0)
+
+  @@index([registroId])
+}
+
+model Planilha {
+  id           String   @id @default(cuid())
+  nome         String   @default("")
+  empresaId    String?
+  unidadeId    String?
+  assuntoId    String?
+  categoriaIds String[]
+  atividadeId  String?
+  conteudo     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
