@@ -18,6 +18,7 @@ function emptyPlanilha(): Planilha {
     assuntoId: null,
     categoriaIds: [],
     atividadeId: null,
+    conteudo: null,
     createdAt: new Date().toISOString(),
   };
 }

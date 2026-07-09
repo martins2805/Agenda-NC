@@ -98,5 +98,6 @@ export interface Planilha {
   assuntoId: string | null;
   categoriaIds: string[];
   atividadeId: string | null;
+  conteudo: Record<string, unknown> | null;
   createdAt: string; // ISO datetime
 }

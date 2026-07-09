@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type {
@@ -82,6 +83,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [atividades, setAtividades] = useState<Atividade[]>([]);
   const [registros, setRegistros] = useState<Registro[]>([]);
   const [planilhas, setPlanilhas] = useState<Planilha[]>([]);
+  const planilhaSaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map()
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -89,11 +93,13 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
     async function load() {
       try {
-        const [lookupsRes, atividadesRes, registrosRes] = await Promise.all([
-          fetch("/api/lookups"),
-          fetch("/api/atividades"),
-          fetch("/api/registros"),
-        ]);
+        const [lookupsRes, atividadesRes, registrosRes, planilhasRes] =
+          await Promise.all([
+            fetch("/api/lookups"),
+            fetch("/api/atividades"),
+            fetch("/api/registros"),
+            fetch("/api/planilhas"),
+          ]);
         if (cancelled) return;
 
         if (lookupsRes.ok) {
@@ -107,6 +113,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         if (registrosRes.ok) {
           const data = await registrosRes.json();
           setRegistros(data);
+        }
+        if (planilhasRes.ok) {
+          const data = await planilhasRes.json();
+          setPlanilhas(data);
         }
       } catch (error) {
         console.error("Falha ao carregar dados iniciais", error);
@@ -230,16 +240,39 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const addPlanilha = useCallback((planilha: Planilha) => {
     setPlanilhas((prev) => [planilha, ...prev]);
+    fetch("/api/planilhas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(planilha),
+    }).catch((error) => console.error("Falha ao criar planilha", error));
   }, []);
 
   const updatePlanilha = useCallback((id: string, patch: Partial<Planilha>) => {
-    setPlanilhas((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...patch } : p))
-    );
+    setPlanilhas((prev) => {
+      const next = prev.map((p) => (p.id === id ? { ...p, ...patch } : p));
+      const updated = next.find((p) => p.id === id);
+      if (updated) {
+        const existingTimer = planilhaSaveTimers.current.get(id);
+        if (existingTimer) clearTimeout(existingTimer);
+        const timer = setTimeout(() => {
+          planilhaSaveTimers.current.delete(id);
+          fetch(`/api/planilhas/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updated),
+          }).catch((error) => console.error("Falha ao atualizar planilha", error));
+        }, 600);
+        planilhaSaveTimers.current.set(id, timer);
+      }
+      return next;
+    });
   }, []);
 
   const deletePlanilha = useCallback((id: string) => {
     setPlanilhas((prev) => prev.filter((p) => p.id !== id));
+    fetch(`/api/planilhas/${id}`, { method: "DELETE" }).catch((error) =>
+      console.error("Falha ao excluir planilha", error)
+    );
   }, []);
 
   const value = useMemo(

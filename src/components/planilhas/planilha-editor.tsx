@@ -180,7 +180,12 @@ export function PlanilhaEditor({
 
       <div className="flex flex-col gap-1.5">
         <Label>Planilha</Label>
-        <UniverSheet workbookId={planilha.id} workbookName={planilha.nome || "Planilha"} />
+        <UniverSheet
+          workbookId={planilha.id}
+          workbookName={planilha.nome || "Planilha"}
+          initialData={planilha.conteudo}
+          onChange={(conteudo) => patch({ conteudo })}
+        />
       </div>
 
       <ActivityForm

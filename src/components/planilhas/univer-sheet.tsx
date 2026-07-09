@@ -9,10 +9,22 @@ import "@univerjs/preset-sheets-core/lib/index.css";
 interface UniverSheetProps {
   workbookId: string;
   workbookName: string;
+  initialData?: Record<string, unknown> | null;
+  onChange?: (snapshot: Record<string, unknown>) => void;
 }
 
-export function UniverSheet({ workbookId, workbookName }: UniverSheetProps) {
+export function UniverSheet({
+  workbookId,
+  workbookName,
+  initialData,
+  onChange,
+}: UniverSheetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const onChangeRef = useRef(onChange);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -30,9 +42,23 @@ export function UniverSheet({ workbookId, workbookName }: UniverSheetProps) {
       ],
     });
 
-    univerAPI.createWorkbook({ id: workbookId, name: workbookName });
+    univerAPI.createWorkbook(
+      (initialData as never) ?? { id: workbookId, name: workbookName }
+    );
+
+    let saveTimer: ReturnType<typeof setTimeout> | null = null;
+    const disposable = univerAPI.onCommandExecuted(() => {
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        const workbook = univerAPI.getActiveWorkbook();
+        if (workbook)
+          onChangeRef.current?.(workbook.save() as unknown as Record<string, unknown>);
+      }, 800);
+    });
 
     return () => {
+      if (saveTimer) clearTimeout(saveTimer);
+      disposable.dispose();
       univer.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
