@@ -6,6 +6,7 @@ import { Plus, Table2 } from "lucide-react";
 import { useAppData, makePlanilhaId } from "@/lib/app-data-context";
 import { PlanilhaCard } from "@/components/planilhas/planilha-card";
 import { PlanilhaEditor } from "@/components/planilhas/planilha-editor";
+import { PageHero } from "@/components/page-hero";
 import type { Planilha } from "@/lib/types";
 
 function emptyPlanilha(): Planilha {
@@ -70,11 +71,18 @@ export default function PlanilhasPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <PageHero
+        icon={<Table2 className="size-3.5" />}
+        label="Tela 3 · Planilhas"
+        title="Planilhas livres para virar processo."
+        description="Grade estilo Excel/Sheets com fórmulas reais, abas, metadados e associação como anexo de atividades."
+      />
+
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Planilhas</h1>
-          <p className="mt-2 max-w-xl text-muted-foreground">
-            Planilhas livres com fórmulas, organizadas por categoria.
+          <h2 className="text-2xl font-bold tracking-tight">Planilhas</h2>
+          <p className="mt-1 text-muted-foreground">
+            Organizadas por categoria: vendas, comissão, faturamento, dados e consultoria.
           </p>
         </div>
         <Button className="gap-2 sm:w-fit" onClick={openNew}>

@@ -20,7 +20,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-full flex-col">
       <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <span className="text-lg font-bold tracking-tight">Agenda NC</span>
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-900 to-blue-600 text-sm font-black text-white shadow-md">
+              NC
+            </div>
+            <span className="text-lg font-bold tracking-tight">Agenda NC</span>
+          </div>
           <div className="flex items-center gap-1">
             <nav className="hidden gap-1 sm:flex">
               {NAV_ITEMS.map((item) => {
