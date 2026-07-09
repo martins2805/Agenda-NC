@@ -7,10 +7,17 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { Atividade, LookupItem, LookupKind, Registro } from "./types";
+import type {
+  Atividade,
+  LookupItem,
+  LookupKind,
+  Planilha,
+  Registro,
+} from "./types";
 import {
   SEED_AMOSTRAGENS,
   SEED_ASSUNTOS,
+  SEED_CATEGORIAS_PLANILHA,
   SEED_CATEGORIAS_REGISTRO,
   SEED_EMPRESAS,
   SEED_ESCOPOS,
@@ -28,12 +35,14 @@ interface LookupState {
   escopo: LookupItem[];
   amostragem: LookupItem[];
   categoriaRegistro: LookupItem[];
+  categoriaPlanilha: LookupItem[];
 }
 
 interface AppDataContextValue {
   lookups: LookupState;
   atividades: Atividade[];
   registros: Registro[];
+  planilhas: Planilha[];
   addLookupItem: (kind: LookupKind, name: string) => string;
   renameLookupItem: (kind: LookupKind, id: string, name: string) => void;
   deactivateLookupItem: (kind: LookupKind, id: string) => void;
@@ -43,6 +52,9 @@ interface AppDataContextValue {
   addRegistro: (registro: Registro) => void;
   updateRegistro: (id: string, patch: Partial<Registro>) => void;
   deleteRegistro: (id: string) => void;
+  addPlanilha: (planilha: Planilha) => void;
+  updatePlanilha: (id: string, patch: Partial<Planilha>) => void;
+  deletePlanilha: (id: string) => void;
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -63,9 +75,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     escopo: SEED_ESCOPOS,
     amostragem: SEED_AMOSTRAGENS,
     categoriaRegistro: SEED_CATEGORIAS_REGISTRO,
+    categoriaPlanilha: SEED_CATEGORIAS_PLANILHA,
   });
   const [atividades, setAtividades] = useState<Atividade[]>([]);
   const [registros, setRegistros] = useState<Registro[]>([]);
+  const [planilhas, setPlanilhas] = useState<Planilha[]>([]);
 
   const addLookupItem = useCallback((kind: LookupKind, name: string) => {
     const id = makeId(kind);
@@ -125,11 +139,26 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     setRegistros((prev) => prev.filter((r) => r.id !== id));
   }, []);
 
+  const addPlanilha = useCallback((planilha: Planilha) => {
+    setPlanilhas((prev) => [planilha, ...prev]);
+  }, []);
+
+  const updatePlanilha = useCallback((id: string, patch: Partial<Planilha>) => {
+    setPlanilhas((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, ...patch } : p))
+    );
+  }, []);
+
+  const deletePlanilha = useCallback((id: string) => {
+    setPlanilhas((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
   const value = useMemo(
     () => ({
       lookups,
       atividades,
       registros,
+      planilhas,
       addLookupItem,
       renameLookupItem,
       deactivateLookupItem,
@@ -139,11 +168,15 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addRegistro,
       updateRegistro,
       deleteRegistro,
+      addPlanilha,
+      updatePlanilha,
+      deletePlanilha,
     }),
     [
       lookups,
       atividades,
       registros,
+      planilhas,
       addLookupItem,
       renameLookupItem,
       deactivateLookupItem,
@@ -153,6 +186,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addRegistro,
       updateRegistro,
       deleteRegistro,
+      addPlanilha,
+      updatePlanilha,
+      deletePlanilha,
     ]
   );
 
@@ -185,4 +221,8 @@ export function makeRegistroId() {
 
 export function makeRegistroTabId() {
   return makeId("registroTab");
+}
+
+export function makePlanilhaId() {
+  return makeId("planilha");
 }

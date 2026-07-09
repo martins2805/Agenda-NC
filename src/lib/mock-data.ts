@@ -110,3 +110,15 @@ export const SEED_CATEGORIAS_REGISTRO = toItems("categoriaRegistro", [
   "Produtos/Serviços",
   "Alinhamentos",
 ]);
+
+export const SEED_CATEGORIAS_PLANILHA = toItems("categoriaPlanilha", [
+  "Vendas",
+  "Comissão",
+  "Faturamento",
+  "Processos Internos",
+  "Propostas",
+  "Dimensionamentos",
+  "Dados",
+  "Produtos/Serviços",
+  "Consultoria",
+]);

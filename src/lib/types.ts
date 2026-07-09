@@ -6,7 +6,8 @@ export type LookupKind =
   | "servicoProduto"
   | "escopo"
   | "amostragem"
-  | "categoriaRegistro";
+  | "categoriaRegistro"
+  | "categoriaPlanilha";
 
 export interface LookupItem {
   id: string;
@@ -85,6 +86,17 @@ export interface Registro {
   assuntoId: string | null;
   categoriaIds: string[];
   tabs: RegistroTab[];
+  atividadeId: string | null;
+  createdAt: string; // ISO datetime
+}
+
+export interface Planilha {
+  id: string;
+  nome: string;
+  empresaId: string | null;
+  unidadeId: string | null;
+  assuntoId: string | null;
+  categoriaIds: string[];
   atividadeId: string | null;
   createdAt: string; // ISO datetime
 }
