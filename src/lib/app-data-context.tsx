@@ -89,9 +89,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
     async function load() {
       try {
-        const [lookupsRes, atividadesRes] = await Promise.all([
+        const [lookupsRes, atividadesRes, registrosRes] = await Promise.all([
           fetch("/api/lookups"),
           fetch("/api/atividades"),
+          fetch("/api/registros"),
         ]);
         if (cancelled) return;
 
@@ -102,6 +103,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         if (atividadesRes.ok) {
           const data = await atividadesRes.json();
           setAtividades(data);
+        }
+        if (registrosRes.ok) {
+          const data = await registrosRes.json();
+          setRegistros(data);
         }
       } catch (error) {
         console.error("Falha ao carregar dados iniciais", error);
@@ -194,16 +199,33 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
   const addRegistro = useCallback((registro: Registro) => {
     setRegistros((prev) => [registro, ...prev]);
+    fetch("/api/registros", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(registro),
+    }).catch((error) => console.error("Falha ao criar registro", error));
   }, []);
 
   const updateRegistro = useCallback((id: string, patch: Partial<Registro>) => {
-    setRegistros((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, ...patch } : r))
-    );
+    setRegistros((prev) => {
+      const next = prev.map((r) => (r.id === id ? { ...r, ...patch } : r));
+      const updated = next.find((r) => r.id === id);
+      if (updated) {
+        fetch(`/api/registros/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updated),
+        }).catch((error) => console.error("Falha ao atualizar registro", error));
+      }
+      return next;
+    });
   }, []);
 
   const deleteRegistro = useCallback((id: string) => {
     setRegistros((prev) => prev.filter((r) => r.id !== id));
+    fetch(`/api/registros/${id}`, { method: "DELETE" }).catch((error) =>
+      console.error("Falha ao excluir registro", error)
+    );
   }, []);
 
   const addPlanilha = useCallback((planilha: Planilha) => {
