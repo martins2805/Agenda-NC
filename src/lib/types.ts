@@ -1,0 +1,71 @@
+export type LookupKind =
+  | "empresa"
+  | "unidade"
+  | "assunto"
+  | "tipoAtividade"
+  | "servicoProduto"
+  | "escopo"
+  | "amostragem";
+
+export interface LookupItem {
+  id: string;
+  name: string;
+  active: boolean;
+}
+
+export type StatusConclusao =
+  | "Concluído"
+  | "Pendente"
+  | "Aguardando retorno interno"
+  | "Aguardando retorno cliente";
+
+export const STATUS_OPTIONS: StatusConclusao[] = [
+  "Pendente",
+  "Aguardando retorno interno",
+  "Aguardando retorno cliente",
+  "Concluído",
+];
+
+export type Prioridade = "Urgente" | "Importante" | "Médio" | "Baixo";
+
+export const PRIORIDADE_OPTIONS: Prioridade[] = [
+  "Urgente",
+  "Importante",
+  "Médio",
+  "Baixo",
+];
+
+export interface ChecklistItem {
+  id: string;
+  texto: string;
+  concluido: boolean;
+}
+
+export interface Proposta {
+  id: string;
+  numero: number;
+  servicoProdutoIds: string[];
+  escopoIds: string[];
+  amostragemIds: string[];
+  quantidade: number | null;
+  valorUnitario: number | null;
+  valorTotal: number | null;
+}
+
+export interface Atividade {
+  id: string;
+  empresaId: string | null;
+  unidadeId: string | null;
+  assuntoId: string | null;
+  tipoAtividadeIds: string[];
+  emailConteudo: string;
+  oportunidadeTexto: string;
+  propostas: Proposta[];
+  contato: string;
+  prazo: string | null; // ISO date
+  descricao: string;
+  status: StatusConclusao;
+  prioridade: Prioridade;
+  checklist: ChecklistItem[];
+  createdAt: string; // ISO datetime
+}
