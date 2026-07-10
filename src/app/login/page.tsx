@@ -4,7 +4,6 @@ import { signIn } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 async function authenticate(formData: FormData) {
   "use server";
@@ -31,35 +30,58 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted/30 px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Agenda NC</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Entre para acessar suas atividades, registros e planilhas.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <form action={authenticate} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">E-mail</Label>
-              <Input id="email" name="email" type="email" required autoFocus />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">Senha</Label>
-              <Input id="password" name="password" type="password" required />
-            </div>
-            {error && (
-              <p className="text-sm text-destructive">
-                E-mail ou senha inválidos.
-              </p>
-            )}
-            <Button type="submit" className="mt-2">
-              Entrar
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 px-4">
+      <div className="w-full max-w-sm border border-border bg-card p-8">
+        <div className="mb-8 flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center border border-primary font-mono text-xs font-bold text-primary">
+            NC
+          </div>
+          <div>
+            <p className="font-display text-xl italic leading-none">Agenda NC</p>
+            <p className="ledger-label mt-1">Acesso restrito</p>
+          </div>
+        </div>
+
+        <p className="mb-6 text-sm text-muted-foreground">
+          Entre para acessar suas atividades, registros e planilhas.
+        </p>
+
+        <form action={authenticate} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="email" className="ledger-label">
+              E-mail
+            </Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoFocus
+              className="rounded-none border-border font-mono text-sm"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="password" className="ledger-label">
+              Senha
+            </Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              required
+              className="rounded-none border-border font-mono text-sm"
+            />
+          </div>
+          {error && (
+            <p className="font-mono text-xs text-destructive">
+              E-mail ou senha inválidos.
+            </p>
+          )}
+          <Button type="submit" className="mt-2 rounded-none font-mono text-xs tracking-wide uppercase">
+            Entrar
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }

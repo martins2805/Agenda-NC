@@ -18,13 +18,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-900 to-blue-600 text-sm font-black text-white shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center border border-primary font-mono text-xs font-bold text-primary">
               NC
             </div>
-            <span className="text-lg font-bold tracking-tight">Agenda NC</span>
+            <span className="font-display text-lg tracking-tight italic">
+              Agenda NC
+            </span>
           </div>
           <div className="flex items-center gap-1">
             <nav className="hidden gap-1 sm:flex">
@@ -35,13 +37,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      "flex items-center gap-2 border border-transparent px-3 py-2 font-mono text-xs tracking-wide uppercase transition-colors",
                       active
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "border-primary text-primary"
+                        : "text-muted-foreground hover:border-border hover:text-foreground"
                     )}
                   >
-                    <item.icon className="size-4" />
+                    <item.icon className="size-3.5" />
                     {item.label}
                   </Link>
                 );
@@ -60,7 +62,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-background sm:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background sm:hidden">
         <div className="flex">
           {NAV_ITEMS.map((item) => {
             const active = pathname?.startsWith(item.href);
@@ -69,7 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-1 flex-col items-center gap-1 py-2.5 text-xs font-medium",
+                  "flex flex-1 flex-col items-center gap-1 py-2.5 font-mono text-[10px] tracking-wide uppercase",
                   active ? "text-primary" : "text-muted-foreground"
                 )}
               >

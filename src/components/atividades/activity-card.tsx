@@ -10,17 +10,17 @@ import type { Atividade } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const PRIORIDADE_STYLES: Record<Atividade["prioridade"], string> = {
-  Urgente: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
-  Importante: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-  Médio: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
-  Baixo: "bg-zinc-100 text-zinc-600 dark:bg-zinc-500/15 dark:text-zinc-300",
+  Urgente: "border-[#c96a4e]/50 text-[#e08a6c]",
+  Importante: "border-[#d9822f]/50 text-[#e6b374]",
+  Médio: "border-[#5b8aa6]/50 text-[#8ab2c8]",
+  Baixo: "border-border text-muted-foreground",
 };
 
 const STATUS_STYLES: Record<Atividade["status"], string> = {
-  Concluído: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-  Pendente: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300",
-  "Aguardando retorno interno": "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-300",
-  "Aguardando retorno cliente": "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+  Concluído: "border-[#5f9e77]/50 text-[#7fbb96]",
+  Pendente: "border-[#d9822f]/50 text-[#e6b374]",
+  "Aguardando retorno interno": "border-[#8d7cae]/50 text-[#ad9fcb]",
+  "Aguardando retorno cliente": "border-[#5b8aa6]/50 text-[#8ab2c8]",
 };
 
 interface ActivityCardProps {
@@ -77,11 +77,11 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className={cn("rounded-full px-2 py-0.5 font-medium", STATUS_STYLES[atividade.status])}>
+        <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
+          <span className={cn("border px-2 py-0.5 font-medium uppercase tracking-wide", STATUS_STYLES[atividade.status])}>
             {atividade.status}
           </span>
-          <span className={cn("rounded-full px-2 py-0.5 font-medium", PRIORIDADE_STYLES[atividade.prioridade])}>
+          <span className={cn("border px-2 py-0.5 font-medium uppercase tracking-wide", PRIORIDADE_STYLES[atividade.prioridade])}>
             {atividade.prioridade}
           </span>
           {dias !== null && (

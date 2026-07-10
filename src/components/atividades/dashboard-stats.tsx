@@ -47,11 +47,13 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
       <Card className="lg:col-span-1">
         <CardContent className="flex flex-col gap-1">
           <div className="flex items-center gap-2 text-muted-foreground">
-            <ClipboardList className="size-4" />
-            <span className="text-sm font-medium">Total de atividades</span>
+            <ClipboardList className="size-3.5" />
+            <span className="ledger-label">Total de atividades</span>
           </div>
-          <p className="text-4xl font-black tracking-tight">{total}</p>
-          <Badge variant="secondary" className="w-fit">
+          <p className="font-mono text-4xl font-bold tracking-tight text-foreground">
+            {String(total).padStart(2, "0")}
+          </p>
+          <Badge variant="secondary" className="w-fit border border-border font-mono text-[10px] tracking-wide uppercase">
             controle vivo
           </Badge>
         </CardContent>
@@ -59,7 +61,7 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
 
       <Card>
         <CardContent className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Por status</span>
+          <span className="ledger-label">Por status</span>
           <div className="flex flex-col gap-2 text-sm">
             {porStatus.map((s) => (
               <div key={s.label} className="flex flex-col gap-1">
@@ -76,7 +78,7 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
 
       <Card>
         <CardContent className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Por prioridade</span>
+          <span className="ledger-label">Por prioridade</span>
           <div className="flex flex-col gap-2 text-sm">
             {porPrioridade.map((p) => (
               <div key={p.label} className="flex flex-col gap-1">
@@ -93,7 +95,7 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
 
       <Card>
         <CardContent className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Por tipo de atividade</span>
+          <span className="ledger-label">Por tipo de atividade</span>
           {porTipo.length === 0 ? (
             <span className="text-sm text-muted-foreground">Sem dados ainda</span>
           ) : (
@@ -104,11 +106,11 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
                   className="group relative flex flex-1 flex-col items-center justify-end"
                 >
                   <div
-                    className="w-full rounded-t-lg rounded-b-sm bg-gradient-to-b from-blue-600 to-blue-300"
+                    className="w-full border border-b-0 border-border bg-primary/80"
                     style={{ height: `${Math.max(12, (t.count / maxTipo) * 88)}px` }}
                     title={`${t.name}: ${t.count}`}
                   />
-                  <span className="mt-1 line-clamp-1 w-full text-center text-[10px] text-muted-foreground">
+                  <span className="mt-1 line-clamp-1 w-full text-center font-mono text-[10px] text-muted-foreground">
                     {t.name}
                   </span>
                 </div>
