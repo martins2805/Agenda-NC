@@ -106,12 +106,23 @@ export default function UsuariosPage() {
         </p>
       </div>
 
+      <Card className="w-fit border-none bg-[var(--chart-1)] text-white shadow-lg shadow-[var(--chart-1)]/20">
+        <CardContent className="flex flex-col gap-1">
+          <span className="ledger-label text-white/70">Contas cadastradas</span>
+          <p className="font-mono text-4xl font-bold tracking-tight">
+            {String(users.length).padStart(2, "0")}
+          </p>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,360px)_1fr]">
         <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <UserPlus className="size-4" />
+                <span className="flex size-6 items-center justify-center rounded-full bg-[var(--chart-1)] text-white">
+                  <UserPlus className="size-3.5" />
+                </span>
                 Novo usuário
               </CardTitle>
               <CardDescription>Defina e-mail e senha de acesso.</CardDescription>
@@ -152,7 +163,9 @@ export default function UsuariosPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <KeyRound className="size-4" />
+                <span className="flex size-6 items-center justify-center rounded-full bg-[var(--chart-3)] text-white">
+                  <KeyRound className="size-3.5" />
+                </span>
                 Trocar minha senha
               </CardTitle>
               <CardDescription>Altere a senha da sua própria conta.</CardDescription>

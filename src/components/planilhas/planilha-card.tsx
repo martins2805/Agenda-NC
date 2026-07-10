@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Table2, Link2 } from "lucide-react";
 import { useAppData } from "@/lib/app-data-context";
+import { tileColorFor } from "@/lib/tile-colors";
+import { cn } from "@/lib/utils";
 import type { Planilha } from "@/lib/types";
 
 export function PlanilhaCard({
@@ -46,24 +47,25 @@ export function PlanilhaCard({
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {categorias.map((c) => (
-            <Badge key={c.id} variant="outline">
+            <span
+              key={c.id}
+              className={cn(
+                "rounded-full px-2.5 py-0.5 text-xs font-medium",
+                tileColorFor(c.id)
+              )}
+            >
               {c.name}
-            </Badge>
+            </span>
           ))}
         </div>
         {atividadeLabel && (
           <Link
             href={`/atividades?open=${planilha.atividadeId}`}
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1 self-start"
+            className="flex w-fit items-center gap-1 rounded-full bg-[var(--chart-5)] px-2.5 py-0.5 text-xs font-medium text-[var(--chart-1)] hover:opacity-80"
           >
-            <Badge
-              variant="secondary"
-              className="gap-1 text-primary hover:underline"
-            >
-              <Link2 className="size-3" />
-              {atividadeLabel}
-            </Badge>
+            <Link2 className="size-3" />
+            {atividadeLabel}
           </Link>
         )}
       </CardContent>

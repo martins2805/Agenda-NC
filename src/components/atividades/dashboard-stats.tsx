@@ -5,6 +5,7 @@ import { useAppData } from "@/lib/app-data-context";
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
 import type { Atividade } from "@/lib/types";
 import { ClipboardList } from "lucide-react";
+import { TILE_COLORS } from "@/lib/tile-colors";
 
 function StatBar({ value, max }: { value: number; max: number }) {
   return (
@@ -13,15 +14,6 @@ function StatBar({ value, max }: { value: number; max: number }) {
     </div>
   );
 }
-
-const TILE_COLORS = [
-  "bg-[var(--chart-1)] text-white",
-  "bg-[var(--chart-3)] text-white",
-  "bg-[var(--chart-2)] text-white",
-  "bg-[var(--chart-4)] text-[var(--chart-1)]",
-  "bg-[var(--chart-5)] text-[var(--chart-1)]",
-  "bg-foreground text-background",
-];
 
 export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
   const { lookups } = useAppData();
