@@ -1,11 +1,15 @@
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
-const CHAT_MODEL = "gemini-flash-latest";
+const CHAT_MODELS = ["gemini-flash-latest", "gemini-2.0-flash", "gemini-2.5-flash-lite"];
 const EMBEDDING_MODEL = "gemini-embedding-001";
 
 function apiKey(): string {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error("GEMINI_API_KEY não configurada");
   return key;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function embedText(text: string): Promise<number[]> {
@@ -33,12 +37,13 @@ export interface ChatTurn {
   text: string;
 }
 
-export async function generateChatReply(
+async function callModel(
+  model: string,
   systemInstruction: string,
   history: ChatTurn[]
-): Promise<string> {
+): Promise<{ ok: boolean; status: number; body: string }> {
   const res = await fetch(
-    `${GEMINI_BASE_URL}/models/${CHAT_MODEL}:generateContent?key=${apiKey()}`,
+    `${GEMINI_BASE_URL}/models/${model}:generateContent?key=${apiKey()}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -51,15 +56,34 @@ export async function generateChatReply(
       }),
     }
   );
+  const body = await res.text();
+  return { ok: res.ok, status: res.status, body };
+}
 
-  if (!res.ok) {
-    throw new Error(`Gemini chat falhou: ${res.status} ${await res.text()}`);
+export async function generateChatReply(
+  systemInstruction: string,
+  history: ChatTurn[]
+): Promise<string> {
+  let lastError = "";
+
+  for (const model of CHAT_MODELS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const result = await callModel(model, systemInstruction, history);
+
+      if (result.ok) {
+        const data = JSON.parse(result.body);
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (typeof text === "string") return text;
+        lastError = "Resposta inesperada do Gemini";
+        continue;
+      }
+
+      lastError = `${model}: ${result.status} ${result.body}`;
+      // 503 = sobrecarga temporária do modelo; vale tentar de novo ou trocar de modelo.
+      if (result.status !== 503) break;
+      await sleep(400);
+    }
   }
 
-  const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (typeof text !== "string") {
-    throw new Error("Resposta inesperada do Gemini");
-  }
-  return text;
+  throw new Error(`Gemini chat falhou em todos os modelos. Último erro: ${lastError}`);
 }
