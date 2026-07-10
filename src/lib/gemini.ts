@@ -108,7 +108,7 @@ export interface ToolRunner {
   execute: (name: string, args: Record<string, unknown>) => Promise<object>;
 }
 
-export async function generateChatReply(
+async function generateChatReplyGemini(
   systemInstruction: string,
   history: ChatTurn[],
   toolRunner?: ToolRunner
@@ -145,4 +145,21 @@ export async function generateChatReply(
   }
 
   throw new Error("Limite de chamadas de ferramenta excedido");
+}
+
+export async function generateChatReply(
+  systemInstruction: string,
+  history: ChatTurn[],
+  toolRunner?: ToolRunner
+): Promise<string> {
+  if (process.env.NVIDIA_API_KEY) {
+    try {
+      const { generateChatReplyNvidia } = await import("@/lib/nvidia");
+      return await generateChatReplyNvidia(systemInstruction, history, toolRunner);
+    } catch (nvidiaError) {
+      console.error("NVIDIA indisponível, tentando fallback Gemini", nvidiaError);
+    }
+  }
+
+  return generateChatReplyGemini(systemInstruction, history, toolRunner);
 }
