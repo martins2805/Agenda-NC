@@ -29,6 +29,14 @@ export async function GET() {
   return NextResponse.json(messages);
 }
 
+export async function DELETE() {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  await prisma.chatMessage.deleteMany({ where: { createdAt: { gte: todayStart() } } });
+  return NextResponse.json({ ok: true });
+}
+
 export async function POST(request: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

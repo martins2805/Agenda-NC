@@ -13,6 +13,16 @@ interface ChatMessageRow {
   createdAt: string;
 }
 
+const HELP_TEXT = [
+  "Comandos disponíveis:",
+  "/limpar — apaga a conversa de hoje (some daqui e do banco)",
+  "/ajuda — mostra esta lista",
+].join("\n");
+
+function localMessage(role: "user" | "assistant", content: string): ChatMessageRow {
+  return { id: `local-${role}-${Date.now()}-${Math.random()}`, role, content, createdAt: new Date().toISOString() };
+}
+
 export function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessageRow[]>([]);
@@ -48,15 +58,46 @@ export function ChatWidget() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, loading]);
 
+  async function runCommand(command: string): Promise<boolean> {
+    const cmd = command.trim().toLowerCase();
+
+    if (cmd === "/ajuda" || cmd === "/help") {
+      setMessages((prev) => [...prev, localMessage("assistant", HELP_TEXT)]);
+      return true;
+    }
+
+    if (cmd === "/limpar" || cmd === "/clear") {
+      setMessages([]);
+      try {
+        await fetch("/api/chat", { method: "DELETE" });
+      } catch (error) {
+        console.error("Falha ao limpar conversa", error);
+      }
+      setMessages([localMessage("assistant", "Conversa de hoje apagada.")]);
+      return true;
+    }
+
+    return false;
+  }
+
   async function send() {
     const text = draft.trim();
     if (!text || loading) return;
 
     setDraft("");
-    setMessages((prev) => [
-      ...prev,
-      { id: `local-${Date.now()}`, role: "user", content: text, createdAt: new Date().toISOString() },
-    ]);
+
+    if (text.startsWith("/")) {
+      setMessages((prev) => [...prev, localMessage("user", text)]);
+      const handled = await runCommand(text);
+      if (handled) return;
+      setMessages((prev) => [
+        ...prev,
+        localMessage("assistant", `Comando desconhecido. ${HELP_TEXT}`),
+      ]);
+      return;
+    }
+
+    setMessages((prev) => [...prev, localMessage("user", text)]);
     setLoading(true);
 
     try {
@@ -67,24 +108,11 @@ export function ChatWidget() {
       });
       const data = await res.json();
       if (res.ok) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `local-reply-${Date.now()}`,
-            role: "assistant",
-            content: data.reply as string,
-            createdAt: new Date().toISOString(),
-          },
-        ]);
+        setMessages((prev) => [...prev, localMessage("assistant", data.reply as string)]);
       } else {
         setMessages((prev) => [
           ...prev,
-          {
-            id: `local-error-${Date.now()}`,
-            role: "assistant",
-            content: "Não consegui responder agora. Tente de novo em instantes.",
-            createdAt: new Date().toISOString(),
-          },
+          localMessage("assistant", "Não consegui responder agora. Tente de novo em instantes."),
         ]);
       }
     } catch (error) {
@@ -121,13 +149,14 @@ export function ChatWidget() {
             {!loadingHistory && messages.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 Pergunte algo sobre suas atividades, registros ou planilhas.
+                Digite <span className="font-mono">/ajuda</span> para ver os comandos.
               </p>
             )}
             {messages.map((m) => (
               <div
                 key={m.id}
                 className={cn(
-                  "max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed",
+                  "max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed whitespace-pre-line",
                   m.role === "user"
                     ? "ml-auto bg-primary text-primary-foreground"
                     : "bg-muted text-foreground"
