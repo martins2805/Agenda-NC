@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, JetBrains_Mono, Inter } from "next/font/google";
+import { Cormorant_Garamond, JetBrains_Mono, Inter } from "next/font/google";
 import "./globals.css";
 
-const fraunces = Fraunces({
+const displayFont = Cormorant_Garamond({
   variable: "--font-display",
   subsets: ["latin"],
-  axes: ["opsz", "SOFT", "WONK"],
+  weight: ["500", "600", "700"],
   style: ["normal", "italic"],
 });
 
@@ -37,7 +37,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${fraunces.variable} ${jetbrainsMono.variable} ${inter.variable} h-full antialiased`}
+      className={`${displayFont.variable} ${jetbrainsMono.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

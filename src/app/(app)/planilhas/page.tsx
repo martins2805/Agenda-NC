@@ -74,7 +74,7 @@ export default function PlanilhasPage() {
     <div className="flex flex-col gap-6">
       <PageHero
         icon={<Table2 className="size-3.5" />}
-        label="Tela 3 · Planilhas"
+        label="Biblioteca · Planilhas"
         title="Planilhas livres para virar processo."
         description="Grade estilo Excel/Sheets com fórmulas reais, abas, metadados e associação como anexo de atividades."
       />

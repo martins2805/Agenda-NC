@@ -74,7 +74,7 @@ export default function RegistrosPage() {
     <div className="flex flex-col gap-6">
       <PageHero
         icon={<FileText className="size-3.5" />}
-        label="Tela 2 · Registros"
+        label="Biblioteca · Registros"
         title="Saídas de reunião sem virar bagunça."
         description="Documentos com abas, formatação rica, categorias e associação com atividades novas ou existentes."
       />

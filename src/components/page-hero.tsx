@@ -17,7 +17,7 @@ export function PageHero({
         {icon}
         {label}
       </span>
-      <h1 className="mt-5 font-display text-3xl leading-[1.05] font-medium tracking-tight text-foreground italic sm:text-5xl">
+      <h1 className="mt-5 font-display text-4xl leading-[1.05] font-semibold tracking-tight text-foreground italic sm:text-6xl">
         {title}
       </h1>
       <div className="mt-4 h-px w-16 bg-primary" />
