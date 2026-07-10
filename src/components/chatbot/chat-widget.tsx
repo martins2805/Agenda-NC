@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, Send, X, Loader2 } from "lucide-react";
+import { MessageCircle, Send, X, Loader2, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,31 @@ interface ChatMessageRow {
   createdAt: string;
 }
 
+interface Position {
+  right: number;
+  bottom: number;
+}
+
+const DEFAULT_POSITION: Position = { right: 24, bottom: 24 };
+const STORAGE_KEY = "agenda-nc-chat-position";
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), Math.max(min, max));
+}
+
+function loadPosition(): Position {
+  if (typeof window === "undefined") return DEFAULT_POSITION;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return DEFAULT_POSITION;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed.right === "number" && typeof parsed.bottom === "number") return parsed;
+  } catch {
+    // ignore malformed storage
+  }
+  return DEFAULT_POSITION;
+}
+
 const HELP_TEXT = [
   "Comandos disponíveis:",
   "/limpar — apaga a conversa de hoje (some daqui e do banco)",
@@ -24,14 +49,31 @@ function localMessage(role: "user" | "assistant", content: string): ChatMessageR
   return { id: `local-${role}-${Date.now()}-${Math.random()}`, role, content, createdAt: new Date().toISOString() };
 }
 
+interface DragInfo {
+  startX: number;
+  startY: number;
+  startRight: number;
+  startBottom: number;
+  moved: boolean;
+}
+
 export function ChatWidget() {
   const { refetch } = useAppData();
   const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState<Position>(DEFAULT_POSITION);
   const [messages, setMessages] = useState<ChatMessageRow[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const dragInfo = useRef<DragInfo | null>(null);
+
+  useEffect(() => {
+    function hydratePosition() {
+      setPosition(loadPosition());
+    }
+    hydratePosition();
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -59,6 +101,52 @@ export function ChatWidget() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, loading]);
+
+  function beginDrag(e: React.PointerEvent<HTMLElement>) {
+    dragInfo.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startRight: position.right,
+      startBottom: position.bottom,
+      moved: false,
+    };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // alguns ambientes (touch/simuladores) podem não suportar; o drag
+      // ainda funciona via pointermove no elemento, só sem captura.
+    }
+  }
+
+  function onDragMove(e: React.PointerEvent<HTMLElement>) {
+    const info = dragInfo.current;
+    if (!info) return;
+    const dx = e.clientX - info.startX;
+    const dy = e.clientY - info.startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) info.moved = true;
+    if (!info.moved) return;
+
+    const next: Position = {
+      right: clamp(info.startRight - dx, 8, window.innerWidth - 56),
+      bottom: clamp(info.startBottom - dy, 8, window.innerHeight - 56),
+    };
+    setPosition(next);
+  }
+
+  function endDrag() {
+    if (dragInfo.current?.moved) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(position));
+    }
+  }
+
+  function onButtonClick() {
+    if (dragInfo.current?.moved) {
+      dragInfo.current = null;
+      return;
+    }
+    dragInfo.current = null;
+    setOpen((v) => !v);
+  }
 
   async function runCommand(command: string): Promise<boolean> {
     const cmd = command.trim().toLowerCase();
@@ -126,23 +214,24 @@ export function ChatWidget() {
   }
 
   return (
-    <>
-      <Button
-        onClick={() => setOpen((v) => !v)}
-        size="icon"
-        className="fixed right-4 bottom-20 z-50 size-12 rounded-full shadow-lg sm:right-6 sm:bottom-6"
-        aria-label={open ? "Fechar assistente" : "Abrir assistente"}
-      >
-        {open ? <X className="size-5" /> : <MessageCircle className="size-5" />}
-      </Button>
-
+    <div
+      className="fixed z-50 flex flex-col items-end gap-3"
+      style={{ right: position.right, bottom: position.bottom }}
+    >
       {open && (
-        <div className="fixed inset-x-4 bottom-36 z-50 flex h-[60vh] max-h-[520px] flex-col rounded-2xl border border-border bg-card shadow-2xl sm:inset-x-auto sm:right-6 sm:bottom-24 sm:w-96">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div className="flex h-[60vh] max-h-[520px] w-[calc(100vw-2rem)] flex-col rounded-2xl border border-border bg-card shadow-2xl sm:w-96">
+          <div
+            onPointerDown={beginDrag}
+            onPointerMove={onDragMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            className="flex cursor-grab items-center justify-between border-b border-border px-4 py-3 touch-none active:cursor-grabbing"
+          >
             <div>
-              <p className="font-display text-sm italic leading-none">Assistente Agenda NC</p>
+              <p className="font-display text-base italic leading-none">Assistente Agenda NC</p>
               <p className="ledger-label mt-1">pergunte sobre seus dados</p>
             </div>
+            <GripVertical className="size-4 shrink-0 text-muted-foreground" />
           </div>
 
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
@@ -201,6 +290,19 @@ export function ChatWidget() {
           </div>
         </div>
       )}
-    </>
+
+      <Button
+        onPointerDown={beginDrag}
+        onPointerMove={onDragMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onClick={onButtonClick}
+        size="icon"
+        className="size-12 touch-none rounded-full shadow-lg active:cursor-grabbing"
+        aria-label={open ? "Fechar assistente" : "Abrir assistente"}
+      >
+        {open ? <X className="size-5" /> : <MessageCircle className="size-5" />}
+      </Button>
+    </div>
   );
 }
