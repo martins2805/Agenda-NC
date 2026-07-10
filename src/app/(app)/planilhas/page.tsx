@@ -13,7 +13,10 @@ import {
   type PlanilhaFilters,
 } from "@/components/planilhas/planilha-filter-bar";
 import { ViewToggle, type ViewMode } from "@/components/view-toggle";
+import { KanbanBoard } from "@/components/kanban-board";
 import type { Planilha } from "@/lib/types";
+
+const SEM_CATEGORIA = "__sem_categoria__";
 
 function emptyPlanilha(): Planilha {
   return {
@@ -99,17 +102,19 @@ export default function PlanilhasPage() {
   }
 
   const activeCategorias = lookups.categoriaPlanilha.filter((c) => c.active);
-  const semCategoria = filtered.filter((p) => p.categoriaIds.length === 0);
-  const columns = [
+  const allColumns = [
     ...activeCategorias.map((cat) => ({
       id: cat.id,
       name: cat.name,
       items: filtered.filter((p) => p.categoriaIds.includes(cat.id)),
     })),
-    ...(semCategoria.length > 0
-      ? [{ id: "__sem_categoria__", name: "Sem categoria", items: semCategoria }]
-      : []),
-  ].filter((col) => col.items.length > 0);
+    {
+      id: SEM_CATEGORIA,
+      name: "Sem categoria",
+      items: filtered.filter((p) => p.categoriaIds.length === 0),
+    },
+  ];
+  const columns = allColumns.filter((col) => col.items.length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -158,27 +163,17 @@ export default function PlanilhasPage() {
           ))}
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {columns.map((col) => (
-            <div key={col.id} className="flex w-72 shrink-0 flex-col gap-3">
-              <p className="text-sm font-semibold">
-                {col.name}{" "}
-                <span className="font-mono text-xs font-normal text-muted-foreground">
-                  ({col.items.length})
-                </span>
-              </p>
-              <div className="flex flex-col gap-3">
-                {col.items.map((p) => (
-                  <PlanilhaCard
-                    key={p.id}
-                    planilha={p}
-                    onOpen={() => setEditingId(p.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        <KanbanBoard
+          columns={allColumns}
+          renderCard={(p) => (
+            <PlanilhaCard planilha={p} onOpen={() => setEditingId(p.id)} />
+          )}
+          onMove={(itemId, _fromColumnId, toColumnId) =>
+            updatePlanilha(itemId, {
+              categoriaIds: toColumnId === SEM_CATEGORIA ? [] : [toColumnId],
+            })
+          }
+        />
       )}
     </div>
   );

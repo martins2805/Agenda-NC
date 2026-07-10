@@ -13,7 +13,10 @@ import {
   type RegistroFilters,
 } from "@/components/registros/registro-filter-bar";
 import { ViewToggle, type ViewMode } from "@/components/view-toggle";
+import { KanbanBoard } from "@/components/kanban-board";
 import type { Registro } from "@/lib/types";
+
+const SEM_CATEGORIA = "__sem_categoria__";
 
 function emptyRegistro(): Registro {
   return {
@@ -99,17 +102,19 @@ export default function RegistrosPage() {
   }
 
   const activeCategorias = lookups.categoriaRegistro.filter((c) => c.active);
-  const semCategoria = filtered.filter((r) => r.categoriaIds.length === 0);
-  const columns = [
+  const allColumns = [
     ...activeCategorias.map((cat) => ({
       id: cat.id,
       name: cat.name,
       items: filtered.filter((r) => r.categoriaIds.includes(cat.id)),
     })),
-    ...(semCategoria.length > 0
-      ? [{ id: "__sem_categoria__", name: "Sem categoria", items: semCategoria }]
-      : []),
-  ].filter((col) => col.items.length > 0);
+    {
+      id: SEM_CATEGORIA,
+      name: "Sem categoria",
+      items: filtered.filter((r) => r.categoriaIds.length === 0),
+    },
+  ];
+  const columns = allColumns.filter((col) => col.items.length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -158,27 +163,17 @@ export default function RegistrosPage() {
           ))}
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {columns.map((col) => (
-            <div key={col.id} className="flex w-72 shrink-0 flex-col gap-3">
-              <p className="text-sm font-semibold">
-                {col.name}{" "}
-                <span className="font-mono text-xs font-normal text-muted-foreground">
-                  ({col.items.length})
-                </span>
-              </p>
-              <div className="flex flex-col gap-3">
-                {col.items.map((r) => (
-                  <RegistroCard
-                    key={r.id}
-                    registro={r}
-                    onOpen={() => setEditingId(r.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        <KanbanBoard
+          columns={allColumns}
+          renderCard={(r) => (
+            <RegistroCard registro={r} onOpen={() => setEditingId(r.id)} />
+          )}
+          onMove={(itemId, _fromColumnId, toColumnId) =>
+            updateRegistro(itemId, {
+              categoriaIds: toColumnId === SEM_CATEGORIA ? [] : [toColumnId],
+            })
+          }
+        />
       )}
     </div>
   );

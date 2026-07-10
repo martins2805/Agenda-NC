@@ -15,8 +15,9 @@ import {
 import { ActivityCard } from "@/components/atividades/activity-card";
 import { ActivityForm } from "@/components/atividades/activity-form";
 import { ViewToggle, type ViewMode } from "@/components/view-toggle";
+import { KanbanBoard } from "@/components/kanban-board";
 import { STATUS_OPTIONS } from "@/lib/types";
-import type { Atividade } from "@/lib/types";
+import type { Atividade, StatusConclusao } from "@/lib/types";
 
 function matchesPrazo(prazo: string | null, mode: ActivityFilters["prazo"]) {
   if (mode === "todos") return true;
@@ -34,7 +35,7 @@ function matchesPrazo(prazo: string | null, mode: ActivityFilters["prazo"]) {
 }
 
 export default function AtividadesPage() {
-  const { lookups, atividades, loading } = useAppData();
+  const { lookups, atividades, loading, updateAtividade } = useAppData();
   const [filters, setFilters] = useState<ActivityFilters>(DEFAULT_FILTERS);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Atividade | null>(null);
@@ -143,33 +144,25 @@ export default function AtividadesPage() {
           ))}
         </div>
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {STATUS_OPTIONS.map((status) => {
-            const items = filtered.filter((a) => a.status === status);
-            return (
-              <div key={status} className="flex w-72 shrink-0 flex-col gap-3">
-                <p className="text-sm font-semibold">
-                  {status}{" "}
-                  <span className="font-mono text-xs font-normal text-muted-foreground">
-                    ({items.length})
-                  </span>
-                </p>
-                <div className="flex flex-col gap-3">
-                  {items.map((a) => (
-                    <ActivityCard
-                      key={a.id}
-                      atividade={a}
-                      onEdit={() => {
-                        setEditing(a);
-                        setFormOpen(true);
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <KanbanBoard
+          columns={STATUS_OPTIONS.map((status) => ({
+            id: status,
+            name: status,
+            items: filtered.filter((a) => a.status === status),
+          }))}
+          renderCard={(a) => (
+            <ActivityCard
+              atividade={a}
+              onEdit={() => {
+                setEditing(a);
+                setFormOpen(true);
+              }}
+            />
+          )}
+          onMove={(itemId, _fromStatus, toStatus) =>
+            updateAtividade(itemId, { status: toStatus as StatusConclusao })
+          }
+        />
       )}
 
       <ActivityForm open={formOpen} onOpenChange={setFormOpen} editing={editing} />
