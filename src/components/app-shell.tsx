@@ -21,7 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center border border-primary font-mono text-xs font-bold text-primary">
+            <div className="flex size-9 items-center justify-center rounded-full border border-primary/60 bg-accent font-mono text-xs font-bold text-primary">
               NC
             </div>
             <span className="font-display text-lg tracking-tight italic">
@@ -37,9 +37,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-2 border border-transparent px-3 py-2 font-mono text-xs tracking-wide uppercase transition-colors",
+                      "flex items-center gap-2 rounded-full border border-transparent px-3 py-2 font-mono text-xs tracking-wide uppercase transition-colors",
                       active
-                        ? "border-primary text-primary"
+                        ? "border-primary/50 bg-accent text-primary"
                         : "text-muted-foreground hover:border-border hover:text-foreground"
                     )}
                   >

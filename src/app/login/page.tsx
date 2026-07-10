@@ -31,9 +31,9 @@ export default async function LoginPage({
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 px-4">
-      <div className="w-full max-w-sm border border-border bg-card p-8">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-xl shadow-primary/5">
         <div className="mb-8 flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center border border-primary font-mono text-xs font-bold text-primary">
+          <div className="flex size-10 items-center justify-center rounded-full border border-primary/60 bg-accent font-mono text-xs font-bold text-primary">
             NC
           </div>
           <div>
@@ -57,7 +57,7 @@ export default async function LoginPage({
               type="email"
               required
               autoFocus
-              className="rounded-none border-border font-mono text-sm"
+              className="border-border font-mono text-sm"
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -69,7 +69,7 @@ export default async function LoginPage({
               name="password"
               type="password"
               required
-              className="rounded-none border-border font-mono text-sm"
+              className="border-border font-mono text-sm"
             />
           </div>
           {error && (
@@ -77,7 +77,7 @@ export default async function LoginPage({
               E-mail ou senha inválidos.
             </p>
           )}
-          <Button type="submit" className="mt-2 rounded-none font-mono text-xs tracking-wide uppercase">
+          <Button type="submit" className="mt-2 font-mono text-xs tracking-wide uppercase">
             Entrar
           </Button>
         </form>

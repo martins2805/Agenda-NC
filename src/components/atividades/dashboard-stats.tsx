@@ -106,7 +106,7 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
                   className="group relative flex flex-1 flex-col items-center justify-end"
                 >
                   <div
-                    className="w-full border border-b-0 border-border bg-primary/80"
+                    className="w-full rounded-t-full bg-primary/80"
                     style={{ height: `${Math.max(12, (t.count / maxTipo) * 88)}px` }}
                     title={`${t.name}: ${t.count}`}
                   />
