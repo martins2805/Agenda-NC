@@ -18,14 +18,14 @@ import { ViewToggle, type ViewMode } from "@/components/view-toggle";
 import { KanbanBoard } from "@/components/kanban-board";
 import { STATUS_OPTIONS } from "@/lib/types";
 import type { Atividade, StatusConclusao } from "@/lib/types";
+import { parseLocalDate } from "@/lib/calculations";
 
 function matchesPrazo(prazo: string | null, mode: ActivityFilters["prazo"]) {
   if (mode === "todos") return true;
   if (!prazo) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const date = new Date(prazo);
-  date.setHours(0, 0, 0, 0);
+  const date = parseLocalDate(prazo);
   const diffDays = Math.round((date.getTime() - today.getTime()) / 86400000);
   if (mode === "atrasadas") return diffDays < 0;
   if (mode === "hoje") return diffDays === 0;

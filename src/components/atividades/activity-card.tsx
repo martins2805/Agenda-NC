@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarClock, Trash2, CheckSquare, Phone, Check } from "lucide-react";
 import { useAppData } from "@/lib/app-data-context";
-import { diasEmPendencia, formatCurrency } from "@/lib/calculations";
+import { diasEmPendencia, formatCurrency, parseLocalDate } from "@/lib/calculations";
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
 import type { Atividade } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -155,7 +155,7 @@ function QuickPrazo({ atividade }: { atividade: Atividade }) {
       className="text-muted-foreground hover:underline"
     >
       {atividade.prazo
-        ? `Prazo: ${new Date(atividade.prazo).toLocaleDateString("pt-BR")}`
+        ? `Prazo: ${parseLocalDate(atividade.prazo).toLocaleDateString("pt-BR")}`
         : "+ prazo"}
     </button>
   );
