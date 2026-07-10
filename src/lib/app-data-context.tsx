@@ -59,6 +59,7 @@ interface AppDataContextValue {
   addPlanilha: (planilha: Planilha) => void;
   updatePlanilha: (id: string, patch: Partial<Planilha>) => void;
   deletePlanilha: (id: string) => void;
+  refetch: () => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextValue | null>(null);
@@ -88,47 +89,51 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   );
   const [loading, setLoading] = useState(true);
 
+  const load = useCallback(async () => {
+    try {
+      const [lookupsRes, atividadesRes, registrosRes, planilhasRes] =
+        await Promise.all([
+          fetch("/api/lookups"),
+          fetch("/api/atividades"),
+          fetch("/api/registros"),
+          fetch("/api/planilhas"),
+        ]);
+
+      if (lookupsRes.ok) {
+        const data = await lookupsRes.json();
+        setLookups(groupLookups(data));
+      }
+      if (atividadesRes.ok) {
+        const data = await atividadesRes.json();
+        setAtividades(data);
+      }
+      if (registrosRes.ok) {
+        const data = await registrosRes.json();
+        setRegistros(data);
+      }
+      if (planilhasRes.ok) {
+        const data = await planilhasRes.json();
+        setPlanilhas(data);
+      }
+    } catch (error) {
+      console.error("Falha ao carregar dados", error);
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
-      try {
-        const [lookupsRes, atividadesRes, registrosRes, planilhasRes] =
-          await Promise.all([
-            fetch("/api/lookups"),
-            fetch("/api/atividades"),
-            fetch("/api/registros"),
-            fetch("/api/planilhas"),
-          ]);
-        if (cancelled) return;
-
-        if (lookupsRes.ok) {
-          const data = await lookupsRes.json();
-          setLookups(groupLookups(data));
-        }
-        if (atividadesRes.ok) {
-          const data = await atividadesRes.json();
-          setAtividades(data);
-        }
-        if (registrosRes.ok) {
-          const data = await registrosRes.json();
-          setRegistros(data);
-        }
-        if (planilhasRes.ok) {
-          const data = await planilhasRes.json();
-          setPlanilhas(data);
-        }
-      } catch (error) {
-        console.error("Falha ao carregar dados iniciais", error);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    async function initialLoad() {
+      await load();
+      if (!cancelled) setLoading(false);
     }
 
-    load();
+    initialLoad();
+
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addLookupItem = useCallback((kind: LookupKind, name: string) => {
@@ -294,6 +299,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addPlanilha,
       updatePlanilha,
       deletePlanilha,
+      refetch: load,
     }),
     [
       lookups,
@@ -313,6 +319,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addPlanilha,
       updatePlanilha,
       deletePlanilha,
+      load,
     ]
   );
 

@@ -5,6 +5,7 @@ import { MessageCircle, Send, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { useAppData } from "@/lib/app-data-context";
 
 interface ChatMessageRow {
   id: string;
@@ -24,6 +25,7 @@ function localMessage(role: "user" | "assistant", content: string): ChatMessageR
 }
 
 export function ChatWidget() {
+  const { refetch } = useAppData();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessageRow[]>([]);
   const [draft, setDraft] = useState("");
@@ -109,6 +111,7 @@ export function ChatWidget() {
       const data = await res.json();
       if (res.ok) {
         setMessages((prev) => [...prev, localMessage("assistant", data.reply as string)]);
+        refetch().catch((error) => console.error("Falha ao atualizar tela após o chat", error));
       } else {
         setMessages((prev) => [
           ...prev,
