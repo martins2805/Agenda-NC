@@ -1,5 +1,10 @@
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
-const CHAT_MODELS = ["gemini-flash-latest", "gemini-2.0-flash", "gemini-2.5-flash-lite"];
+const CHAT_MODELS = [
+  "gemini-flash-lite-latest",
+  "gemini-flash-latest",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-001",
+];
 const EMBEDDING_MODEL = "gemini-embedding-001";
 
 function apiKey(): string {
