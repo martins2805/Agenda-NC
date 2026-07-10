@@ -22,10 +22,11 @@ export interface RetrievedChunk {
 }
 
 export async function retrieveContext(
+  userId: string,
   query: string,
   topK = 6
 ): Promise<RetrievedChunk[]> {
-  const chunks = await prisma.knowledgeChunk.findMany();
+  const chunks = await prisma.knowledgeChunk.findMany({ where: { userId } });
   if (chunks.length === 0) return [];
 
   const queryEmbedding = await embedText(query);

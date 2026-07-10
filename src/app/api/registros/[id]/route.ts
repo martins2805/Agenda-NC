@@ -16,8 +16,13 @@ export async function PATCH(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const { id } = await params;
+
+  const owned = await prisma.registro.findFirst({ where: { id, userId } });
+  if (!owned) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   const body = (await request.json()) as Registro;
 
   const updated = await prisma.$transaction(async (tx) => {
@@ -46,7 +51,7 @@ export async function PATCH(
   });
 
   serializeRegistro(updated)
-    .then((content) => syncKnowledgeChunk("registro", updated.id, content))
+    .then((content) => syncKnowledgeChunk(userId, "registro", updated.id, content))
     .catch((error) => console.error("Falha ao indexar registro", error));
 
   return NextResponse.json({
@@ -61,10 +66,14 @@ export async function DELETE(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const { id } = await params;
-  await prisma.registro.delete({ where: { id } });
-  deleteKnowledgeChunk("registro", id).catch((error) =>
+  const result = await prisma.registro.deleteMany({ where: { id, userId } });
+  if (result.count === 0) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  deleteKnowledgeChunk(userId, "registro", id).catch((error) =>
     console.error("Falha ao remover indexação", error)
   );
   return NextResponse.json({ ok: true });

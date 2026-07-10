@@ -155,20 +155,21 @@ export const TOOL_DECLARATIONS = [
 
 const include = { propostas: true, checklist: true };
 
-async function criarAtividade(args: Record<string, unknown>) {
+async function criarAtividade(userId: string, args: Record<string, unknown>) {
   const empresaId = args.empresa
-    ? await resolveOrCreateLookup("empresa", String(args.empresa))
+    ? await resolveOrCreateLookup(userId, "empresa", String(args.empresa))
     : null;
   const unidadeId = args.unidade
-    ? await resolveOrCreateLookup("unidade", String(args.unidade))
+    ? await resolveOrCreateLookup(userId, "unidade", String(args.unidade))
     : null;
   const assuntoId = args.assunto
-    ? await resolveOrCreateLookup("assunto", String(args.assunto))
+    ? await resolveOrCreateLookup(userId, "assunto", String(args.assunto))
     : null;
 
   const created = await prisma.atividade.create({
     data: {
       id: crypto.randomUUID(),
+      userId,
       empresaId,
       unidadeId,
       assuntoId,
@@ -182,21 +183,24 @@ async function criarAtividade(args: Record<string, unknown>) {
   });
 
   serializeAtividade(created)
-    .then((content) => syncKnowledgeChunk("atividade", created.id, content))
+    .then((content) => syncKnowledgeChunk(userId, "atividade", created.id, content))
     .catch((error) => console.error("Falha ao indexar atividade (chat)", error));
 
   const a = atividadeFromDb(created);
   return { ok: true, id: a.id, empresa: args.empresa ?? null, status: a.status, prioridade: a.prioridade };
 }
 
-async function atualizarAtividade(args: Record<string, unknown>) {
+async function atualizarAtividade(userId: string, args: Record<string, unknown>) {
   const id = String(args.id ?? "");
   if (!id) return { ok: false, error: "id é obrigatório" };
 
+  const owned = await prisma.atividade.findFirst({ where: { id, userId } });
+  if (!owned) return { ok: false, error: `Atividade com id ${id} não encontrada` };
+
   const data: Record<string, unknown> = {};
-  if (args.empresa !== undefined) data.empresaId = await resolveOrCreateLookup("empresa", String(args.empresa));
-  if (args.unidade !== undefined) data.unidadeId = await resolveOrCreateLookup("unidade", String(args.unidade));
-  if (args.assunto !== undefined) data.assuntoId = await resolveOrCreateLookup("assunto", String(args.assunto));
+  if (args.empresa !== undefined) data.empresaId = await resolveOrCreateLookup(userId, "empresa", String(args.empresa));
+  if (args.unidade !== undefined) data.unidadeId = await resolveOrCreateLookup(userId, "unidade", String(args.unidade));
+  if (args.assunto !== undefined) data.assuntoId = await resolveOrCreateLookup(userId, "assunto", String(args.assunto));
   if (args.contato !== undefined) data.contato = String(args.contato);
   if (args.prazo !== undefined) data.prazo = args.prazo ? new Date(String(args.prazo)) : null;
   if (args.descricao !== undefined) data.descricao = String(args.descricao);
@@ -206,7 +210,7 @@ async function atualizarAtividade(args: Record<string, unknown>) {
   try {
     const updated = await prisma.atividade.update({ where: { id }, data, include });
     serializeAtividade(updated)
-      .then((content) => syncKnowledgeChunk("atividade", updated.id, content))
+      .then((content) => syncKnowledgeChunk(userId, "atividade", updated.id, content))
       .catch((error) => console.error("Falha ao indexar atividade (chat)", error));
     return { ok: true, id: updated.id };
   } catch {
@@ -214,23 +218,21 @@ async function atualizarAtividade(args: Record<string, unknown>) {
   }
 }
 
-async function excluirAtividade(args: Record<string, unknown>) {
+async function excluirAtividade(userId: string, args: Record<string, unknown>) {
   if (args.confirmado !== true) return { ok: false, error: "Exclusão requer confirmação explícita do usuário" };
   const id = String(args.id ?? "");
-  try {
-    await prisma.atividade.delete({ where: { id } });
-    deleteKnowledgeChunk("atividade", id).catch((error) => console.error(error));
-    return { ok: true };
-  } catch {
-    return { ok: false, error: `Atividade com id ${id} não encontrada` };
-  }
+  const result = await prisma.atividade.deleteMany({ where: { id, userId } });
+  if (result.count === 0) return { ok: false, error: `Atividade com id ${id} não encontrada` };
+  deleteKnowledgeChunk(userId, "atividade", id).catch((error) => console.error(error));
+  return { ok: true };
 }
 
-async function criarRegistro(args: Record<string, unknown>) {
-  const empresaId = args.empresa ? await resolveOrCreateLookup("empresa", String(args.empresa)) : null;
-  const unidadeId = args.unidade ? await resolveOrCreateLookup("unidade", String(args.unidade)) : null;
-  const assuntoId = args.assunto ? await resolveOrCreateLookup("assunto", String(args.assunto)) : null;
+async function criarRegistro(userId: string, args: Record<string, unknown>) {
+  const empresaId = args.empresa ? await resolveOrCreateLookup(userId, "empresa", String(args.empresa)) : null;
+  const unidadeId = args.unidade ? await resolveOrCreateLookup(userId, "unidade", String(args.unidade)) : null;
+  const assuntoId = args.assunto ? await resolveOrCreateLookup(userId, "assunto", String(args.assunto)) : null;
   const categoriaIds = await resolveOrCreateLookups(
+    userId,
     "categoriaRegistro",
     Array.isArray(args.categorias) ? (args.categorias as string[]) : undefined
   );
@@ -238,6 +240,7 @@ async function criarRegistro(args: Record<string, unknown>) {
   const created = await prisma.registro.create({
     data: {
       id: crypto.randomUUID(),
+      userId,
       empresaId,
       unidadeId,
       assuntoId,
@@ -258,28 +261,31 @@ async function criarRegistro(args: Record<string, unknown>) {
   });
 
   serializeRegistro(created)
-    .then((content) => syncKnowledgeChunk("registro", created.id, content))
+    .then((content) => syncKnowledgeChunk(userId, "registro", created.id, content))
     .catch((error) => console.error("Falha ao indexar registro (chat)", error));
 
   return { ok: true, id: created.id };
 }
 
-async function atualizarRegistro(args: Record<string, unknown>) {
+async function atualizarRegistro(userId: string, args: Record<string, unknown>) {
   const id = String(args.id ?? "");
   if (!id) return { ok: false, error: "id é obrigatório" };
 
+  const owned = await prisma.registro.findFirst({ where: { id, userId } });
+  if (!owned) return { ok: false, error: `Registro com id ${id} não encontrado` };
+
   const data: Record<string, unknown> = {};
-  if (args.empresa !== undefined) data.empresaId = await resolveOrCreateLookup("empresa", String(args.empresa));
-  if (args.unidade !== undefined) data.unidadeId = await resolveOrCreateLookup("unidade", String(args.unidade));
-  if (args.assunto !== undefined) data.assuntoId = await resolveOrCreateLookup("assunto", String(args.assunto));
+  if (args.empresa !== undefined) data.empresaId = await resolveOrCreateLookup(userId, "empresa", String(args.empresa));
+  if (args.unidade !== undefined) data.unidadeId = await resolveOrCreateLookup(userId, "unidade", String(args.unidade));
+  if (args.assunto !== undefined) data.assuntoId = await resolveOrCreateLookup(userId, "assunto", String(args.assunto));
   if (args.contato !== undefined) data.contato = String(args.contato);
   if (args.categorias !== undefined)
-    data.categoriaIds = await resolveOrCreateLookups("categoriaRegistro", args.categorias as string[]);
+    data.categoriaIds = await resolveOrCreateLookups(userId, "categoriaRegistro", args.categorias as string[]);
 
   try {
     const updated = await prisma.registro.update({ where: { id }, data, include: { tabs: true } });
     serializeRegistro(updated)
-      .then((content) => syncKnowledgeChunk("registro", updated.id, content))
+      .then((content) => syncKnowledgeChunk(userId, "registro", updated.id, content))
       .catch((error) => console.error("Falha ao indexar registro (chat)", error));
     return { ok: true, id: updated.id };
   } catch {
@@ -287,23 +293,21 @@ async function atualizarRegistro(args: Record<string, unknown>) {
   }
 }
 
-async function excluirRegistro(args: Record<string, unknown>) {
+async function excluirRegistro(userId: string, args: Record<string, unknown>) {
   if (args.confirmado !== true) return { ok: false, error: "Exclusão requer confirmação explícita do usuário" };
   const id = String(args.id ?? "");
-  try {
-    await prisma.registro.delete({ where: { id } });
-    deleteKnowledgeChunk("registro", id).catch((error) => console.error(error));
-    return { ok: true };
-  } catch {
-    return { ok: false, error: `Registro com id ${id} não encontrado` };
-  }
+  const result = await prisma.registro.deleteMany({ where: { id, userId } });
+  if (result.count === 0) return { ok: false, error: `Registro com id ${id} não encontrado` };
+  deleteKnowledgeChunk(userId, "registro", id).catch((error) => console.error(error));
+  return { ok: true };
 }
 
-async function criarPlanilha(args: Record<string, unknown>) {
-  const empresaId = args.empresa ? await resolveOrCreateLookup("empresa", String(args.empresa)) : null;
-  const unidadeId = args.unidade ? await resolveOrCreateLookup("unidade", String(args.unidade)) : null;
-  const assuntoId = args.assunto ? await resolveOrCreateLookup("assunto", String(args.assunto)) : null;
+async function criarPlanilha(userId: string, args: Record<string, unknown>) {
+  const empresaId = args.empresa ? await resolveOrCreateLookup(userId, "empresa", String(args.empresa)) : null;
+  const unidadeId = args.unidade ? await resolveOrCreateLookup(userId, "unidade", String(args.unidade)) : null;
+  const assuntoId = args.assunto ? await resolveOrCreateLookup(userId, "assunto", String(args.assunto)) : null;
   const categoriaIds = await resolveOrCreateLookups(
+    userId,
     "categoriaPlanilha",
     Array.isArray(args.categorias) ? (args.categorias as string[]) : undefined
   );
@@ -311,6 +315,7 @@ async function criarPlanilha(args: Record<string, unknown>) {
   const created = await prisma.planilha.create({
     data: {
       id: crypto.randomUUID(),
+      userId,
       nome: typeof args.nome === "string" && args.nome ? args.nome : "Nova planilha",
       empresaId,
       unidadeId,
@@ -320,28 +325,31 @@ async function criarPlanilha(args: Record<string, unknown>) {
   });
 
   serializePlanilha(created)
-    .then((content) => syncKnowledgeChunk("planilha", created.id, content))
+    .then((content) => syncKnowledgeChunk(userId, "planilha", created.id, content))
     .catch((error) => console.error("Falha ao indexar planilha (chat)", error));
 
   return { ok: true, id: created.id };
 }
 
-async function atualizarPlanilha(args: Record<string, unknown>) {
+async function atualizarPlanilha(userId: string, args: Record<string, unknown>) {
   const id = String(args.id ?? "");
   if (!id) return { ok: false, error: "id é obrigatório" };
 
+  const owned = await prisma.planilha.findFirst({ where: { id, userId } });
+  if (!owned) return { ok: false, error: `Planilha com id ${id} não encontrada` };
+
   const data: Record<string, unknown> = {};
   if (args.nome !== undefined) data.nome = String(args.nome);
-  if (args.empresa !== undefined) data.empresaId = await resolveOrCreateLookup("empresa", String(args.empresa));
-  if (args.unidade !== undefined) data.unidadeId = await resolveOrCreateLookup("unidade", String(args.unidade));
-  if (args.assunto !== undefined) data.assuntoId = await resolveOrCreateLookup("assunto", String(args.assunto));
+  if (args.empresa !== undefined) data.empresaId = await resolveOrCreateLookup(userId, "empresa", String(args.empresa));
+  if (args.unidade !== undefined) data.unidadeId = await resolveOrCreateLookup(userId, "unidade", String(args.unidade));
+  if (args.assunto !== undefined) data.assuntoId = await resolveOrCreateLookup(userId, "assunto", String(args.assunto));
   if (args.categorias !== undefined)
-    data.categoriaIds = await resolveOrCreateLookups("categoriaPlanilha", args.categorias as string[]);
+    data.categoriaIds = await resolveOrCreateLookups(userId, "categoriaPlanilha", args.categorias as string[]);
 
   try {
     const updated = await prisma.planilha.update({ where: { id }, data });
     serializePlanilha(updated)
-      .then((content) => syncKnowledgeChunk("planilha", updated.id, content))
+      .then((content) => syncKnowledgeChunk(userId, "planilha", updated.id, content))
       .catch((error) => console.error("Falha ao indexar planilha (chat)", error));
     return { ok: true, id: updated.id };
   } catch {
@@ -349,19 +357,16 @@ async function atualizarPlanilha(args: Record<string, unknown>) {
   }
 }
 
-async function excluirPlanilha(args: Record<string, unknown>) {
+async function excluirPlanilha(userId: string, args: Record<string, unknown>) {
   if (args.confirmado !== true) return { ok: false, error: "Exclusão requer confirmação explícita do usuário" };
   const id = String(args.id ?? "");
-  try {
-    await prisma.planilha.delete({ where: { id } });
-    deleteKnowledgeChunk("planilha", id).catch((error) => console.error(error));
-    return { ok: true };
-  } catch {
-    return { ok: false, error: `Planilha com id ${id} não encontrada` };
-  }
+  const result = await prisma.planilha.deleteMany({ where: { id, userId } });
+  if (result.count === 0) return { ok: false, error: `Planilha com id ${id} não encontrada` };
+  deleteKnowledgeChunk(userId, "planilha", id).catch((error) => console.error(error));
+  return { ok: true };
 }
 
-const HANDLERS: Record<string, (args: Record<string, unknown>) => Promise<object>> = {
+const HANDLERS: Record<string, (userId: string, args: Record<string, unknown>) => Promise<object>> = {
   criar_atividade: criarAtividade,
   atualizar_atividade: atualizarAtividade,
   excluir_atividade: excluirAtividade,
@@ -373,11 +378,15 @@ const HANDLERS: Record<string, (args: Record<string, unknown>) => Promise<object
   excluir_planilha: excluirPlanilha,
 };
 
-export async function executeTool(name: string, args: Record<string, unknown>): Promise<object> {
+export async function executeTool(
+  userId: string,
+  name: string,
+  args: Record<string, unknown>
+): Promise<object> {
   const handler = HANDLERS[name];
   if (!handler) return { ok: false, error: `Ferramenta desconhecida: ${name}` };
   try {
-    return await handler(args ?? {});
+    return await handler(userId, args ?? {});
   } catch (error) {
     console.error(`Falha ao executar ferramenta ${name}`, error);
     return { ok: false, error: "Erro interno ao executar a ação" };

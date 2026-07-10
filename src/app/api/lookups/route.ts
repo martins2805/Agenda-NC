@@ -19,21 +19,26 @@ const VALID_KINDS: LookupKind[] = [
 export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
-  const count = await prisma.lookupItem.count();
+  const count = await prisma.lookupItem.count({ where: { userId } });
   if (count === 0) {
     await prisma.lookupItem.createMany({
-      data: LOOKUP_SEED_DATA.map((d) => ({ kind: d.kind as LookupKind, name: d.name })),
+      data: LOOKUP_SEED_DATA.map((d) => ({ userId, kind: d.kind as LookupKind, name: d.name })),
     });
   }
 
-  const items = await prisma.lookupItem.findMany({ orderBy: { createdAt: "asc" } });
+  const items = await prisma.lookupItem.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+  });
   return NextResponse.json(items);
 }
 
 export async function POST(request: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const body = await request.json();
   const { id, kind, name } = body as { id?: string; kind?: string; name?: string };
@@ -43,7 +48,7 @@ export async function POST(request: Request) {
   }
 
   const item = await prisma.lookupItem.create({
-    data: { ...(id ? { id } : {}), kind: kind as LookupKind, name: name.trim() },
+    data: { ...(id ? { id } : {}), userId, kind: kind as LookupKind, name: name.trim() },
   });
   return NextResponse.json(item, { status: 201 });
 }

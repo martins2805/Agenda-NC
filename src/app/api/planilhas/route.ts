@@ -8,8 +8,10 @@ import type { Planilha } from "@/lib/types";
 export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const planilhas = await prisma.planilha.findMany({
+    where: { userId },
     orderBy: { createdAt: "desc" },
   });
   return NextResponse.json(
@@ -23,12 +25,14 @@ export async function GET() {
 export async function POST(request: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const body = (await request.json()) as Planilha;
 
   const created = await prisma.planilha.create({
     data: {
       id: body.id,
+      userId,
       nome: body.nome,
       empresaId: body.empresaId,
       unidadeId: body.unidadeId,
@@ -40,7 +44,7 @@ export async function POST(request: Request) {
   });
 
   serializePlanilha(created)
-    .then((content) => syncKnowledgeChunk("planilha", created.id, content))
+    .then((content) => syncKnowledgeChunk(userId, "planilha", created.id, content))
     .catch((error) => console.error("Falha ao indexar planilha", error));
 
   return NextResponse.json(created, { status: 201 });

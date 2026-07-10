@@ -38,16 +38,20 @@ enum Prioridade {
 
 model LookupItem {
   id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind      LookupKind
   name      String
   active    Boolean    @default(true)
   createdAt DateTime   @default(now())
 
-  @@index([kind])
+  @@index([userId, kind])
 }
 
 model Atividade {
   id                String           @id @default(cuid())
+  userId            String
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   empresaId         String?
   unidadeId         String?
   assuntoId         String?
@@ -64,6 +68,8 @@ model Atividade {
 
   propostas Proposta[]
   checklist ChecklistItem[]
+
+  @@index([userId])
 }
 
 model Proposta {
@@ -94,6 +100,8 @@ model ChecklistItem {
 
 model Registro {
   id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   empresaId    String?
   unidadeId    String?
   contato      String        @default("")
@@ -104,6 +112,8 @@ model Registro {
   updatedAt    DateTime      @updatedAt
 
   tabs RegistroTab[]
+
+  @@index([userId])
 }
 
 model RegistroTab {
@@ -119,6 +129,8 @@ model RegistroTab {
 
 model Planilha {
   id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   nome         String   @default("")
   empresaId    String?
   unidadeId    String?
@@ -128,6 +140,8 @@ model Planilha {
   conteudo     Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model User {
@@ -135,10 +149,19 @@ model User {
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+
+  lookupItems     LookupItem[]
+  atividades      Atividade[]
+  registros       Registro[]
+  planilhas       Planilha[]
+  knowledgeChunks KnowledgeChunk[]
+  chatMessages    ChatMessage[]
 }
 
 model KnowledgeChunk {
   id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   sourceType String
   sourceId   String
   content    String
@@ -146,15 +169,17 @@ model KnowledgeChunk {
   updatedAt  DateTime @updatedAt
   createdAt  DateTime @default(now())
 
-  @@unique([sourceType, sourceId])
-  @@index([sourceType])
+  @@unique([userId, sourceType, sourceId])
+  @@index([userId, sourceType])
 }
 
 model ChatMessage {
   id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   role      String
   content   String
   createdAt DateTime @default(now())
 
-  @@index([createdAt])
+  @@index([userId, createdAt])
 }

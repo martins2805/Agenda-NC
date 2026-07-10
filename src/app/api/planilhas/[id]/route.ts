@@ -14,8 +14,13 @@ export async function PATCH(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const { id } = await params;
+
+  const owned = await prisma.planilha.findFirst({ where: { id, userId } });
+  if (!owned) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   const body = (await request.json()) as Partial<Planilha>;
 
   const data: Record<string, unknown> = {};
@@ -38,7 +43,7 @@ export async function PATCH(
 
   if (metadataChanged) {
     serializePlanilha(updated)
-      .then((content) => syncKnowledgeChunk("planilha", updated.id, content))
+      .then((content) => syncKnowledgeChunk(userId, "planilha", updated.id, content))
       .catch((error) => console.error("Falha ao indexar planilha", error));
   }
 
@@ -51,10 +56,14 @@ export async function DELETE(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const { id } = await params;
-  await prisma.planilha.delete({ where: { id } });
-  deleteKnowledgeChunk("planilha", id).catch((error) =>
+  const result = await prisma.planilha.deleteMany({ where: { id, userId } });
+  if (result.count === 0) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  deleteKnowledgeChunk(userId, "planilha", id).catch((error) =>
     console.error("Falha ao remover indexação", error)
   );
   return NextResponse.json({ ok: true });

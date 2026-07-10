@@ -23,6 +23,7 @@ export function isValidLookupKind(kind: string): kind is LookupKind {
  * de id, espelhando o comportamento das listas gerenciáveis da UI.
  */
 export async function resolveOrCreateLookup(
+  userId: string,
   kind: LookupKind,
   name: string
 ): Promise<string | null> {
@@ -30,24 +31,25 @@ export async function resolveOrCreateLookup(
   if (!trimmed) return null;
 
   const existing = await prisma.lookupItem.findFirst({
-    where: { kind, active: true, name: { equals: trimmed, mode: "insensitive" } },
+    where: { userId, kind, active: true, name: { equals: trimmed, mode: "insensitive" } },
   });
   if (existing) return existing.id;
 
   const created = await prisma.lookupItem.create({
-    data: { kind, name: trimmed },
+    data: { userId, kind, name: trimmed },
   });
   return created.id;
 }
 
 export async function resolveOrCreateLookups(
+  userId: string,
   kind: LookupKind,
   names: string[] | undefined
 ): Promise<string[]> {
   if (!names || names.length === 0) return [];
   const ids: string[] = [];
   for (const name of names) {
-    const id = await resolveOrCreateLookup(kind, name);
+    const id = await resolveOrCreateLookup(userId, kind, name);
     if (id) ids.push(id);
   }
   return ids;

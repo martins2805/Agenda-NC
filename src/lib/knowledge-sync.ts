@@ -11,6 +11,7 @@ import type {
 } from "@/generated/prisma/client";
 
 export async function syncKnowledgeChunk(
+  userId: string,
   sourceType: string,
   sourceId: string,
   content: string
@@ -18,13 +19,13 @@ export async function syncKnowledgeChunk(
   try {
     const trimmed = content.trim();
     if (!trimmed) {
-      await deleteKnowledgeChunk(sourceType, sourceId);
+      await deleteKnowledgeChunk(userId, sourceType, sourceId);
       return;
     }
     const embedding = await embedText(trimmed);
     await prisma.knowledgeChunk.upsert({
-      where: { sourceType_sourceId: { sourceType, sourceId } },
-      create: { sourceType, sourceId, content: trimmed, embedding },
+      where: { userId_sourceType_sourceId: { userId, sourceType, sourceId } },
+      create: { userId, sourceType, sourceId, content: trimmed, embedding },
       update: { content: trimmed, embedding },
     });
   } catch (error) {
@@ -32,18 +33,25 @@ export async function syncKnowledgeChunk(
   }
 }
 
-export async function deleteKnowledgeChunk(sourceType: string, sourceId: string) {
+export async function deleteKnowledgeChunk(
+  userId: string,
+  sourceType: string,
+  sourceId: string
+) {
   try {
-    await prisma.knowledgeChunk.deleteMany({ where: { sourceType, sourceId } });
+    await prisma.knowledgeChunk.deleteMany({ where: { userId, sourceType, sourceId } });
   } catch (error) {
     console.error(`Falha ao remover embedding (${sourceType}/${sourceId})`, error);
   }
 }
 
-async function lookupNames(ids: (string | null | undefined)[]): Promise<Map<string, string>> {
+async function lookupNames(
+  userId: string,
+  ids: (string | null | undefined)[]
+): Promise<Map<string, string>> {
   const clean = [...new Set(ids.filter((id): id is string => !!id))];
   if (clean.length === 0) return new Map();
-  const items = await prisma.lookupItem.findMany({ where: { id: { in: clean } } });
+  const items = await prisma.lookupItem.findMany({ where: { userId, id: { in: clean } } });
   return new Map(items.map((i) => [i.id, i.name]));
 }
 
@@ -76,7 +84,7 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
       ...p.amostragemIds,
     ]),
   ];
-  const names = await lookupNames(ids);
+  const names = await lookupNames(raw.userId, ids);
   const name = (id: string | null) => (id ? names.get(id) ?? "" : "");
 
   const lines = [
@@ -128,7 +136,7 @@ type FullDbRegistro = DbRegistro & { tabs: DbRegistroTab[] };
 
 export async function serializeRegistro(r: FullDbRegistro): Promise<string> {
   const ids = [r.empresaId, r.unidadeId, r.assuntoId, ...r.categoriaIds];
-  const names = await lookupNames(ids);
+  const names = await lookupNames(r.userId, ids);
   const name = (id: string | null) => (id ? names.get(id) ?? "" : "");
 
   const lines = [
@@ -150,7 +158,7 @@ export async function serializeRegistro(r: FullDbRegistro): Promise<string> {
 
 export async function serializePlanilha(p: DbPlanilha): Promise<string> {
   const ids = [p.empresaId, p.unidadeId, p.assuntoId, ...p.categoriaIds];
-  const names = await lookupNames(ids);
+  const names = await lookupNames(p.userId, ids);
   const name = (id: string | null) => (id ? names.get(id) ?? "" : "");
 
   return [

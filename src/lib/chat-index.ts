@@ -6,24 +6,27 @@ import { prisma } from "@/lib/prisma";
  * chamar as ferramentas de editar/excluir, mesmo quando a busca semântica
  * (RAG) não traz o registro certo para a pergunta atual.
  */
-export async function buildEntityIndex(): Promise<string> {
+export async function buildEntityIndex(userId: string): Promise<string> {
   const [atividades, registros, planilhas, lookups] = await Promise.all([
     prisma.atividade.findMany({
+      where: { userId },
       select: { id: true, empresaId: true, assuntoId: true, status: true, prioridade: true },
       orderBy: { createdAt: "desc" },
       take: 200,
     }),
     prisma.registro.findMany({
+      where: { userId },
       select: { id: true, empresaId: true, assuntoId: true },
       orderBy: { createdAt: "desc" },
       take: 200,
     }),
     prisma.planilha.findMany({
+      where: { userId },
       select: { id: true, nome: true, empresaId: true },
       orderBy: { createdAt: "desc" },
       take: 200,
     }),
-    prisma.lookupItem.findMany({ where: { active: true } }),
+    prisma.lookupItem.findMany({ where: { userId, active: true } }),
   ]);
 
   const names = new Map(lookups.map((l) => [l.id, l.name]));

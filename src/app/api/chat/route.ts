@@ -32,9 +32,10 @@ const SYSTEM_PREAMBLE =
 export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const messages = await prisma.chatMessage.findMany({
-    where: { createdAt: { gte: todayStart() } },
+    where: { userId, createdAt: { gte: todayStart() } },
     orderBy: { createdAt: "asc" },
   });
 
@@ -44,33 +45,35 @@ export async function GET() {
 export async function DELETE() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
-  await prisma.chatMessage.deleteMany({ where: { createdAt: { gte: todayStart() } } });
+  await prisma.chatMessage.deleteMany({ where: { userId, createdAt: { gte: todayStart() } } });
   return NextResponse.json({ ok: true });
 }
 
 export async function POST(request: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const { message } = (await request.json()) as { message?: string };
   if (typeof message !== "string" || !message.trim()) {
     return NextResponse.json({ error: "Mensagem inválida" }, { status: 400 });
   }
 
-  await rollupPastDays().catch((error) =>
+  await rollupPastDays(userId).catch((error) =>
     console.error("Falha no rollup diário do chat", error)
   );
 
   await prisma.chatMessage.create({
-    data: { role: "user", content: message },
+    data: { userId, role: "user", content: message },
   });
 
   const [contextChunks, entityIndex, todaysMessages] = await Promise.all([
-    retrieveContext(message),
-    buildEntityIndex(),
+    retrieveContext(userId, message),
+    buildEntityIndex(userId),
     prisma.chatMessage.findMany({
-      where: { createdAt: { gte: todayStart() } },
+      where: { userId, createdAt: { gte: todayStart() } },
       orderBy: { createdAt: "asc" },
     }),
   ]);
@@ -93,11 +96,11 @@ export async function POST(request: Request) {
 
   const reply = await generateChatReply(systemInstruction, history, {
     tools: TOOL_DECLARATIONS,
-    execute: executeTool,
+    execute: (name, args) => executeTool(userId, name, args),
   });
 
   await prisma.chatMessage.create({
-    data: { role: "assistant", content: reply },
+    data: { userId, role: "assistant", content: reply },
   });
 
   return NextResponse.json({ reply });

@@ -10,8 +10,10 @@ const include = { propostas: true, checklist: true };
 export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const atividades = await prisma.atividade.findMany({
+    where: { userId },
     include,
     orderBy: { createdAt: "desc" },
   });
@@ -21,12 +23,14 @@ export async function GET() {
 export async function POST(request: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const body = (await request.json()) as Atividade;
 
   const created = await prisma.atividade.create({
     data: {
       id: body.id,
+      userId,
       empresaId: body.empresaId,
       unidadeId: body.unidadeId,
       assuntoId: body.assuntoId,
@@ -63,7 +67,7 @@ export async function POST(request: Request) {
   });
 
   serializeAtividade(created)
-    .then((content) => syncKnowledgeChunk("atividade", created.id, content))
+    .then((content) => syncKnowledgeChunk(userId, "atividade", created.id, content))
     .catch((error) => console.error("Falha ao indexar atividade", error));
 
   return NextResponse.json(atividadeFromDb(created), { status: 201 });

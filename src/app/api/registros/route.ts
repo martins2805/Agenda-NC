@@ -9,8 +9,10 @@ const include = { tabs: true };
 export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const registros = await prisma.registro.findMany({
+    where: { userId },
     include,
     orderBy: { createdAt: "desc" },
   });
@@ -26,12 +28,14 @@ export async function GET() {
 export async function POST(request: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = session.user.id;
 
   const body = (await request.json()) as Registro;
 
   const created = await prisma.registro.create({
     data: {
       id: body.id,
+      userId,
       empresaId: body.empresaId,
       unidadeId: body.unidadeId,
       contato: body.contato,
@@ -51,7 +55,7 @@ export async function POST(request: Request) {
   });
 
   serializeRegistro(created)
-    .then((content) => syncKnowledgeChunk("registro", created.id, content))
+    .then((content) => syncKnowledgeChunk(userId, "registro", created.id, content))
     .catch((error) => console.error("Falha ao indexar registro", error));
 
   return NextResponse.json(

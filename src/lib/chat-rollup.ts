@@ -12,11 +12,11 @@ const SUMMARY_INSTRUCTION =
   "destacando decisões, informações e pendências relevantes que valham a pena " +
   "lembrar depois. Responda apenas com o resumo, sem introduções nem saudações.";
 
-export async function rollupPastDays(): Promise<void> {
+export async function rollupPastDays(userId: string): Promise<void> {
   const todayStart = new Date(`${dateKey(new Date())}T00:00:00.000Z`);
 
   const oldMessages = await prisma.chatMessage.findMany({
-    where: { createdAt: { lt: todayStart } },
+    where: { userId, createdAt: { lt: todayStart } },
     orderBy: { createdAt: "asc" },
   });
 
@@ -41,6 +41,7 @@ export async function rollupPastDays(): Promise<void> {
       ]);
 
       await syncKnowledgeChunk(
+        userId,
         "chat_summary",
         day,
         `Resumo da conversa de ${day}:\n${summary}`
