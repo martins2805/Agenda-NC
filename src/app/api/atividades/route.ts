@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { atividadeFromDb, statusToDb, prioridadeToDb } from "@/lib/atividade-mapper";
+import { syncKnowledgeChunk, serializeAtividade } from "@/lib/knowledge-sync";
 import type { Atividade } from "@/lib/types";
 
 const include = { propostas: true, checklist: true };
@@ -60,6 +61,10 @@ export async function POST(request: Request) {
     },
     include,
   });
+
+  serializeAtividade(created)
+    .then((content) => syncKnowledgeChunk("atividade", created.id, content))
+    .catch((error) => console.error("Falha ao indexar atividade", error));
 
   return NextResponse.json(atividadeFromDb(created), { status: 201 });
 }

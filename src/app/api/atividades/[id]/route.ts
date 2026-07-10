@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { atividadeFromDb, statusToDb, prioridadeToDb } from "@/lib/atividade-mapper";
+import {
+  syncKnowledgeChunk,
+  deleteKnowledgeChunk,
+  serializeAtividade,
+} from "@/lib/knowledge-sync";
 import type { Atividade } from "@/lib/types";
 
 const include = { propostas: true, checklist: true };
@@ -59,6 +64,10 @@ export async function PATCH(
     });
   });
 
+  serializeAtividade(updated)
+    .then((content) => syncKnowledgeChunk("atividade", updated.id, content))
+    .catch((error) => console.error("Falha ao indexar atividade", error));
+
   return NextResponse.json(atividadeFromDb(updated));
 }
 
@@ -71,5 +80,8 @@ export async function DELETE(
 
   const { id } = await params;
   await prisma.atividade.delete({ where: { id } });
+  deleteKnowledgeChunk("atividade", id).catch((error) =>
+    console.error("Falha ao remover indexação", error)
+  );
   return NextResponse.json({ ok: true });
 }

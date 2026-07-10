@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { syncKnowledgeChunk, serializePlanilha } from "@/lib/knowledge-sync";
 import type { Prisma } from "@/generated/prisma/client";
 import type { Planilha } from "@/lib/types";
 
@@ -37,6 +38,10 @@ export async function POST(request: Request) {
       conteudo: (body.conteudo ?? undefined) as Prisma.InputJsonValue | undefined,
     },
   });
+
+  serializePlanilha(created)
+    .then((content) => syncKnowledgeChunk("planilha", created.id, content))
+    .catch((error) => console.error("Falha ao indexar planilha", error));
 
   return NextResponse.json(created, { status: 201 });
 }

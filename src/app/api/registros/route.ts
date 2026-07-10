@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { syncKnowledgeChunk, serializeRegistro } from "@/lib/knowledge-sync";
 import type { Registro } from "@/lib/types";
 
 const include = { tabs: true };
@@ -48,6 +49,10 @@ export async function POST(request: Request) {
     },
     include,
   });
+
+  serializeRegistro(created)
+    .then((content) => syncKnowledgeChunk("registro", created.id, content))
+    .catch((error) => console.error("Falha ao indexar registro", error));
 
   return NextResponse.json(
     { ...created, tabs: created.tabs.sort((a, b) => a.ordem - b.ordem) },

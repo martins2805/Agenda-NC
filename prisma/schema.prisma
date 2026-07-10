@@ -136,3 +136,25 @@ model User {
   passwordHash String
   createdAt    DateTime @default(now())
 }
+
+model KnowledgeChunk {
+  id         String   @id @default(cuid())
+  sourceType String
+  sourceId   String
+  content    String
+  embedding  Float[]
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+
+  @@unique([sourceType, sourceId])
+  @@index([sourceType])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
