@@ -6,7 +6,6 @@ import { Plus, Table2 } from "lucide-react";
 import { useAppData, makePlanilhaId } from "@/lib/app-data-context";
 import { PlanilhaCard } from "@/components/planilhas/planilha-card";
 import { PlanilhaEditor } from "@/components/planilhas/planilha-editor";
-import { PageHero } from "@/components/page-hero";
 import type { Planilha } from "@/lib/types";
 
 function emptyPlanilha(): Planilha {
@@ -72,13 +71,6 @@ export default function PlanilhasPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHero
-        icon={<Table2 className="size-3.5" />}
-        label="Biblioteca · Planilhas"
-        title="Planilhas livres para virar processo."
-        description="Grade estilo Excel/Sheets com fórmulas reais, abas, metadados e associação como anexo de atividades."
-      />
-
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Planilhas</h2>

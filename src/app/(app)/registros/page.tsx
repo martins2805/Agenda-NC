@@ -6,7 +6,6 @@ import { Plus, FileText } from "lucide-react";
 import { useAppData, makeRegistroId, makeRegistroTabId } from "@/lib/app-data-context";
 import { RegistroCard } from "@/components/registros/registro-card";
 import { RegistroEditor } from "@/components/registros/registro-editor";
-import { PageHero } from "@/components/page-hero";
 import type { Registro } from "@/lib/types";
 
 function emptyRegistro(): Registro {
@@ -72,13 +71,6 @@ export default function RegistrosPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHero
-        icon={<FileText className="size-3.5" />}
-        label="Biblioteca · Registros"
-        title="Saídas de reunião sem virar bagunça."
-        description="Documentos com abas, formatação rica, categorias e associação com atividades novas ou existentes."
-      />
-
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Registros</h2>

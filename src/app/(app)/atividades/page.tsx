@@ -12,7 +12,6 @@ import {
 } from "@/components/atividades/filter-bar";
 import { ActivityCard } from "@/components/atividades/activity-card";
 import { ActivityForm } from "@/components/atividades/activity-form";
-import { PageHero } from "@/components/page-hero";
 import type { Atividade } from "@/lib/types";
 
 function matchesPrazo(prazo: string | null, mode: ActivityFilters["prazo"]) {
@@ -83,13 +82,6 @@ export default function AtividadesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHero
-        icon={<LayoutDashboard className="size-3.5" />}
-        label="Painel · Atividades"
-        title="Central viva de atividades, reuniões e pendências."
-        description="Cadastre atividades, propostas e próximos passos. Nada se perde ao fechar o navegador — tudo já fica salvo."
-      />
-
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>

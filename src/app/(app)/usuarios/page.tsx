@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { KeyRound, UserPlus, Users } from "lucide-react";
-import { PageHero } from "@/components/page-hero";
+import { KeyRound, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,12 +99,12 @@ export default function UsuariosPage() {
 
   return (
     <div className="space-y-8">
-      <PageHero
-        icon={<Users className="size-3.5" />}
-        label="Acesso"
-        title="Usuários"
-        description="Cadastre novas contas de acesso ao Agenda NC. Cada usuário vê apenas os próprios dados."
-      />
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Usuários</h2>
+        <p className="mt-1 text-muted-foreground">
+          Cadastre novas contas de acesso ao Agenda NC. Cada usuário vê apenas os próprios dados.
+        </p>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,360px)_1fr]">
         <div className="space-y-6">
