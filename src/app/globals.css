@@ -125,9 +125,10 @@
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(circle at 15% 0%, color-mix(in oklch, var(--primary), transparent 90%), transparent 34rem),
-      radial-gradient(circle at 100% 25%, color-mix(in oklch, var(--chart-5), transparent 92%), transparent 30rem);
-    background-attachment: fixed, fixed;
+      radial-gradient(circle at 10% -5%, color-mix(in oklch, var(--primary), transparent 78%), transparent 38rem),
+      radial-gradient(circle at 100% 10%, color-mix(in oklch, var(--chart-5), transparent 78%), transparent 34rem),
+      radial-gradient(circle at 85% 95%, color-mix(in oklch, var(--chart-3), transparent 88%), transparent 32rem);
+    background-attachment: fixed, fixed, fixed;
   }
   html {
     @apply font-sans;

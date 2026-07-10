@@ -10,17 +10,17 @@ import type { Atividade } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const PRIORIDADE_STYLES: Record<Atividade["prioridade"], string> = {
-  Urgente: "border-[#b25a3e]/40 text-[#a04e35] bg-[#b25a3e]/[0.06]",
-  Importante: "border-[#a24d63]/40 text-[#93435a] bg-[#a24d63]/[0.06]",
-  Médio: "border-[#7c68a0]/40 text-[#6f5d90] bg-[#7c68a0]/[0.06]",
-  Baixo: "border-border text-muted-foreground",
+  Urgente: "bg-[var(--chart-3)] text-white",
+  Importante: "bg-[var(--chart-1)] text-white",
+  Médio: "bg-[var(--chart-2)] text-white",
+  Baixo: "bg-muted text-muted-foreground",
 };
 
 const STATUS_STYLES: Record<Atividade["status"], string> = {
-  Concluído: "border-[#5e7350]/40 text-[#526645] bg-[#5e7350]/[0.06]",
-  Pendente: "border-[#a56a3f]/40 text-[#935e37] bg-[#a56a3f]/[0.06]",
-  "Aguardando retorno interno": "border-[#7c68a0]/40 text-[#6f5d90] bg-[#7c68a0]/[0.06]",
-  "Aguardando retorno cliente": "border-[#9c7a3a]/40 text-[#8a6b32] bg-[#9c7a3a]/[0.06]",
+  Concluído: "bg-[var(--chart-2)] text-white",
+  Pendente: "bg-[var(--chart-4)] text-[var(--chart-1)]",
+  "Aguardando retorno interno": "bg-[var(--chart-1)] text-white",
+  "Aguardando retorno cliente": "bg-[var(--chart-3)] text-white",
 };
 
 interface ActivityCardProps {
@@ -83,10 +83,10 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
         )}
 
         <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
-          <span className={cn("rounded-full border px-2.5 py-0.5 font-medium tracking-wide uppercase", STATUS_STYLES[atividade.status])}>
+          <span className={cn("rounded-full px-2.5 py-0.5 font-medium tracking-wide uppercase", STATUS_STYLES[atividade.status])}>
             {atividade.status}
           </span>
-          <span className={cn("rounded-full border px-2.5 py-0.5 font-medium tracking-wide uppercase", PRIORIDADE_STYLES[atividade.prioridade])}>
+          <span className={cn("rounded-full px-2.5 py-0.5 font-medium tracking-wide uppercase", PRIORIDADE_STYLES[atividade.prioridade])}>
             {atividade.prioridade}
           </span>
           {dias !== null && (
@@ -107,7 +107,7 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
             </span>
           )}
           {propostaTotal > 0 && (
-            <span className="rounded-full border border-primary/30 bg-primary/[0.06] px-2.5 py-0.5 font-medium text-primary">
+            <span className="rounded-full bg-[var(--chart-5)] px-2.5 py-0.5 font-medium text-[var(--chart-1)]">
               {formatCurrency(propostaTotal)}
             </span>
           )}

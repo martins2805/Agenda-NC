@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useAppData } from "@/lib/app-data-context";
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
 import type { Atividade } from "@/lib/types";
@@ -14,6 +13,15 @@ function StatBar({ value, max }: { value: number; max: number }) {
     </div>
   );
 }
+
+const TILE_COLORS = [
+  "bg-[var(--chart-1)] text-white",
+  "bg-[var(--chart-3)] text-white",
+  "bg-[var(--chart-2)] text-white",
+  "bg-[var(--chart-4)] text-[var(--chart-1)]",
+  "bg-[var(--chart-5)] text-[var(--chart-1)]",
+  "bg-foreground text-background",
+];
 
 export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
   const { lookups } = useAppData();
@@ -40,22 +48,21 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
 
   const maxStatus = Math.max(1, ...porStatus.map((s) => s.count));
   const maxPrioridade = Math.max(1, ...porPrioridade.map((p) => p.count));
-  const maxTipo = Math.max(1, ...porTipo.map((t) => t.count));
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <Card className="lg:col-span-1">
+      <Card className="lg:col-span-1 border-none bg-[var(--chart-1)] text-white shadow-lg shadow-[var(--chart-1)]/20">
         <CardContent className="flex flex-col gap-1">
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex items-center gap-2 text-white/70">
             <ClipboardList className="size-3.5" />
-            <span className="ledger-label">Total de atividades</span>
+            <span className="ledger-label text-white/70">Total de atividades</span>
           </div>
-          <p className="font-mono text-4xl font-bold tracking-tight text-foreground">
+          <p className="font-mono text-4xl font-bold tracking-tight">
             {String(total).padStart(2, "0")}
           </p>
-          <Badge variant="secondary" className="w-fit border border-border font-mono text-[10px] tracking-wide uppercase">
+          <span className="w-fit rounded-full bg-white/15 px-2.5 py-0.5 font-mono text-[10px] tracking-wide uppercase">
             controle vivo
-          </Badge>
+          </span>
         </CardContent>
       </Card>
 
@@ -99,20 +106,17 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
           {porTipo.length === 0 ? (
             <span className="text-sm text-muted-foreground">Sem dados ainda</span>
           ) : (
-            <div className="mt-1 flex h-22 items-end gap-2">
-              {porTipo.slice(0, 6).map((t) => (
+            <div className="mt-1 grid grid-cols-3 gap-1.5">
+              {porTipo.slice(0, 6).map((t, i) => (
                 <div
                   key={t.name}
-                  className="group relative flex flex-1 flex-col items-center justify-end"
+                  className={`flex flex-col justify-between gap-2 rounded-lg p-2 ${TILE_COLORS[i % TILE_COLORS.length]}`}
+                  title={`${t.name}: ${t.count}`}
                 >
-                  <div
-                    className="w-full rounded-t-full bg-primary/80"
-                    style={{ height: `${Math.max(12, (t.count / maxTipo) * 88)}px` }}
-                    title={`${t.name}: ${t.count}`}
-                  />
-                  <span className="mt-1 line-clamp-1 w-full text-center font-mono text-[10px] text-muted-foreground">
+                  <span className="line-clamp-1 text-[10px] font-medium opacity-80">
                     {t.name}
                   </span>
+                  <span className="font-mono text-lg font-bold">{t.count}</span>
                 </div>
               ))}
             </div>

@@ -23,10 +23,10 @@ function toKey(date: Date) {
 }
 
 const PRIORIDADE_STYLES: Record<Prioridade, string> = {
-  Urgente: "border-[#b25a3e]/40 text-[#a04e35] bg-[#b25a3e]/[0.06]",
-  Importante: "border-[#a24d63]/40 text-[#93435a] bg-[#a24d63]/[0.06]",
-  Médio: "border-[#7c68a0]/40 text-[#6f5d90] bg-[#7c68a0]/[0.06]",
-  Baixo: "border-border text-muted-foreground",
+  Urgente: "bg-[var(--chart-3)] text-white",
+  Importante: "bg-[var(--chart-1)] text-white",
+  Médio: "bg-[var(--chart-2)] text-white",
+  Baixo: "bg-muted text-muted-foreground",
 };
 
 export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
@@ -138,7 +138,7 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
                       )}
                       <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                         <span
-                          className={`rounded-full border px-2 py-0.5 font-medium tracking-wide uppercase ${PRIORIDADE_STYLES[entry.atividade.prioridade]}`}
+                          className={`rounded-full px-2 py-0.5 font-medium tracking-wide uppercase ${PRIORIDADE_STYLES[entry.atividade.prioridade]}`}
                         >
                           {entry.atividade.prioridade}
                         </span>
