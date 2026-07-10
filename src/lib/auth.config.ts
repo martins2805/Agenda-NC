@@ -5,7 +5,7 @@ export const authConfig = {
   session: { strategy: "jwt" },
   callbacks: {
     authorized({ auth }) {
-      return !!auth?.user;
+      return !!auth?.user?.id;
     },
     jwt({ token, user }) {
       if (user) token.id = user.id;
