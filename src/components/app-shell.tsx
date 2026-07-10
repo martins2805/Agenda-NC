@@ -18,49 +18,50 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-full flex-col">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-full border border-primary/60 bg-accent font-mono text-xs font-bold text-primary">
+    <div className="flex min-h-full">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-6 p-4 sm:flex">
+        <div className="flex flex-col gap-6 rounded-2xl border border-sidebar-border bg-sidebar p-4 h-full">
+          <div className="flex items-center gap-3 px-1">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent font-mono text-xs font-bold text-accent-foreground">
               NC
             </div>
-            <span className="font-display text-lg tracking-tight italic">
+            <span className="font-display text-lg tracking-tight italic text-sidebar-foreground">
               Agenda NC
             </span>
           </div>
-          <div className="flex items-center gap-1">
-            <nav className="hidden gap-1 sm:flex">
-              {NAV_ITEMS.map((item) => {
-                const active = pathname?.startsWith(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-2 rounded-full border border-transparent px-3 py-2 font-mono text-xs tracking-wide uppercase transition-colors",
-                      active
-                        ? "border-primary/50 bg-accent text-primary"
-                        : "text-muted-foreground hover:border-border hover:text-foreground"
-                    )}
-                  >
-                    <item.icon className="size-3.5" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-            <form action={logout}>
-              <Button variant="ghost" size="icon" type="submit" aria-label="Sair">
-                <LogOut className="size-4" />
-              </Button>
-            </form>
-          </div>
-        </div>
-      </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-24 pt-6 sm:px-6 sm:pb-10">
-        {children}
+          <nav className="flex flex-col gap-1">
+            {NAV_ITEMS.map((item) => {
+              const active = pathname?.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium transition-colors",
+                    active
+                      ? "border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "border-transparent text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  )}
+                >
+                  <item.icon className="size-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <form action={logout} className="mt-auto">
+            <Button variant="ghost" className="w-full justify-start gap-3 px-3" type="submit">
+              <LogOut className="size-4" />
+              Sair
+            </Button>
+          </form>
+        </div>
+      </aside>
+
+      <main className="w-full flex-1 px-4 pb-24 pt-6 sm:px-6 sm:pb-10">
+        <div className="mx-auto w-full max-w-5xl">{children}</div>
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background sm:hidden">
