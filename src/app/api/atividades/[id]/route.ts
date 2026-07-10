@@ -42,6 +42,7 @@ export async function PATCH(
         contato: body.contato,
         prazo: body.prazo ? new Date(body.prazo) : null,
         descricao: body.descricao,
+        alinhamentos: body.alinhamentos,
         status: statusToDb(body.status),
         prioridade: prioridadeToDb(body.prioridade),
         propostas: {
@@ -62,6 +63,7 @@ export async function PATCH(
             texto: c.texto,
             concluido: c.concluido,
             ordem: i,
+            prazo: c.prazo ? new Date(c.prazo) : null,
           })),
         },
       },

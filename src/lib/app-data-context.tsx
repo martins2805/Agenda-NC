@@ -47,7 +47,7 @@ interface AppDataContextValue {
   registros: Registro[];
   planilhas: Planilha[];
   loading: boolean;
-  addLookupItem: (kind: LookupKind, name: string) => string;
+  addLookupItem: (kind: LookupKind, name: string, empresaId?: string | null) => string;
   renameLookupItem: (kind: LookupKind, id: string, name: string) => void;
   deactivateLookupItem: (kind: LookupKind, id: string) => void;
   addAtividade: (atividade: Atividade) => void;
@@ -73,7 +73,7 @@ function groupLookups(items: (LookupItem & { kind: LookupKind })[]): LookupState
   for (const item of items) {
     grouped[item.kind] = [
       ...grouped[item.kind],
-      { id: item.id, name: item.name, active: item.active },
+      { id: item.id, name: item.name, active: item.active, empresaId: item.empresaId },
     ];
   }
   return grouped;
@@ -136,19 +136,22 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const addLookupItem = useCallback((kind: LookupKind, name: string) => {
-    const id = makeId();
-    setLookups((prev) => ({
-      ...prev,
-      [kind]: [...prev[kind], { id, name, active: true }],
-    }));
-    fetch("/api/lookups", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, kind, name }),
-    }).catch((error) => console.error("Falha ao criar item", error));
-    return id;
-  }, []);
+  const addLookupItem = useCallback(
+    (kind: LookupKind, name: string, empresaId?: string | null) => {
+      const id = makeId();
+      setLookups((prev) => ({
+        ...prev,
+        [kind]: [...prev[kind], { id, name, active: true, empresaId: empresaId ?? null }],
+      }));
+      fetch("/api/lookups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, kind, name, empresaId }),
+      }).catch((error) => console.error("Falha ao criar item", error));
+      return id;
+    },
+    []
+  );
 
   const renameLookupItem = useCallback(
     (kind: LookupKind, id: string, name: string) => {

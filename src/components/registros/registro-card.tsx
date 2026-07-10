@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Link2 } from "lucide-react";
@@ -13,13 +14,22 @@ export function RegistroCard({
   registro: Registro;
   onOpen: () => void;
 }) {
-  const { lookups } = useAppData();
+  const { lookups, atividades } = useAppData();
 
   const empresa = lookups.empresa.find((e) => e.id === registro.empresaId);
   const assunto = lookups.assunto.find((a) => a.id === registro.assuntoId);
   const categorias = lookups.categoriaRegistro.filter((c) =>
     registro.categoriaIds.includes(c.id)
   );
+  const atividadeVinculada = atividades.find((a) => a.id === registro.atividadeId);
+  const atividadeLabel = atividadeVinculada
+    ? [
+        lookups.empresa.find((e) => e.id === atividadeVinculada.empresaId)?.name,
+        lookups.assunto.find((s) => s.id === atividadeVinculada.assuntoId)?.name,
+      ]
+        .filter(Boolean)
+        .join(" · ") || "Atividade vinculada"
+    : null;
 
   return (
     <Card className="cursor-pointer transition-shadow hover:shadow-md" onClick={onOpen}>
@@ -39,13 +49,22 @@ export function RegistroCard({
               {c.name}
             </Badge>
           ))}
-          {registro.atividadeId && (
-            <Badge variant="secondary" className="gap-1">
-              <Link2 className="size-3" />
-              Vinculado
-            </Badge>
-          )}
         </div>
+        {atividadeLabel && (
+          <Link
+            href={`/atividades?open=${registro.atividadeId}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1 self-start"
+          >
+            <Badge
+              variant="secondary"
+              className="gap-1 text-primary hover:underline"
+            >
+              <Link2 className="size-3" />
+              {atividadeLabel}
+            </Badge>
+          </Link>
+        )}
         <p className="text-xs text-muted-foreground">
           {registro.tabs.length} {registro.tabs.length === 1 ? "aba" : "abas"}
         </p>

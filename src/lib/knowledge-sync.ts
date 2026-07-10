@@ -101,13 +101,17 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
     `Descrição: ${a.descricao}`,
   ];
 
+  if (a.alinhamentos) lines.push(`Alinhamentos: ${a.alinhamentos}`);
   if (a.emailConteudo) lines.push(`E-mail: ${a.emailConteudo}`);
   if (a.oportunidadeTexto) lines.push(`Oportunidade: ${a.oportunidadeTexto}`);
 
   if (a.checklist.length > 0) {
     lines.push(
       `Checklist: ${a.checklist
-        .map((c) => `${c.concluido ? "[x]" : "[ ]"} ${c.texto}`)
+        .map(
+          (c) =>
+            `${c.concluido ? "[x]" : "[ ]"} ${c.texto}${c.prazo ? ` (prazo: ${c.prazo})` : ""}`
+        )
         .join("; ")}`
     );
   }

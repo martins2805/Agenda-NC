@@ -41,14 +41,25 @@ export async function POST(request: Request) {
   const userId = session.user.id;
 
   const body = await request.json();
-  const { id, kind, name } = body as { id?: string; kind?: string; name?: string };
+  const { id, kind, name, empresaId } = body as {
+    id?: string;
+    kind?: string;
+    name?: string;
+    empresaId?: string | null;
+  };
 
   if (!kind || !VALID_KINDS.includes(kind as LookupKind) || !name?.trim()) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
   const item = await prisma.lookupItem.create({
-    data: { ...(id ? { id } : {}), userId, kind: kind as LookupKind, name: name.trim() },
+    data: {
+      ...(id ? { id } : {}),
+      userId,
+      kind: kind as LookupKind,
+      name: name.trim(),
+      empresaId: empresaId ?? null,
+    },
   });
   return NextResponse.json(item, { status: 201 });
 }

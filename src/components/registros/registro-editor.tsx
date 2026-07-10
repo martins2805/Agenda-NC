@@ -72,17 +72,25 @@ export function RegistroEditor({
           label="Empresa"
           items={lookups.empresa}
           value={registro.empresaId}
-          onChange={(id) => patch({ empresaId: id })}
+          onChange={(id) =>
+            patch(
+              id === registro.empresaId
+                ? { empresaId: id }
+                : { empresaId: id, unidadeId: null }
+            )
+          }
           onCreate={(name) => addLookupItem("empresa", name)}
           onRename={(id, name) => renameLookupItem("empresa", id, name)}
           onDeactivate={(id) => deactivateLookupItem("empresa", id)}
         />
         <ManagedSelect
           label="Unidade"
-          items={lookups.unidade}
+          items={lookups.unidade.filter(
+            (u) => !u.empresaId || u.empresaId === registro.empresaId
+          )}
           value={registro.unidadeId}
           onChange={(id) => patch({ unidadeId: id })}
-          onCreate={(name) => addLookupItem("unidade", name)}
+          onCreate={(name) => addLookupItem("unidade", name, registro.empresaId)}
           onRename={(id, name) => renameLookupItem("unidade", id, name)}
           onDeactivate={(id) => deactivateLookupItem("unidade", id)}
         />

@@ -60,6 +60,7 @@ export function atividadeFromDb(a: FullDbAtividade): Atividade {
     contato: a.contato,
     prazo: a.prazo ? a.prazo.toISOString().slice(0, 10) : null,
     descricao: a.descricao,
+    alinhamentos: a.alinhamentos,
     status: STATUS_FROM_DB[a.status],
     prioridade: PRIORIDADE_FROM_DB[a.prioridade],
     createdAt: a.createdAt.toISOString(),
@@ -86,5 +87,10 @@ function propostaFromDb(p: DbProposta): Proposta {
 }
 
 function checklistItemFromDb(c: DbChecklistItem): ChecklistItem {
-  return { id: c.id, texto: c.texto, concluido: c.concluido };
+  return {
+    id: c.id,
+    texto: c.texto,
+    concluido: c.concluido,
+    prazo: c.prazo ? c.prazo.toISOString().slice(0, 10) : null,
+  };
 }

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarClock, Trash2, CheckSquare } from "lucide-react";
 import { useAppData } from "@/lib/app-data-context";
-import { diasEmPendencia } from "@/lib/calculations";
+import { diasEmPendencia, formatCurrency } from "@/lib/calculations";
 import type { Atividade } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +40,11 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
   const dias = diasEmPendencia(atividade);
   const checkTotal = atividade.checklist.length;
   const checkDone = atividade.checklist.filter((c) => c.concluido).length;
+  const checkPct = checkTotal > 0 ? Math.round((checkDone / checkTotal) * 100) : 0;
+  const propostaTotal = atividade.propostas.reduce(
+    (sum, p) => sum + (p.valorTotal ?? 0),
+    0
+  );
 
   return (
     <Card className="cursor-pointer transition-shadow hover:shadow-md" onClick={onEdit}>
@@ -101,7 +106,18 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
               Prazo: {new Date(atividade.prazo).toLocaleDateString("pt-BR")}
             </span>
           )}
+          {propostaTotal > 0 && (
+            <span className="rounded-full border border-primary/30 bg-primary/[0.06] px-2.5 py-0.5 font-medium text-primary">
+              {formatCurrency(propostaTotal)}
+            </span>
+          )}
         </div>
+
+        {checkTotal > 0 && (
+          <div className="stat-bar">
+            <span style={{ width: `${checkPct}%` }} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

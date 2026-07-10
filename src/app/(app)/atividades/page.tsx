@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, LayoutDashboard } from "lucide-react";
 import { useAppData } from "@/lib/app-data-context";
+import { useAutoOpenFromQuery } from "@/lib/use-auto-open";
 import { DashboardStats } from "@/components/atividades/dashboard-stats";
+import { ActivityCalendar } from "@/components/atividades/activity-calendar";
 import {
   FilterBar,
   DEFAULT_FILTERS,
@@ -12,6 +14,8 @@ import {
 } from "@/components/atividades/filter-bar";
 import { ActivityCard } from "@/components/atividades/activity-card";
 import { ActivityForm } from "@/components/atividades/activity-form";
+import { ViewToggle, type ViewMode } from "@/components/view-toggle";
+import { STATUS_OPTIONS } from "@/lib/types";
 import type { Atividade } from "@/lib/types";
 
 function matchesPrazo(prazo: string | null, mode: ActivityFilters["prazo"]) {
@@ -30,10 +34,16 @@ function matchesPrazo(prazo: string | null, mode: ActivityFilters["prazo"]) {
 }
 
 export default function AtividadesPage() {
-  const { lookups, atividades } = useAppData();
+  const { lookups, atividades, loading } = useAppData();
   const [filters, setFilters] = useState<ActivityFilters>(DEFAULT_FILTERS);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Atividade | null>(null);
+  const [view, setView] = useState<ViewMode>("lista");
+
+  useAutoOpenFromQuery(atividades, loading, (a) => {
+    setEditing(a);
+    setFormOpen(true);
+  });
 
   const filtered = useMemo(() => {
     const keyword = filters.keyword.trim().toLowerCase();
@@ -103,7 +113,12 @@ export default function AtividadesPage() {
 
       <DashboardStats atividades={atividades} />
 
+      <ActivityCalendar atividades={atividades} />
+
       <FilterBar filters={filters} onChange={setFilters} />
+      <div className="flex justify-end">
+        <ViewToggle value={view} onChange={setView} />
+      </div>
 
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-16 text-center">
@@ -114,7 +129,7 @@ export default function AtividadesPage() {
               : "Nenhuma atividade encontrada com esses filtros."}
           </p>
         </div>
-      ) : (
+      ) : view === "lista" ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((a) => (
             <ActivityCard
@@ -126,6 +141,34 @@ export default function AtividadesPage() {
               }}
             />
           ))}
+        </div>
+      ) : (
+        <div className="flex gap-4 overflow-x-auto pb-2">
+          {STATUS_OPTIONS.map((status) => {
+            const items = filtered.filter((a) => a.status === status);
+            return (
+              <div key={status} className="flex w-72 shrink-0 flex-col gap-3">
+                <p className="text-sm font-semibold">
+                  {status}{" "}
+                  <span className="font-mono text-xs font-normal text-muted-foreground">
+                    ({items.length})
+                  </span>
+                </p>
+                <div className="flex flex-col gap-3">
+                  {items.map((a) => (
+                    <ActivityCard
+                      key={a.id}
+                      atividade={a}
+                      onEdit={() => {
+                        setEditing(a);
+                        setFormOpen(true);
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

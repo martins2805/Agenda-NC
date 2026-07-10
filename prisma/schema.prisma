@@ -43,6 +43,7 @@ model LookupItem {
   kind      LookupKind
   name      String
   active    Boolean    @default(true)
+  empresaId String?    // usado apenas por itens do tipo "unidade"
   createdAt DateTime   @default(now())
 
   @@index([userId, kind])
@@ -61,6 +62,7 @@ model Atividade {
   contato           String           @default("")
   prazo             DateTime?
   descricao         String           @default("")
+  alinhamentos      String           @default("")
   status            StatusConclusao  @default(Pendente)
   prioridade        Prioridade       @default(Medio)
   createdAt         DateTime         @default(now())
@@ -94,6 +96,7 @@ model ChecklistItem {
   texto       String
   concluido   Boolean   @default(false)
   ordem       Int       @default(0)
+  prazo       DateTime?
 
   @@index([atividadeId])
 }

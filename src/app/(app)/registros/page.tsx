@@ -1,11 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, FileText } from "lucide-react";
 import { useAppData, makeRegistroId, makeRegistroTabId } from "@/lib/app-data-context";
+import { useAutoOpenFromQuery } from "@/lib/use-auto-open";
 import { RegistroCard } from "@/components/registros/registro-card";
 import { RegistroEditor } from "@/components/registros/registro-editor";
+import {
+  RegistroFilterBar,
+  DEFAULT_REGISTRO_FILTERS,
+  type RegistroFilters,
+} from "@/components/registros/registro-filter-bar";
+import { ViewToggle, type ViewMode } from "@/components/view-toggle";
 import type { Registro } from "@/lib/types";
 
 function emptyRegistro(): Registro {
@@ -23,12 +30,37 @@ function emptyRegistro(): Registro {
 }
 
 export default function RegistrosPage() {
-  const { lookups, registros, addRegistro, updateRegistro, deleteRegistro } =
+  const { lookups, registros, loading, addRegistro, updateRegistro, deleteRegistro } =
     useAppData();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftNew, setDraftNew] = useState<Registro | null>(null);
+  const [filters, setFilters] = useState<RegistroFilters>(DEFAULT_REGISTRO_FILTERS);
+  const [view, setView] = useState<ViewMode>("lista");
 
   const editing = draftNew ?? registros.find((r) => r.id === editingId) ?? null;
+
+  useAutoOpenFromQuery(registros, loading, (r) => setEditingId(r.id));
+
+  const filtered = useMemo(() => {
+    const keyword = filters.keyword.trim().toLowerCase();
+    return registros.filter((r) => {
+      if (filters.empresaId && r.empresaId !== filters.empresaId) return false;
+      if (filters.assuntoId && r.assuntoId !== filters.assuntoId) return false;
+      if (filters.categoriaId && !r.categoriaIds.includes(filters.categoriaId))
+        return false;
+      if (filters.vinculo === "vinculado" && !r.atividadeId) return false;
+      if (filters.vinculo === "sem_vinculo" && r.atividadeId) return false;
+
+      if (keyword) {
+        const empresa = lookups.empresa.find((e) => e.id === r.empresaId)?.name ?? "";
+        const assunto = lookups.assunto.find((a) => a.id === r.assuntoId)?.name ?? "";
+        const haystack = [r.contato, empresa, assunto].join(" ").toLowerCase();
+        if (!haystack.includes(keyword)) return false;
+      }
+
+      return true;
+    });
+  }, [registros, filters, lookups]);
 
   function openNew() {
     const registro = emptyRegistro();
@@ -67,7 +99,17 @@ export default function RegistrosPage() {
   }
 
   const activeCategorias = lookups.categoriaRegistro.filter((c) => c.active);
-  const semCategoria = registros.filter((r) => r.categoriaIds.length === 0);
+  const semCategoria = filtered.filter((r) => r.categoriaIds.length === 0);
+  const columns = [
+    ...activeCategorias.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      items: filtered.filter((r) => r.categoriaIds.includes(cat.id)),
+    })),
+    ...(semCategoria.length > 0
+      ? [{ id: "__sem_categoria__", name: "Sem categoria", items: semCategoria }]
+      : []),
+  ].filter((col) => col.items.length > 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -84,39 +126,27 @@ export default function RegistrosPage() {
         </Button>
       </div>
 
-      {registros.length === 0 ? (
+      <RegistroFilterBar filters={filters} onChange={setFilters} />
+      <div className="flex justify-end">
+        <ViewToggle value={view} onChange={setView} />
+      </div>
+
+      {filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed py-16 text-center">
           <FileText className="size-10 text-muted-foreground" />
           <p className="text-sm font-medium text-muted-foreground">
-            Nenhum registro cadastrado ainda.
+            {registros.length === 0
+              ? "Nenhum registro cadastrado ainda."
+              : "Nenhum registro encontrado com esses filtros."}
           </p>
         </div>
-      ) : (
+      ) : view === "lista" ? (
         <div className="flex flex-col gap-8">
-          {activeCategorias.map((cat) => {
-            const items = registros.filter((r) => r.categoriaIds.includes(cat.id));
-            if (items.length === 0) return null;
-            return (
-              <section key={cat.id} className="flex flex-col gap-3">
-                <h2 className="text-lg font-semibold">{cat.name}</h2>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {items.map((r) => (
-                    <RegistroCard
-                      key={r.id}
-                      registro={r}
-                      onOpen={() => setEditingId(r.id)}
-                    />
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-
-          {semCategoria.length > 0 && (
-            <section className="flex flex-col gap-3">
-              <h2 className="text-lg font-semibold">Sem categoria</h2>
+          {columns.map((col) => (
+            <section key={col.id} className="flex flex-col gap-3">
+              <h2 className="text-lg font-semibold">{col.name}</h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {semCategoria.map((r) => (
+                {col.items.map((r) => (
                   <RegistroCard
                     key={r.id}
                     registro={r}
@@ -125,7 +155,29 @@ export default function RegistrosPage() {
                 ))}
               </div>
             </section>
-          )}
+          ))}
+        </div>
+      ) : (
+        <div className="flex gap-4 overflow-x-auto pb-2">
+          {columns.map((col) => (
+            <div key={col.id} className="flex w-72 shrink-0 flex-col gap-3">
+              <p className="text-sm font-semibold">
+                {col.name}{" "}
+                <span className="font-mono text-xs font-normal text-muted-foreground">
+                  ({col.items.length})
+                </span>
+              </p>
+              <div className="flex flex-col gap-3">
+                {col.items.map((r) => (
+                  <RegistroCard
+                    key={r.id}
+                    registro={r}
+                    onOpen={() => setEditingId(r.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

@@ -13,6 +13,7 @@ export interface LookupItem {
   id: string;
   name: string;
   active: boolean;
+  empresaId?: string | null; // usado apenas por itens do tipo "unidade"
 }
 
 export type StatusConclusao =
@@ -41,6 +42,7 @@ export interface ChecklistItem {
   id: string;
   texto: string;
   concluido: boolean;
+  prazo: string | null; // ISO date
 }
 
 export interface Proposta {
@@ -66,6 +68,7 @@ export interface Atividade {
   contato: string;
   prazo: string | null; // ISO date
   descricao: string;
+  alinhamentos: string;
   status: StatusConclusao;
   prioridade: Prioridade;
   checklist: ChecklistItem[];

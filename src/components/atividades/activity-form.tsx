@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { FileText, Link2, Table2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -45,6 +47,7 @@ function emptyAtividade(): Atividade {
     contato: "",
     prazo: null,
     descricao: "",
+    alinhamentos: "",
     status: "Pendente",
     prioridade: "Médio",
     checklist: [],
@@ -62,6 +65,8 @@ interface ActivityFormProps {
 export function ActivityForm({ open, onOpenChange, editing, onCreated }: ActivityFormProps) {
   const {
     lookups,
+    registros,
+    planilhas,
     addLookupItem,
     renameLookupItem,
     deactivateLookupItem,
@@ -88,6 +93,13 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
     !!tipoOportunidade && draft.tipoAtividadeIds.includes(tipoOportunidade.id);
   const showProposta = !!tipoProposta && draft.tipoAtividadeIds.includes(tipoProposta.id);
 
+  const linkedRegistros = editing
+    ? registros.filter((r) => r.atividadeId === editing.id)
+    : [];
+  const linkedPlanilhas = editing
+    ? planilhas.filter((p) => p.atividadeId === editing.id)
+    : [];
+
   function patch(p: Partial<Atividade>) {
     setDraft((prev) => ({ ...prev, ...p }));
   }
@@ -108,7 +120,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
+      <SheetContent className="overflow-y-auto data-[side=right]:inset-0 data-[side=right]:h-full data-[side=right]:w-full data-[side=right]:max-w-none data-[side=right]:sm:max-w-none">
         <SheetHeader>
           <SheetTitle>{editing ? "Editar atividade" : "Nova atividade"}</SheetTitle>
           <SheetDescription>
@@ -116,12 +128,14 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex flex-col gap-5 px-4 pb-4">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 pb-4">
           <ManagedSelect
             label="Empresa"
             items={lookups.empresa}
             value={draft.empresaId}
-            onChange={(id) => patch({ empresaId: id })}
+            onChange={(id) =>
+              patch(id === draft.empresaId ? { empresaId: id } : { empresaId: id, unidadeId: null })
+            }
             onCreate={(name) => addLookupItem("empresa", name)}
             onRename={(id, name) => renameLookupItem("empresa", id, name)}
             onDeactivate={(id) => deactivateLookupItem("empresa", id)}
@@ -129,12 +143,24 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
 
           <ManagedSelect
             label="Unidade"
-            items={lookups.unidade}
+            items={lookups.unidade.filter(
+              (u) => !u.empresaId || u.empresaId === draft.empresaId
+            )}
             value={draft.unidadeId}
             onChange={(id) => patch({ unidadeId: id })}
-            onCreate={(name) => addLookupItem("unidade", name)}
+            onCreate={(name) => addLookupItem("unidade", name, draft.empresaId)}
             onRename={(id, name) => renameLookupItem("unidade", id, name)}
             onDeactivate={(id) => deactivateLookupItem("unidade", id)}
+          />
+
+          <ManagedMultiSelect
+            label="Tipo de atividade"
+            items={lookups.tipoAtividade}
+            value={draft.tipoAtividadeIds}
+            onChange={(ids) => patch({ tipoAtividadeIds: ids })}
+            onCreate={(name) => addLookupItem("tipoAtividade", name)}
+            onRename={(id, name) => renameLookupItem("tipoAtividade", id, name)}
+            onDeactivate={(id) => deactivateLookupItem("tipoAtividade", id)}
           />
 
           <ManagedSelect
@@ -147,15 +173,36 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
             onDeactivate={(id) => deactivateLookupItem("assunto", id)}
           />
 
-          <ManagedMultiSelect
-            label="Tipo de atividade"
-            items={lookups.tipoAtividade}
-            value={draft.tipoAtividadeIds}
-            onChange={(ids) => patch({ tipoAtividadeIds: ids })}
-            onCreate={(name) => addLookupItem("tipoAtividade", name)}
-            onRename={(id, name) => renameLookupItem("tipoAtividade", id, name)}
-            onDeactivate={(id) => deactivateLookupItem("tipoAtividade", id)}
-          />
+          {(linkedRegistros.length > 0 || linkedPlanilhas.length > 0) && (
+            <div className="flex flex-col gap-1.5 rounded-lg border bg-muted/30 p-3">
+              <Label className="flex items-center gap-1.5">
+                <Link2 className="size-3.5" />
+                Vínculos
+              </Label>
+              <div className="flex flex-col gap-1.5">
+                {linkedRegistros.map((r) => (
+                  <Link
+                    key={r.id}
+                    href={`/registros?open=${r.id}`}
+                    className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+                  >
+                    <FileText className="size-3.5 shrink-0" />
+                    {r.tabs[0]?.titulo || "Registro"}
+                  </Link>
+                ))}
+                {linkedPlanilhas.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/planilhas?open=${p.id}`}
+                    className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+                  >
+                    <Table2 className="size-3.5 shrink-0" />
+                    {p.nome || "Planilha"}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {showEmail && (
             <div className="flex flex-col gap-1.5">
@@ -224,6 +271,16 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
               rows={4}
               value={draft.descricao}
               onChange={(e) => patch({ descricao: e.target.value })}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>Alinhamentos</Label>
+            <Textarea
+              rows={3}
+              value={draft.alinhamentos}
+              onChange={(e) => patch({ alinhamentos: e.target.value })}
+              placeholder="Combinados e pontos alinhados com o cliente/equipe"
             />
           </div>
 
