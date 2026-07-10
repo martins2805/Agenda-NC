@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { generateChatReply, type ChatTurn } from "@/lib/gemini";
 import { retrieveContext } from "@/lib/rag";
 import { rollupPastDays } from "@/lib/chat-rollup";
+import { buildEntityIndex } from "@/lib/chat-index";
+import { TOOL_DECLARATIONS, executeTool } from "@/lib/chat-tools";
 
 function todayStart(): Date {
   return new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
@@ -12,10 +14,20 @@ function todayStart(): Date {
 const SYSTEM_PREAMBLE =
   "Você é o assistente do Agenda NC, um sistema de controle de atividades, " +
   "registros de reunião e planilhas. Responda de forma direta, objetiva e em " +
-  "português. Baseie-se nas informações de contexto abaixo (dados reais do " +
-  "usuário) para responder perguntas sobre atividades, registros, planilhas " +
-  "ou conversas anteriores. Se a resposta não estiver no contexto, diga " +
-  "claramente que não encontrou essa informação, sem inventar.";
+  "português.\n\n" +
+  "Você tem ferramentas para CRIAR, ATUALIZAR e EXCLUIR atividades, registros " +
+  "e planilhas de verdade no banco de dados. Use-as sempre que o usuário pedir " +
+  "para registrar, criar, editar, atualizar ou apagar algo — não finja que fez, " +
+  "chame a ferramenta correspondente. Para localizar o id de algo a editar ou " +
+  "excluir, use o índice de entidades abaixo.\n\n" +
+  "Exclusão é irreversível: ao chamar excluir_atividade/excluir_registro/" +
+  "excluir_planilha, informe confirmado=true SOMENTE depois que o usuário " +
+  "confirmar explicitamente, em uma mensagem própria, que quer excluir aquele " +
+  "item específico. Se o usuário só pediu para excluir mas ainda não confirmou, " +
+  "pergunte antes de chamar a ferramenta com confirmado=true.\n\n" +
+  "Para perguntas sobre os dados (não sobre criar/editar/excluir), baseie-se " +
+  "no contexto relevante abaixo. Se a resposta não estiver no contexto nem no " +
+  "índice, diga claramente que não encontrou, sem inventar.";
 
 export async function GET() {
   const session = await auth();
@@ -54,8 +66,9 @@ export async function POST(request: Request) {
     data: { role: "user", content: message },
   });
 
-  const [contextChunks, todaysMessages] = await Promise.all([
+  const [contextChunks, entityIndex, todaysMessages] = await Promise.all([
     retrieveContext(message),
+    buildEntityIndex(),
     prisma.chatMessage.findMany({
       where: { createdAt: { gte: todayStart() } },
       orderBy: { createdAt: "asc" },
@@ -68,14 +81,20 @@ export async function POST(request: Request) {
         .join("\n\n")
     : "Nenhum dado relevante encontrado na base.";
 
-  const systemInstruction = `${SYSTEM_PREAMBLE}\n\nContexto relevante:\n${contextText}`;
+  const systemInstruction =
+    `${SYSTEM_PREAMBLE}\n\n` +
+    `Índice de entidades (use os ids exatamente como estão):\n${entityIndex}\n\n` +
+    `Contexto relevante para a pergunta atual:\n${contextText}`;
 
   const history: ChatTurn[] = todaysMessages.map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
     text: m.content,
   }));
 
-  const reply = await generateChatReply(systemInstruction, history);
+  const reply = await generateChatReply(systemInstruction, history, {
+    tools: TOOL_DECLARATIONS,
+    execute: executeTool,
+  });
 
   await prisma.chatMessage.create({
     data: { role: "assistant", content: reply },

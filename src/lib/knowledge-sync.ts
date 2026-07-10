@@ -81,6 +81,7 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
 
   const lines = [
     `Atividade`,
+    `id: ${a.id}`,
     `Empresa: ${name(a.empresaId)}`,
     `Unidade: ${name(a.unidadeId)}`,
     `Assunto: ${name(a.assuntoId)}`,
@@ -132,6 +133,7 @@ export async function serializeRegistro(r: FullDbRegistro): Promise<string> {
 
   const lines = [
     `Registro`,
+    `id: ${r.id}`,
     `Empresa: ${name(r.empresaId)}`,
     `Unidade: ${name(r.unidadeId)}`,
     `Assunto: ${name(r.assuntoId)}`,
@@ -153,6 +155,7 @@ export async function serializePlanilha(p: DbPlanilha): Promise<string> {
 
   return [
     `Planilha: ${p.nome}`,
+    `id: ${p.id}`,
     `Empresa: ${name(p.empresaId)}`,
     `Unidade: ${name(p.unidadeId)}`,
     `Assunto: ${name(p.assuntoId)}`,

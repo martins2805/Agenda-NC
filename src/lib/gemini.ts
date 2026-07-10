@@ -42,10 +42,22 @@ export interface ChatTurn {
   text: string;
 }
 
+interface GeminiPart {
+  text?: string;
+  functionCall?: { name: string; args: Record<string, unknown> };
+  functionResponse?: { name: string; response: object };
+}
+
+interface GeminiContent {
+  role: "user" | "model";
+  parts: GeminiPart[];
+}
+
 async function callModel(
   model: string,
   systemInstruction: string,
-  history: ChatTurn[]
+  contents: GeminiContent[],
+  tools?: object[]
 ): Promise<{ ok: boolean; status: number; body: string }> {
   const res = await fetch(
     `${GEMINI_BASE_URL}/models/${model}:generateContent?key=${apiKey()}`,
@@ -54,10 +66,8 @@ async function callModel(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemInstruction }] },
-        contents: history.map((turn) => ({
-          role: turn.role,
-          parts: [{ text: turn.text }],
-        })),
+        contents,
+        ...(tools ? { tools } : {}),
       }),
     }
   );
@@ -65,30 +75,74 @@ async function callModel(
   return { ok: res.ok, status: res.status, body };
 }
 
-export async function generateChatReply(
+async function callWithFallback(
   systemInstruction: string,
-  history: ChatTurn[]
-): Promise<string> {
+  contents: GeminiContent[],
+  tools?: object[]
+): Promise<{ parts: GeminiPart[] }> {
   let lastError = "";
 
   for (const model of CHAT_MODELS) {
     for (let attempt = 0; attempt < 2; attempt++) {
-      const result = await callModel(model, systemInstruction, history);
+      const result = await callModel(model, systemInstruction, contents, tools);
 
       if (result.ok) {
         const data = JSON.parse(result.body);
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (typeof text === "string") return text;
+        const parts = data.candidates?.[0]?.content?.parts;
+        if (Array.isArray(parts)) return { parts };
         lastError = "Resposta inesperada do Gemini";
         continue;
       }
 
       lastError = `${model}: ${result.status} ${result.body}`;
-      // 503 = sobrecarga temporária do modelo; vale tentar de novo ou trocar de modelo.
       if (result.status !== 503) break;
       await sleep(400);
     }
   }
 
   throw new Error(`Gemini chat falhou em todos os modelos. Último erro: ${lastError}`);
+}
+
+export interface ToolRunner {
+  tools: object[];
+  execute: (name: string, args: Record<string, unknown>) => Promise<object>;
+}
+
+export async function generateChatReply(
+  systemInstruction: string,
+  history: ChatTurn[],
+  toolRunner?: ToolRunner
+): Promise<string> {
+  const contents: GeminiContent[] = history.map((turn) => ({
+    role: turn.role,
+    parts: [{ text: turn.text }],
+  }));
+
+  for (let round = 0; round < 5; round++) {
+    const { parts } = await callWithFallback(
+      systemInstruction,
+      contents,
+      toolRunner?.tools
+    );
+
+    const functionCalls = parts.filter((p) => p.functionCall);
+
+    if (functionCalls.length === 0 || !toolRunner) {
+      const text = parts.map((p) => p.text ?? "").join("");
+      if (!text.trim()) throw new Error("Resposta vazia do Gemini");
+      return text;
+    }
+
+    contents.push({ role: "model", parts });
+
+    const responses: GeminiPart[] = [];
+    for (const call of functionCalls) {
+      const fc = call.functionCall!;
+      const result = await toolRunner.execute(fc.name, fc.args ?? {});
+      responses.push({ functionResponse: { name: fc.name, response: result } });
+    }
+    contents.push({ role: "user", parts: responses });
+  }
+
+  throw new Error("Limite de chamadas de ferramenta excedido");
 }
