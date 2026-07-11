@@ -6,6 +6,9 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Apenas administradores podem listar usuários" }, { status: 403 });
+  }
 
   const users = await prisma.user.findMany({
     select: { id: true, email: true, createdAt: true },
@@ -18,6 +21,9 @@ export async function GET() {
 export async function POST(request: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Apenas administradores podem criar usuários" }, { status: 403 });
+  }
 
   const { email, password } = (await request.json()) as {
     email?: string;

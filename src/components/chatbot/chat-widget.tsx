@@ -228,8 +228,8 @@ export function ChatWidget() {
             className="flex cursor-grab items-center justify-between border-b border-border px-4 py-3 touch-none active:cursor-grabbing"
           >
             <div>
-              <p className="font-display text-base italic leading-none">Assistente Agenda NC</p>
-              <p className="ledger-label mt-1">pergunte sobre seus dados</p>
+              <p className="font-display text-base italic leading-none">Aya</p>
+              <p className="ledger-label mt-1">sua assistente no Agenda NC</p>
             </div>
             <GripVertical className="size-4 shrink-0 text-muted-foreground" />
           </div>
@@ -240,8 +240,9 @@ export function ChatWidget() {
             )}
             {!loadingHistory && messages.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                Pergunte algo sobre suas atividades, registros ou planilhas.
-                Digite <span className="font-mono">/ajuda</span> para ver os comandos.
+                Oi, eu sou a Aya! Pergunte algo sobre suas atividades, registros
+                ou planilhas. Digite <span className="font-mono">/ajuda</span> para
+                ver os comandos.
               </p>
             )}
             {messages.map((m) => (
@@ -260,7 +261,7 @@ export function ChatWidget() {
             {loading && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="size-3.5 animate-spin" />
-                Pensando...
+                Aya está pensando...
               </div>
             )}
           </div>
@@ -299,7 +300,7 @@ export function ChatWidget() {
         onClick={onButtonClick}
         size="icon"
         className="size-12 touch-none rounded-full shadow-lg active:cursor-grabbing"
-        aria-label={open ? "Fechar assistente" : "Abrir assistente"}
+        aria-label={open ? "Fechar chat com a Aya" : "Abrir chat com a Aya"}
       >
         {open ? <X className="size-5" /> : <MessageCircle className="size-5" />}
       </Button>

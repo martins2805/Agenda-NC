@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Agenda NC
 
-## Getting Started
+Sistema de controle de atividades, registros de reunião e planilhas, com
+isolamento de dados por usuário (multi-tenant) e um assistente de chat com IA
+que pode criar/editar/excluir dados via function calling.
 
-First, run the development server:
+## Stack
+
+- [Next.js](https://nextjs.org) 16 (App Router) + React 19 + TypeScript
+- PostgreSQL via [Prisma](https://www.prisma.io) 7
+- [NextAuth](https://authjs.dev) 5 (credenciais + JWT) para autenticação
+- Tailwind CSS 4 + shadcn/ui
+- Chat com fallback entre modelos Gemini e NVIDIA NIM (ver `src/lib/gemini.ts`)
+
+## Pré-requisitos
+
+- Node.js >= 20.9
+- Um banco PostgreSQL acessível (local ou remoto)
+
+## Variáveis de ambiente
+
+Crie um arquivo `.env` na raiz do projeto com:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Conexão com o Postgres
+DATABASE_URL="postgresql://usuario:senha@host:5432/agenda_nc"
+
+# Segredo usado pelo NextAuth para assinar sessões/JWT (gere com `openssl rand -base64 32`)
+AUTH_SECRET="..."
+
+# Credenciais usadas para criar a primeira conta (bootstrap). Após o primeiro
+# login bem-sucedido com esse e-mail/senha, a conta é criada no banco com
+# role=ADMIN e passa a existir normalmente — essas variáveis podem ser
+# removidas depois disso.
+ADMIN_EMAIL="voce@empresa.com"
+ADMIN_PASSWORD="uma-senha-forte"
+
+# Provedores de IA do chat (pelo menos um é necessário para o chat funcionar)
+GEMINI_API_KEY="..."
+NVIDIA_API_KEY="..."
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Rodando localmente
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npx prisma migrate deploy   # aplica as migrations no banco configurado em DATABASE_URL
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Abra [http://localhost:3000](http://localhost:3000). Faça login com o
+`ADMIN_EMAIL`/`ADMIN_PASSWORD` configurados para criar a conta administradora
+inicial — só essa conta pode cadastrar novos usuários em `/usuarios`.
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+- `npm run dev` — servidor de desenvolvimento
+- `npm run build` — build de produção
+- `npm start` — aplica migrations pendentes (`prisma migrate deploy`) e sobe o servidor de produção
+- `npm run lint` — ESLint
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Estrutura
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `src/app/(app)` — páginas autenticadas (Atividades, Registros, Planilhas, Usuários)
+- `src/app/api` — rotas de API (todas escopadas por `userId` da sessão)
+- `src/lib/chat-tools.ts` — ferramentas que o chat pode chamar para criar/editar/excluir dados
+- `prisma/schema.prisma` — modelo de dados; cada tabela de domínio tem `userId` obrigatório
 
-## Deploy on Vercel
+## Notas de segurança
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Apenas contas com `role = ADMIN` podem listar ou criar usuários (`/api/users`, `/usuarios`).
+- Exclusões pedidas via chat exigem confirmação em uma mensagem separada — o
+  pedido e a confirmação nunca podem vir da mesma chamada do modelo.

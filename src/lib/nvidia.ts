@@ -1,7 +1,6 @@
 import type { ChatTurn, ToolRunner } from "@/lib/gemini";
 
 const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
-const CHAT_MODEL = "meta/llama-3.1-70b-instruct";
 
 function apiKey(): string {
   const key = process.env.NVIDIA_API_KEY;
@@ -45,7 +44,7 @@ function toOpenAiTools(tools: object[] | undefined) {
   }));
 }
 
-async function callModel(messages: OpenAiMessage[], tools?: ReturnType<typeof toOpenAiTools>) {
+async function callModel(model: string, messages: OpenAiMessage[], tools?: ReturnType<typeof toOpenAiTools>) {
   const res = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
@@ -53,7 +52,7 @@ async function callModel(messages: OpenAiMessage[], tools?: ReturnType<typeof to
       Authorization: `Bearer ${apiKey()}`,
     },
     body: JSON.stringify({
-      model: CHAT_MODEL,
+      model,
       messages,
       ...(tools ? { tools, tool_choice: "auto" } : {}),
     }),
@@ -61,12 +60,17 @@ async function callModel(messages: OpenAiMessage[], tools?: ReturnType<typeof to
 
   const body = await res.text();
   if (!res.ok) {
-    throw new Error(`NVIDIA chat falhou: ${res.status} ${body}`);
+    throw new Error(`NVIDIA (${model}) falhou: ${res.status} ${body}`);
   }
   return JSON.parse(body);
 }
 
-export async function generateChatReplyNvidia(
+// Runs one model of the provider fallback sequence to completion, including
+// its own tool-calling round trips. A failure here (network error, bad
+// response) is caught by the caller in gemini.ts, which moves on to the next
+// model/provider in the sequence.
+export async function attemptNvidiaModel(
+  model: string,
   systemInstruction: string,
   history: ChatTurn[],
   toolRunner?: ToolRunner
@@ -82,15 +86,15 @@ export async function generateChatReplyNvidia(
   const tools = toOpenAiTools(toolRunner?.tools);
 
   for (let round = 0; round < 5; round++) {
-    const data = await callModel(messages, tools);
+    const data = await callModel(model, messages, tools);
     const message = data.choices?.[0]?.message;
-    if (!message) throw new Error("Resposta inesperada da NVIDIA");
+    if (!message) throw new Error(`Resposta inesperada da NVIDIA (${model})`);
 
     const toolCalls: OpenAiToolCall[] | undefined = message.tool_calls;
 
     if (!toolCalls || toolCalls.length === 0 || !toolRunner) {
       const text = message.content ?? "";
-      if (!text.trim()) throw new Error("Resposta vazia da NVIDIA");
+      if (!text.trim()) throw new Error(`Resposta vazia da NVIDIA (${model})`);
       return text;
     }
 
@@ -112,5 +116,5 @@ export async function generateChatReplyNvidia(
     }
   }
 
-  throw new Error("Limite de chamadas de ferramenta excedido (NVIDIA)");
+  throw new Error(`Limite de chamadas de ferramenta excedido (NVIDIA ${model})`);
 }

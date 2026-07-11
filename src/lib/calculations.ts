@@ -15,6 +15,17 @@ export function parseLocalDate(dateOnly: string): Date {
   return new Date(year, month - 1, day);
 }
 
+// Mirror of parseLocalDate: build today's "YYYY-MM-DD" from local date parts
+// instead of `new Date().toISOString()` (which is UTC and rolls over to
+// tomorrow's date in the evening for timezones behind UTC, e.g. Brazil).
+export function todayLocalDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export function formatCurrency(value: number | null): string {
   if (value === null || Number.isNaN(value)) return "";
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

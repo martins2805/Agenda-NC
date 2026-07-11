@@ -36,6 +36,11 @@ enum Prioridade {
   Baixo
 }
 
+enum Role {
+  ADMIN
+  USER
+}
+
 model LookupItem {
   id        String     @id @default(cuid())
   userId    String
@@ -151,14 +156,16 @@ model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
+  role         Role     @default(USER)
   createdAt    DateTime @default(now())
 
   lookupItems     LookupItem[]
   atividades      Atividade[]
   registros       Registro[]
   planilhas       Planilha[]
-  knowledgeChunks KnowledgeChunk[]
-  chatMessages    ChatMessage[]
+  knowledgeChunks  KnowledgeChunk[]
+  chatMessages     ChatMessage[]
+  pendingDeletions PendingDeletion[]
 }
 
 model KnowledgeChunk {
@@ -185,4 +192,23 @@ model ChatMessage {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+// Tracks a chat-initiated deletion request that hasn't been confirmed yet.
+// The model can only complete the deletion in a LATER chat turn (a different
+// requestedInMessageId) than the one that created this record — this stops
+// the LLM from registering the request and confirming it in the same turn,
+// which would make "confirmado=true" a value the model can just assert.
+model PendingDeletion {
+  id                   String   @id @default(cuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityType           String
+  entityId             String
+  requestedInMessageId String
+  createdAt            DateTime @default(now())
+  expiresAt            DateTime
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId])
 }

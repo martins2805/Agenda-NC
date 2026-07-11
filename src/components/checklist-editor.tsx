@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { makeChecklistItemId } from "@/lib/app-data-context";
+import { todayLocalDateString } from "@/lib/calculations";
 import type { ChecklistItem } from "@/lib/types";
 
 interface ChecklistEditorProps {
@@ -87,7 +88,7 @@ export function ChecklistEditor({ items, onChange }: ChecklistEditorProps) {
                 title={item.prazo ? "Alterar prazo" : "Adicionar prazo"}
                 onClick={() =>
                   updateItem(item.id, {
-                    prazo: item.prazo ?? new Date().toISOString().slice(0, 10),
+                    prazo: item.prazo ?? todayLocalDateString(),
                   })
                 }
               >

@@ -2,6 +2,7 @@
 
 import {
   DndContext,
+  KeyboardSensor,
   PointerSensor,
   useDraggable,
   useDroppable,
@@ -63,7 +64,8 @@ export function KanbanBoard<T extends { id: string }>({
   onMove,
 }: KanbanBoardProps<T>) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor)
   );
 
   function handleDragEnd(event: DragEndEvent) {

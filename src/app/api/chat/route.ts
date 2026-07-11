@@ -6,15 +6,23 @@ import { retrieveContext } from "@/lib/rag";
 import { rollupPastDays } from "@/lib/chat-rollup";
 import { buildEntityIndex } from "@/lib/chat-index";
 import { TOOL_DECLARATIONS, executeTool } from "@/lib/chat-tools";
+import { rateLimit } from "@/lib/rate-limit";
+
+const CHAT_MESSAGE_LIMIT = 30;
+const CHAT_MESSAGE_WINDOW_MS = 5 * 60 * 1000;
 
 function todayStart(): Date {
   return new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`);
 }
 
 const SYSTEM_PREAMBLE =
-  "Você é o assistente do Agenda NC, um sistema de controle de atividades, " +
-  "registros de reunião e planilhas. Responda de forma direta, objetiva e em " +
-  "português.\n\n" +
+  "Você é a Aya, a assistente do Agenda NC — um sistema de controle de " +
+  "atividades, registros de reunião e planilhas. Fale em português, em " +
+  "primeira pessoa, com um tom caloroso e informal, como uma colega de " +
+  "equipe: acolhedora, direta, sem jargão corporativo ou formalidade " +
+  "excessiva. Pode usar uma linguagem leve e ocasionalmente um emoji, mas " +
+  "sem exagerar — o foco continua sendo ajudar de verdade, então nunca " +
+  "sacrifique clareza ou precisão por simpatia.\n\n" +
   "Você tem ferramentas para CRIAR, ATUALIZAR e EXCLUIR atividades, registros " +
   "e planilhas de verdade no banco de dados. Use-as sempre que o usuário pedir " +
   "para registrar, criar, editar, atualizar ou apagar algo — não finja que fez, " +
@@ -56,6 +64,14 @@ export async function POST(request: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const userId = session.user.id;
 
+  const { allowed } = rateLimit(`chat:${userId}`, CHAT_MESSAGE_LIMIT, CHAT_MESSAGE_WINDOW_MS);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Muitas mensagens em pouco tempo. Aguarde alguns instantes e tente novamente." },
+      { status: 429 }
+    );
+  }
+
   const { message } = (await request.json()) as { message?: string };
   if (typeof message !== "string" || !message.trim()) {
     return NextResponse.json({ error: "Mensagem inválida" }, { status: 400 });
@@ -65,7 +81,7 @@ export async function POST(request: Request) {
     console.error("Falha no rollup diário do chat", error)
   );
 
-  await prisma.chatMessage.create({
+  const userMessage = await prisma.chatMessage.create({
     data: { userId, role: "user", content: message },
   });
 
@@ -94,10 +110,19 @@ export async function POST(request: Request) {
     text: m.content,
   }));
 
-  const reply = await generateChatReply(systemInstruction, history, {
-    tools: TOOL_DECLARATIONS,
-    execute: (name, args) => executeTool(userId, name, args),
-  });
+  let reply: string;
+  try {
+    reply = await generateChatReply(systemInstruction, history, {
+      tools: TOOL_DECLARATIONS,
+      execute: (name, args) => executeTool(userId, name, args, { requestMessageId: userMessage.id }),
+    });
+  } catch (error) {
+    console.error("Falha ao gerar resposta do chat", error);
+    return NextResponse.json(
+      { error: "Não consegui responder agora. Tente novamente em instantes." },
+      { status: 502 }
+    );
+  }
 
   await prisma.chatMessage.create({
     data: { userId, role: "assistant", content: reply },

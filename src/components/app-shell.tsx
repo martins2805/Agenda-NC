@@ -7,15 +7,23 @@ import { LayoutDashboard, FileText, Table2, Users, LogOut } from "lucide-react";
 import { logout } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { href: "/atividades", label: "Atividades", icon: LayoutDashboard },
   { href: "/registros", label: "Registros", icon: FileText },
   { href: "/planilhas", label: "Planilhas", icon: Table2 },
-  { href: "/usuarios", label: "Usuários", icon: Users },
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+const ADMIN_NAV_ITEM = { href: "/usuarios", label: "Usuários", icon: Users };
+
+export function AppShell({
+  children,
+  isAdmin,
+}: {
+  children: React.ReactNode;
+  isAdmin: boolean;
+}) {
   const pathname = usePathname();
+  const NAV_ITEMS = isAdmin ? [...BASE_NAV_ITEMS, ADMIN_NAV_ITEM] : BASE_NAV_ITEMS;
 
   return (
     <div className="flex min-h-full">

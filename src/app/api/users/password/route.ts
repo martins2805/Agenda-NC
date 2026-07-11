@@ -2,11 +2,20 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function PATCH(request: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const userId = session.user.id;
+
+  const { allowed } = rateLimit(`password-change:${userId}`, 5, 60 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Muitas tentativas. Tente novamente mais tarde." },
+      { status: 429 }
+    );
+  }
 
   const { currentPassword, newPassword } = (await request.json()) as {
     currentPassword?: string;
