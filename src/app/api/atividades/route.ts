@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       userId,
       empresaId: body.empresaId,
       unidadeId: body.unidadeId,
-      assuntoId: body.assuntoId,
+      assunto: body.assunto,
       tipoAtividadeIds: body.tipoAtividadeIds,
       emailConteudo: body.emailConteudo,
       oportunidadeTexto: body.oportunidadeTexto,

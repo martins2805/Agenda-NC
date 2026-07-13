@@ -34,7 +34,7 @@ export async function PATCH(
         empresaId: body.empresaId,
         unidadeId: body.unidadeId,
         contato: body.contato,
-        assuntoId: body.assuntoId,
+        assunto: body.assunto,
         categoriaIds: body.categoriaIds,
         atividadeId: body.atividadeId,
         tabs: {

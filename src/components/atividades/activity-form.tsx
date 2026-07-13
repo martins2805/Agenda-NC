@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FileText, Link2, Table2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { FileText, Link2, Table2, Plus, X } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -26,9 +27,18 @@ import { ManagedSelect } from "@/components/managed-select";
 import { ManagedMultiSelect } from "@/components/managed-multi-select";
 import { ChecklistEditor } from "@/components/checklist-editor";
 import { PropostaEditor } from "@/components/proposta-editor";
-import { useAppData, makeAtividadeId, makePropostaId } from "@/lib/app-data-context";
+import {
+  useAppData,
+  makeAtividadeId,
+  makePropostaId,
+  makeRegistroId,
+  makeRegistroTabId,
+  makePlanilhaId,
+} from "@/lib/app-data-context";
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
 import type { Atividade } from "@/lib/types";
+
+const NONE = "__none__";
 
 function findTipoByName(items: { id: string; name: string }[], name: string) {
   return items.find((i) => i.name.toLowerCase() === name.toLowerCase());
@@ -39,7 +49,7 @@ function emptyAtividade(): Atividade {
     id: makeAtividadeId(),
     empresaId: null,
     unidadeId: null,
-    assuntoId: null,
+    assunto: "",
     tipoAtividadeIds: [],
     emailConteudo: "",
     oportunidadeTexto: "",
@@ -72,7 +82,12 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
     deactivateLookupItem,
     addAtividade,
     updateAtividade,
+    addRegistro,
+    updateRegistro,
+    addPlanilha,
+    updatePlanilha,
   } = useAppData();
+  const router = useRouter();
 
   const [draft, setDraft] = useState<Atividade>(emptyAtividade());
   const [prevOpen, setPrevOpen] = useState(open);
@@ -99,9 +114,65 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
   const linkedPlanilhas = editing
     ? planilhas.filter((p) => p.atividadeId === editing.id)
     : [];
+  const unlinkedRegistros = registros.filter((r) => !r.atividadeId);
+  const unlinkedPlanilhas = planilhas.filter((p) => !p.atividadeId);
 
   function patch(p: Partial<Atividade>) {
     setDraft((prev) => ({ ...prev, ...p }));
+  }
+
+  function handleLinkRegistro(id: string) {
+    if (!editing) return;
+    updateRegistro(id, { atividadeId: editing.id });
+  }
+
+  function handleUnlinkRegistro(id: string) {
+    updateRegistro(id, { atividadeId: null });
+  }
+
+  function handleCreateRegistro() {
+    if (!editing) return;
+    const registro = {
+      id: makeRegistroId(),
+      empresaId: editing.empresaId,
+      unidadeId: editing.unidadeId,
+      contato: editing.contato,
+      assunto: editing.assunto,
+      categoriaIds: [],
+      tabs: [{ id: makeRegistroTabId(), titulo: "Aba 1", conteudo: "" }],
+      atividadeId: editing.id,
+      createdAt: new Date().toISOString(),
+    };
+    addRegistro(registro);
+    onOpenChange(false);
+    router.push(`/registros?open=${registro.id}`);
+  }
+
+  function handleLinkPlanilha(id: string) {
+    if (!editing) return;
+    updatePlanilha(id, { atividadeId: editing.id });
+  }
+
+  function handleUnlinkPlanilha(id: string) {
+    updatePlanilha(id, { atividadeId: null });
+  }
+
+  function handleCreatePlanilha() {
+    if (!editing) return;
+    const planilha = {
+      id: makePlanilhaId(),
+      nome: "Nova planilha",
+      empresaId: editing.empresaId,
+      unidadeId: editing.unidadeId,
+      assunto: editing.assunto,
+      categoriaIds: [],
+      atividadeId: editing.id,
+      conteudo: null,
+      createdAt: new Date().toISOString(),
+    };
+    addPlanilha(planilha);
+    onOpenChange(false);
+    router.push(`/planilhas?open=${planilha.id}`);
   }
 
   function handleSave() {
@@ -163,46 +234,142 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
             onDeactivate={(id) => deactivateLookupItem("tipoAtividade", id)}
           />
 
-          <ManagedSelect
-            label="Assunto"
-            items={lookups.assunto}
-            value={draft.assuntoId}
-            onChange={(id) => patch({ assuntoId: id })}
-            onCreate={(name) => addLookupItem("assunto", name)}
-            onRename={(id, name) => renameLookupItem("assunto", id, name)}
-            onDeactivate={(id) => deactivateLookupItem("assunto", id)}
-          />
+          <div className="flex flex-col gap-1.5">
+            <Label>Assunto</Label>
+            <Input
+              value={draft.assunto}
+              onChange={(e) => patch({ assunto: e.target.value })}
+              placeholder="Descreva o assunto em poucas palavras"
+            />
+          </div>
 
-          {(linkedRegistros.length > 0 || linkedPlanilhas.length > 0) && (
-            <div className="flex flex-col gap-1.5 rounded-lg border bg-muted/30 p-3">
-              <Label className="flex items-center gap-1.5">
-                <Link2 className="size-3.5" />
-                Vínculos
-              </Label>
-              <div className="flex flex-col gap-1.5">
-                {linkedRegistros.map((r) => (
-                  <Link
-                    key={r.id}
-                    href={`/registros?open=${r.id}`}
-                    className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+          <div className="flex flex-col gap-2.5 rounded-lg border bg-muted/30 p-3">
+            <Label className="flex items-center gap-1.5">
+              <Link2 className="size-3.5" />
+              Vínculos
+            </Label>
+
+            {!editing ? (
+              <p className="text-xs text-muted-foreground">
+                Crie a atividade para poder incluir ou vincular registros e planilhas.
+              </p>
+            ) : (
+              <>
+                {(linkedRegistros.length > 0 || linkedPlanilhas.length > 0) && (
+                  <div className="flex flex-col gap-1.5">
+                    {linkedRegistros.map((r) => (
+                      <div key={r.id} className="flex items-center gap-1.5">
+                        <Link
+                          href={`/registros?open=${r.id}`}
+                          className="flex flex-1 items-center gap-1.5 text-sm text-primary hover:underline"
+                        >
+                          <FileText className="size-3.5 shrink-0" />
+                          {r.tabs[0]?.titulo || "Registro"}
+                        </Link>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          className="text-muted-foreground"
+                          onClick={() => handleUnlinkRegistro(r.id)}
+                        >
+                          <X className="size-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                    {linkedPlanilhas.map((p) => (
+                      <div key={p.id} className="flex items-center gap-1.5">
+                        <Link
+                          href={`/planilhas?open=${p.id}`}
+                          className="flex flex-1 items-center gap-1.5 text-sm text-primary hover:underline"
+                        >
+                          <Table2 className="size-3.5 shrink-0" />
+                          {p.nome || "Planilha"}
+                        </Link>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-xs"
+                          className="text-muted-foreground"
+                          onClick={() => handleUnlinkPlanilha(p.id)}
+                        >
+                          <X className="size-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Select
+                    items={{
+                      [NONE]: "Vincular registro existente",
+                      ...Object.fromEntries(
+                        unlinkedRegistros.map((r) => [r.id, r.tabs[0]?.titulo || "Registro"])
+                      ),
+                    }}
+                    value={NONE}
+                    onValueChange={(v) => v && v !== NONE && handleLinkRegistro(v)}
                   >
-                    <FileText className="size-3.5 shrink-0" />
-                    {r.tabs[0]?.titulo || "Registro"}
-                  </Link>
-                ))}
-                {linkedPlanilhas.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/planilhas?open=${p.id}`}
-                    className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+                    <SelectTrigger className="w-full sm:flex-1">
+                      <SelectValue placeholder="Vincular registro existente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>Vincular registro existente</SelectItem>
+                      {unlinkedRegistros.map((r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.tabs[0]?.titulo || "Registro"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="gap-1.5"
+                    onClick={handleCreateRegistro}
                   >
-                    <Table2 className="size-3.5 shrink-0" />
-                    {p.nome || "Planilha"}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
+                    <Plus className="size-4" />
+                    Novo registro
+                  </Button>
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Select
+                    items={{
+                      [NONE]: "Vincular planilha existente",
+                      ...Object.fromEntries(
+                        unlinkedPlanilhas.map((p) => [p.id, p.nome || "Planilha"])
+                      ),
+                    }}
+                    value={NONE}
+                    onValueChange={(v) => v && v !== NONE && handleLinkPlanilha(v)}
+                  >
+                    <SelectTrigger className="w-full sm:flex-1">
+                      <SelectValue placeholder="Vincular planilha existente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>Vincular planilha existente</SelectItem>
+                      {unlinkedPlanilhas.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.nome || "Planilha"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="gap-1.5"
+                    onClick={handleCreatePlanilha}
+                  >
+                    <Plus className="size-4" />
+                    Nova planilha
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
 
           {showEmail && (
             <div className="flex flex-col gap-1.5">

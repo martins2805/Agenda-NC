@@ -18,7 +18,6 @@ export function RegistroCard({
   const { lookups, atividades } = useAppData();
 
   const empresa = lookups.empresa.find((e) => e.id === registro.empresaId);
-  const assunto = lookups.assunto.find((a) => a.id === registro.assuntoId);
   const categorias = lookups.categoriaRegistro.filter((c) =>
     registro.categoriaIds.includes(c.id)
   );
@@ -26,7 +25,7 @@ export function RegistroCard({
   const atividadeLabel = atividadeVinculada
     ? [
         lookups.empresa.find((e) => e.id === atividadeVinculada.empresaId)?.name,
-        lookups.assunto.find((s) => s.id === atividadeVinculada.assuntoId)?.name,
+        atividadeVinculada.assunto,
       ]
         .filter(Boolean)
         .join(" · ") || "Atividade vinculada"
@@ -44,7 +43,9 @@ export function RegistroCard({
             <p className="font-semibold leading-tight">
               {empresa?.name ?? "Sem empresa"}
             </p>
-            {assunto && <p className="text-sm text-muted-foreground">{assunto.name}</p>}
+            {registro.assunto && (
+              <p className="text-sm text-muted-foreground">{registro.assunto}</p>
+            )}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">

@@ -1,7 +1,6 @@
 export type LookupKind =
   | "empresa"
   | "unidade"
-  | "assunto"
   | "tipoAtividade"
   | "servicoProduto"
   | "escopo"
@@ -60,7 +59,7 @@ export interface Atividade {
   id: string;
   empresaId: string | null;
   unidadeId: string | null;
-  assuntoId: string | null;
+  assunto: string;
   tipoAtividadeIds: string[];
   emailConteudo: string;
   oportunidadeTexto: string;
@@ -86,7 +85,7 @@ export interface Registro {
   empresaId: string | null;
   unidadeId: string | null;
   contato: string;
-  assuntoId: string | null;
+  assunto: string;
   categoriaIds: string[];
   tabs: RegistroTab[];
   atividadeId: string | null;
@@ -98,7 +97,7 @@ export interface Planilha {
   nome: string;
   empresaId: string | null;
   unidadeId: string | null;
-  assuntoId: string | null;
+  assunto: string;
   categoriaIds: string[];
   atividadeId: string | null;
   conteudo: Record<string, unknown> | null;

@@ -18,7 +18,6 @@ export function PlanilhaCard({
   const { lookups, atividades } = useAppData();
 
   const empresa = lookups.empresa.find((e) => e.id === planilha.empresaId);
-  const assunto = lookups.assunto.find((a) => a.id === planilha.assuntoId);
   const categorias = lookups.categoriaPlanilha.filter((c) =>
     planilha.categoriaIds.includes(c.id)
   );
@@ -26,7 +25,7 @@ export function PlanilhaCard({
   const atividadeLabel = atividadeVinculada
     ? [
         lookups.empresa.find((e) => e.id === atividadeVinculada.empresaId)?.name,
-        lookups.assunto.find((s) => s.id === atividadeVinculada.assuntoId)?.name,
+        atividadeVinculada.assunto,
       ]
         .filter(Boolean)
         .join(" · ") || "Atividade vinculada"
@@ -44,7 +43,7 @@ export function PlanilhaCard({
             <p className="font-semibold leading-tight">{planilha.nome}</p>
             <p className="text-sm text-muted-foreground">
               {empresa?.name ?? "Sem empresa"}
-              {assunto && ` · ${assunto.name}`}
+              {planilha.assunto && ` · ${planilha.assunto}`}
             </p>
           </div>
         </div>

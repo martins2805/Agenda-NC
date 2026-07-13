@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       nome: body.nome,
       empresaId: body.empresaId,
       unidadeId: body.unidadeId,
-      assuntoId: body.assuntoId,
+      assunto: body.assunto,
       categoriaIds: body.categoriaIds,
       atividadeId: body.atividadeId,
       conteudo: (body.conteudo ?? undefined) as Prisma.InputJsonValue | undefined,

@@ -53,7 +53,7 @@ export function atividadeFromDb(a: FullDbAtividade): Atividade {
     id: a.id,
     empresaId: a.empresaId,
     unidadeId: a.unidadeId,
-    assuntoId: a.assuntoId,
+    assunto: a.assunto,
     tipoAtividadeIds: a.tipoAtividadeIds,
     emailConteudo: a.emailConteudo,
     oportunidadeTexto: a.oportunidadeTexto,

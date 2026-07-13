@@ -4,7 +4,6 @@ import type { LookupKind } from "@/generated/prisma/client";
 const VALID_KINDS: LookupKind[] = [
   "empresa",
   "unidade",
-  "assunto",
   "tipoAtividade",
   "servicoProduto",
   "escopo",

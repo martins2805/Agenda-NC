@@ -16,7 +16,6 @@ export type VinculoFilter = "todos" | "vinculado" | "sem_vinculo";
 
 export interface RegistroFilters {
   empresaId: string | null;
-  assuntoId: string | null;
   categoriaId: string | null;
   vinculo: VinculoFilter;
   keyword: string;
@@ -24,7 +23,6 @@ export interface RegistroFilters {
 
 export const DEFAULT_REGISTRO_FILTERS: RegistroFilters = {
   empresaId: null,
-  assuntoId: null,
   categoriaId: null,
   vinculo: "todos",
   keyword: "",
@@ -46,7 +44,6 @@ export function RegistroFilterBar({ filters, onChange }: RegistroFilterBarProps)
 
   const hasActiveFilters =
     filters.empresaId ||
-    filters.assuntoId ||
     filters.categoriaId ||
     filters.vinculo !== "todos" ||
     filters.keyword;
@@ -84,31 +81,6 @@ export function RegistroFilterBar({ filters, onChange }: RegistroFilterBarProps)
               .map((e) => (
                 <SelectItem key={e.id} value={e.id}>
                   {e.name}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          items={{
-            [ALL]: "Todos os assuntos",
-            ...Object.fromEntries(
-              lookups.assunto.filter((a) => a.active).map((a) => [a.id, a.name])
-            ),
-          }}
-          value={filters.assuntoId ?? ALL}
-          onValueChange={(v) => patch({ assuntoId: v === ALL ? null : v })}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Assunto" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todos os assuntos</SelectItem>
-            {lookups.assunto
-              .filter((a) => a.active)
-              .map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.name}
                 </SelectItem>
               ))}
           </SelectContent>

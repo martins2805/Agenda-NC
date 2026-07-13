@@ -234,9 +234,6 @@ async function criarAtividade(userId: string, args: Record<string, unknown>) {
   const unidadeId = args.unidade
     ? await resolveOrCreateLookup(userId, "unidade", String(args.unidade))
     : null;
-  const assuntoId = args.assunto
-    ? await resolveOrCreateLookup(userId, "assunto", String(args.assunto))
-    : null;
 
   const created = await prisma.atividade.create({
     data: {
@@ -244,7 +241,7 @@ async function criarAtividade(userId: string, args: Record<string, unknown>) {
       userId,
       empresaId,
       unidadeId,
-      assuntoId,
+      assunto: typeof args.assunto === "string" ? args.assunto : "",
       contato: typeof args.contato === "string" ? args.contato : "",
       prazo: typeof args.prazo === "string" && args.prazo ? new Date(args.prazo) : null,
       descricao: typeof args.descricao === "string" ? args.descricao : "",
@@ -272,7 +269,7 @@ async function atualizarAtividade(userId: string, args: Record<string, unknown>)
   const data: Record<string, unknown> = {};
   if (args.empresa !== undefined) data.empresaId = await resolveOrCreateLookup(userId, "empresa", String(args.empresa));
   if (args.unidade !== undefined) data.unidadeId = await resolveOrCreateLookup(userId, "unidade", String(args.unidade));
-  if (args.assunto !== undefined) data.assuntoId = await resolveOrCreateLookup(userId, "assunto", String(args.assunto));
+  if (args.assunto !== undefined) data.assunto = String(args.assunto);
   if (args.contato !== undefined) data.contato = String(args.contato);
   if (args.prazo !== undefined) data.prazo = args.prazo ? new Date(String(args.prazo)) : null;
   if (args.descricao !== undefined) data.descricao = String(args.descricao);
@@ -306,7 +303,6 @@ async function excluirAtividade(userId: string, args: Record<string, unknown>, c
 async function criarRegistro(userId: string, args: Record<string, unknown>) {
   const empresaId = args.empresa ? await resolveOrCreateLookup(userId, "empresa", String(args.empresa)) : null;
   const unidadeId = args.unidade ? await resolveOrCreateLookup(userId, "unidade", String(args.unidade)) : null;
-  const assuntoId = args.assunto ? await resolveOrCreateLookup(userId, "assunto", String(args.assunto)) : null;
   const categoriaIds = await resolveOrCreateLookups(
     userId,
     "categoriaRegistro",
@@ -319,7 +315,7 @@ async function criarRegistro(userId: string, args: Record<string, unknown>) {
       userId,
       empresaId,
       unidadeId,
-      assuntoId,
+      assunto: typeof args.assunto === "string" ? args.assunto : "",
       contato: typeof args.contato === "string" ? args.contato : "",
       categoriaIds,
       tabs: {
@@ -353,7 +349,7 @@ async function atualizarRegistro(userId: string, args: Record<string, unknown>) 
   const data: Record<string, unknown> = {};
   if (args.empresa !== undefined) data.empresaId = await resolveOrCreateLookup(userId, "empresa", String(args.empresa));
   if (args.unidade !== undefined) data.unidadeId = await resolveOrCreateLookup(userId, "unidade", String(args.unidade));
-  if (args.assunto !== undefined) data.assuntoId = await resolveOrCreateLookup(userId, "assunto", String(args.assunto));
+  if (args.assunto !== undefined) data.assunto = String(args.assunto);
   if (args.contato !== undefined) data.contato = String(args.contato);
   if (args.categorias !== undefined)
     data.categoriaIds = await resolveOrCreateLookups(userId, "categoriaRegistro", args.categorias as string[]);
@@ -385,7 +381,6 @@ async function excluirRegistro(userId: string, args: Record<string, unknown>, ct
 async function criarPlanilha(userId: string, args: Record<string, unknown>) {
   const empresaId = args.empresa ? await resolveOrCreateLookup(userId, "empresa", String(args.empresa)) : null;
   const unidadeId = args.unidade ? await resolveOrCreateLookup(userId, "unidade", String(args.unidade)) : null;
-  const assuntoId = args.assunto ? await resolveOrCreateLookup(userId, "assunto", String(args.assunto)) : null;
   const categoriaIds = await resolveOrCreateLookups(
     userId,
     "categoriaPlanilha",
@@ -399,7 +394,7 @@ async function criarPlanilha(userId: string, args: Record<string, unknown>) {
       nome: typeof args.nome === "string" && args.nome ? args.nome : "Nova planilha",
       empresaId,
       unidadeId,
-      assuntoId,
+      assunto: typeof args.assunto === "string" ? args.assunto : "",
       categoriaIds,
     },
   });
@@ -422,7 +417,7 @@ async function atualizarPlanilha(userId: string, args: Record<string, unknown>) 
   if (args.nome !== undefined) data.nome = String(args.nome);
   if (args.empresa !== undefined) data.empresaId = await resolveOrCreateLookup(userId, "empresa", String(args.empresa));
   if (args.unidade !== undefined) data.unidadeId = await resolveOrCreateLookup(userId, "unidade", String(args.unidade));
-  if (args.assunto !== undefined) data.assuntoId = await resolveOrCreateLookup(userId, "assunto", String(args.assunto));
+  if (args.assunto !== undefined) data.assunto = String(args.assunto);
   if (args.categorias !== undefined)
     data.categoriaIds = await resolveOrCreateLookups(userId, "categoriaPlanilha", args.categorias as string[]);
 

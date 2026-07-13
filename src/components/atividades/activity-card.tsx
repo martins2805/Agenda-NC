@@ -203,7 +203,6 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
 
   const empresa = lookups.empresa.find((e) => e.id === atividade.empresaId);
   const unidade = lookups.unidade.find((u) => u.id === atividade.unidadeId);
-  const assunto = lookups.assunto.find((a) => a.id === atividade.assuntoId);
   const tipos = lookups.tipoAtividade.filter((t) =>
     atividade.tipoAtividadeIds.includes(t.id)
   );
@@ -231,8 +230,8 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
               {empresa?.name ?? "Sem empresa"}
               {unidade && <span className="text-muted-foreground"> · {unidade.name}</span>}
             </p>
-            {assunto && (
-              <p className="text-sm text-muted-foreground">{assunto.name}</p>
+            {atividade.assunto && (
+              <p className="text-sm text-muted-foreground">{atividade.assunto}</p>
             )}
             <QuickContato atividade={atividade} />
           </div>

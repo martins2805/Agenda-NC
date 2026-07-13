@@ -24,7 +24,7 @@ function emptyRegistro(): Registro {
     empresaId: null,
     unidadeId: null,
     contato: "",
-    assuntoId: null,
+    assunto: "",
     categoriaIds: [],
     tabs: [{ id: makeRegistroTabId(), titulo: "Aba 1", conteudo: "" }],
     atividadeId: null,
@@ -48,7 +48,6 @@ export default function RegistrosPage() {
     const keyword = filters.keyword.trim().toLowerCase();
     return registros.filter((r) => {
       if (filters.empresaId && r.empresaId !== filters.empresaId) return false;
-      if (filters.assuntoId && r.assuntoId !== filters.assuntoId) return false;
       if (filters.categoriaId && !r.categoriaIds.includes(filters.categoriaId))
         return false;
       if (filters.vinculo === "vinculado" && !r.atividadeId) return false;
@@ -56,8 +55,7 @@ export default function RegistrosPage() {
 
       if (keyword) {
         const empresa = lookups.empresa.find((e) => e.id === r.empresaId)?.name ?? "";
-        const assunto = lookups.assunto.find((a) => a.id === r.assuntoId)?.name ?? "";
-        const haystack = [r.contato, empresa, assunto].join(" ").toLowerCase();
+        const haystack = [r.contato, empresa, r.assunto].join(" ").toLowerCase();
         if (!haystack.includes(keyword)) return false;
       }
 
