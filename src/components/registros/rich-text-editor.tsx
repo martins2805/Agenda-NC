@@ -7,8 +7,12 @@ import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
 import Highlight from "@tiptap/extension-highlight";
 import { Table, TableRow, TableCell, TableHeader } from "@tiptap/extension-table";
+import { TextStyle } from "@tiptap/extension-text-style";
+import Color from "@tiptap/extension-color";
+import Image from "@tiptap/extension-image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Bold,
   Italic,
@@ -29,6 +33,7 @@ import {
   Highlighter,
   Undo,
   Redo,
+  Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +41,15 @@ interface RichTextEditorProps {
   content: string;
   onChange: (html: string) => void;
 }
+
+const TEXT_COLORS = [
+  { label: "Padrão", value: null },
+  { label: "Navy", value: "#1f2c43" },
+  { label: "Verde", value: "#998731" },
+  { label: "Laranja", value: "#cf5527" },
+  { label: "Vermelho", value: "#a61414" },
+  { label: "Slate", value: "#3e4c59" },
+];
 
 function ToolbarButton({
   onClick,
@@ -62,6 +76,48 @@ function ToolbarButton({
     >
       {children}
     </Button>
+  );
+}
+
+function ColorPicker({ editor }: { editor: Editor }) {
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button
+            type="button"
+            variant={editor.isActive("textStyle") ? "secondary" : "ghost"}
+            size="icon-sm"
+            aria-label="Cor do texto"
+          />
+        }
+      >
+        <Palette className="size-4" />
+      </PopoverTrigger>
+      <PopoverContent className="w-44 p-2" align="start">
+        <div className="grid grid-cols-3 gap-1.5">
+          {TEXT_COLORS.map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              title={c.label}
+              onClick={() =>
+                c.value
+                  ? editor.chain().focus().setColor(c.value).run()
+                  : editor.chain().focus().unsetColor().run()
+              }
+              className="flex flex-col items-center gap-1 rounded-md p-1 text-[10px] hover:bg-muted"
+            >
+              <span
+                className="size-5 rounded-full border"
+                style={{ background: c.value ?? "transparent" }}
+              />
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -103,6 +159,7 @@ function Toolbar({ editor }: { editor: Editor }) {
       >
         <Highlighter className="size-4" />
       </ToolbarButton>
+      <ColorPicker editor={editor} />
 
       <Separator orientation="vertical" className="mx-1 h-6" />
 
@@ -229,6 +286,15 @@ function Toolbar({ editor }: { editor: Editor }) {
   );
 }
 
+function readImageAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
@@ -238,6 +304,9 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Link.configure({ openOnClick: false, autolink: true }),
       Highlight,
+      TextStyle,
+      Color,
+      Image,
       Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
@@ -249,6 +318,21 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
       attributes: {
         class:
           "tiptap-content min-h-48 rounded-b-lg border p-3 text-sm outline-none focus:ring-2 focus:ring-ring/50",
+      },
+      handlePaste: (view, event) => {
+        const items = Array.from(event.clipboardData?.items ?? []);
+        const imageItem = items.find((item) => item.type.startsWith("image/"));
+        if (!imageItem) return false;
+        const file = imageItem.getAsFile();
+        if (!file) return false;
+        event.preventDefault();
+        readImageAsDataUrl(file).then((src) => {
+          const { schema } = view.state;
+          const node = schema.nodes.image.create({ src });
+          const transaction = view.state.tr.replaceSelectionWith(node);
+          view.dispatch(transaction);
+        });
+        return true;
       },
     },
   });

@@ -97,10 +97,10 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
     `Prazo: ${a.prazo ?? ""}`,
     `Status: ${a.status}`,
     `Prioridade: ${a.prioridade}`,
-    `Descrição: ${a.descricao}`,
+    `Descrição: ${stripHtml(a.descricao)}`,
   ];
 
-  if (a.alinhamentos) lines.push(`Alinhamentos: ${a.alinhamentos}`);
+  if (a.alinhamentos) lines.push(`Alinhamentos: ${stripHtml(a.alinhamentos)}`);
   if (a.emailConteudo) lines.push(`E-mail: ${a.emailConteudo}`);
   if (a.oportunidadeTexto) lines.push(`Oportunidade: ${a.oportunidadeTexto}`);
 
@@ -117,10 +117,10 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
 
   a.propostas.forEach((p) => {
     lines.push(
-      `Proposta ${p.numero}: serviços=${p.servicoProdutoIds
+      `Proposta ${p.numero} (${p.tipo ?? "tipo não definido"}): serviços=${p.servicoProdutoIds
         .map(name)
         .filter(Boolean)
-        .join(", ")}; escopo=${p.escopoIds
+        .join(", ")}; detalhe=${p.detalhe}; escopo=${p.escopoIds
         .map(name)
         .filter(Boolean)
         .join(", ")}; amostragem=${p.amostragemIds
@@ -128,7 +128,9 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
         .filter(Boolean)
         .join(", ")}; quantidade=${p.quantidade ?? ""}; valorUnitario=${
         p.valorUnitario ?? ""
-      }; valorTotal=${p.valorTotal ?? ""}`
+      }; valorTotal=${p.valorTotal ?? ""}; observação=${p.observacao}; statusNegociacao=${
+        p.statusNegociacao ?? ""
+      }`
     );
   });
 

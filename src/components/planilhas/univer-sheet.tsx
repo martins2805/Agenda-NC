@@ -5,12 +5,14 @@ import { createUniver, LocaleType, mergeLocales } from "@univerjs/presets";
 import { UniverSheetsCorePreset } from "@univerjs/preset-sheets-core";
 import UniverPresetSheetsCorePtBR from "@univerjs/preset-sheets-core/locales/pt-BR";
 import "@univerjs/preset-sheets-core/lib/index.css";
+import { cn } from "@/lib/utils";
 
 interface UniverSheetProps {
   workbookId: string;
   workbookName: string;
   initialData?: Record<string, unknown> | null;
   onChange?: (snapshot: Record<string, unknown>) => void;
+  className?: string;
 }
 
 export function UniverSheet({
@@ -18,6 +20,7 @@ export function UniverSheet({
   workbookName,
   initialData,
   onChange,
+  className,
 }: UniverSheetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onChangeRef = useRef(onChange);
@@ -64,5 +67,10 @@ export function UniverSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workbookId]);
 
-  return <div ref={containerRef} className="h-[520px] w-full overflow-hidden rounded-lg border" />;
+  return (
+    <div
+      ref={containerRef}
+      className={cn("w-full overflow-hidden rounded-lg border", className ?? "h-[520px]")}
+    />
+  );
 }

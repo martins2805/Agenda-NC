@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Link2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileText, Link2, Trash2 } from "lucide-react";
 import { useAppData } from "@/lib/app-data-context";
 import { tileColorFor } from "@/lib/tile-colors";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ export function RegistroCard({
   registro: Registro;
   onOpen: () => void;
 }) {
-  const { lookups, atividades } = useAppData();
+  const { lookups, atividades, deleteRegistro } = useAppData();
 
   const empresa = lookups.empresa.find((e) => e.id === registro.empresaId);
   const categorias = lookups.categoriaRegistro.filter((c) =>
@@ -37,16 +38,29 @@ export function RegistroCard({
       onClick={onOpen}
     >
       <CardContent className="flex flex-col gap-2">
-        <div className="flex items-start gap-2">
-          <FileText className="mt-0.5 size-4 shrink-0 text-[var(--base-1)]" />
-          <div>
-            <p className="font-semibold leading-tight">
-              {empresa?.name ?? "Sem empresa"}
-            </p>
-            {registro.assunto && (
-              <p className="text-sm text-muted-foreground">{registro.assunto}</p>
-            )}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-2">
+            <FileText className="mt-0.5 size-4 shrink-0 text-[var(--base-1)]" />
+            <div>
+              <p className="font-semibold leading-tight">
+                {empresa?.name ?? "Sem empresa"}
+              </p>
+              {registro.assunto && (
+                <p className="text-sm text-muted-foreground">{registro.assunto}</p>
+              )}
+            </div>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0 text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteRegistro(registro.id);
+            }}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {categorias.map((c) => (

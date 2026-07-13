@@ -16,7 +16,7 @@ import { ManagedSelect } from "@/components/managed-select";
 import { ManagedMultiSelect } from "@/components/managed-multi-select";
 import { RegistroTabs } from "@/components/registros/registro-tabs";
 import { ActivityForm } from "@/components/atividades/activity-form";
-import { useAppData } from "@/lib/app-data-context";
+import { useAppData, useAssuntoSuggestions } from "@/lib/app-data-context";
 import type { Registro } from "@/lib/types";
 
 const NONE = "__none__";
@@ -42,6 +42,7 @@ export function RegistroEditor({
     deactivateLookupItem,
   } = useAppData();
   const [activityFormOpen, setActivityFormOpen] = useState(false);
+  const assuntoSuggestions = useAssuntoSuggestions();
 
   function patch(p: Partial<Registro>) {
     onChange({ ...registro, ...p });
@@ -104,10 +105,16 @@ export function RegistroEditor({
         <div className="flex flex-col gap-1.5">
           <Label>Assunto</Label>
           <Input
+            list="assunto-sugestoes-registro"
             value={registro.assunto}
             onChange={(e) => patch({ assunto: e.target.value })}
             placeholder="Descreva o assunto em poucas palavras"
           />
+          <datalist id="assunto-sugestoes-registro">
+            {assuntoSuggestions.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
         </div>
       </div>
 

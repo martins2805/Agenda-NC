@@ -16,6 +16,7 @@ interface DonutChartProps {
   centerLabel?: string;
   centerValue?: string | number;
   className?: string;
+  onSegmentClick?: (index: number) => void;
 }
 
 export function DonutChart({
@@ -25,6 +26,7 @@ export function DonutChart({
   centerLabel,
   centerValue,
   className,
+  onSegmentClick,
 }: DonutChartProps) {
   const uid = useId();
   const [active, setActive] = useState<number | null>(null);
@@ -77,6 +79,7 @@ export function DonutChart({
               transform={`rotate(-90 ${size / 2} ${size / 2})`}
               onMouseEnter={() => setActive(a.i)}
               onMouseLeave={() => setActive(null)}
+              onClick={() => onSegmentClick?.(a.i)}
               className="cursor-pointer transition-[stroke-width] duration-200"
               style={{ transformOrigin: "center", opacity: active === null || active === a.i ? 1 : 0.45 }}
             />
@@ -97,7 +100,11 @@ export function DonutChart({
             key={a.label}
             onMouseEnter={() => setActive(a.i)}
             onMouseLeave={() => setActive(null)}
-            className="flex min-w-0 cursor-default items-center justify-between gap-2 rounded-md px-1.5 py-1 text-xs transition-colors"
+            onClick={() => onSegmentClick?.(a.i)}
+            className={cn(
+              "flex min-w-0 items-center justify-between gap-2 rounded-md px-1.5 py-1 text-xs transition-colors",
+              onSegmentClick ? "cursor-pointer" : "cursor-default"
+            )}
             style={{ background: active === a.i ? "var(--muted)" : "transparent" }}
           >
             <span className="flex min-w-0 items-center gap-1.5">

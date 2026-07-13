@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { useAppData } from "@/lib/app-data-context";
-import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
+import { PRIORIDADE_OPTIONS, STATUS_OPTIONS, STATUS_NEGOCIACAO_OPTIONS, STATUS_NEGOCIACAO_LABELS } from "@/lib/types";
 import type { Atividade } from "@/lib/types";
 import {
   ClipboardList,
@@ -10,13 +10,23 @@ import {
   AlarmClockOff,
   Wallet,
   TrendingUp,
+  Hourglass,
+  Flame,
+  AlertTriangle,
+  FileSignature,
 } from "lucide-react";
 import { TILE_COLORS } from "@/lib/tile-colors";
 import { DonutChart } from "@/components/charts/donut-chart";
 import { BarList } from "@/components/charts/bar-list";
 import { TrendLine } from "@/components/charts/trend-line";
-import { STATUS_HEX, PRIORIDADE_HEX, atividadePrazoStatus } from "@/lib/status-colors";
+import {
+  STATUS_HEX,
+  PRIORIDADE_HEX,
+  STATUS_NEGOCIACAO_HEX,
+  atividadePrazoStatus,
+} from "@/lib/status-colors";
 import { formatCurrency } from "@/lib/calculations";
+import { DEFAULT_FILTERS, type ActivityFilters } from "@/components/atividades/filter-bar";
 
 const BASE_ROTATION = [
   "var(--chart-1)",
@@ -32,19 +42,22 @@ function KpiCard({
   value,
   tone,
   hint,
+  onClick,
 }: {
   icon: React.ElementType;
   label: string;
   value: string;
   tone: "dark" | "light";
   hint?: string;
+  onClick?: () => void;
 }) {
   return (
     <Card
+      onClick={onClick}
       className={
-        tone === "dark"
+        (tone === "dark"
           ? "border-none bg-[var(--base-1)] text-white shadow-lg shadow-[var(--base-1)]/25"
-          : "border-none ring-1 ring-foreground/10"
+          : "border-none ring-1 ring-foreground/10") + (onClick ? " cursor-pointer transition-transform hover:-translate-y-0.5" : "")
       }
     >
       <CardContent className="flex flex-col gap-1.5">
@@ -56,7 +69,7 @@ function KpiCard({
             {label}
           </span>
         </div>
-        <p className="kpi-value truncate text-[clamp(1.1rem,2.2vw,1.875rem)]" title={value}>
+        <p className="kpi-value truncate text-[clamp(1rem,2vw,1.5rem)]" title={value}>
           {value}
         </p>
         {hint && (
@@ -73,12 +86,28 @@ function KpiCard({
   );
 }
 
-export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
+interface DashboardStatsProps {
+  atividades: Atividade[];
+  onFilter?: (patch: Partial<ActivityFilters>) => void;
+}
+
+export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
   const { lookups } = useAppData();
+
+  const tipoProposta = lookups.tipoAtividade.find(
+    (t) => t.name.toLowerCase() === "proposta"
+  );
 
   const total = atividades.length;
   const concluidas = atividades.filter((a) => a.status === "Concluído").length;
   const taxaConclusao = total > 0 ? Math.round((concluidas / total) * 100) : 0;
+  const pendentes = atividades.filter((a) => a.status === "Pendente").length;
+  const urgentes = atividades.filter((a) => a.prioridade === "Urgente").length;
+  const importantes = atividades.filter((a) => a.prioridade === "Importante").length;
+  const propostasAtividades = tipoProposta
+    ? atividades.filter((a) => a.tipoAtividadeIds.includes(tipoProposta.id))
+    : [];
+  const propostasPendentes = propostasAtividades.filter((a) => a.status === "Pendente").length;
 
   const prazoStatusCounts = atividades.reduce(
     (acc, a) => {
@@ -106,18 +135,30 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
     color: PRIORIDADE_HEX[p],
   }));
 
+  const statusNegociacaoCounts = STATUS_NEGOCIACAO_OPTIONS.map((s) => ({
+    label: STATUS_NEGOCIACAO_LABELS[s],
+    value: atividades.reduce(
+      (sum, a) => sum + a.propostas.filter((p) => p.statusNegociacao === s).length,
+      0
+    ),
+    color: STATUS_NEGOCIACAO_HEX[s],
+  }));
+  const temPropostaComStatus = statusNegociacaoCounts.some((s) => s.value > 0);
+
   const porTipo = lookups.tipoAtividade
     .filter((t) => t.active)
     .map((t) => ({
+      id: t.id,
       name: t.name,
       count: atividades.filter((a) => a.tipoAtividadeIds.includes(t.id)).length,
     }))
     .filter((t) => t.count > 0)
     .sort((a, b) => b.count - a.count);
 
-  const porEmpresa = lookups.empresa
+  const porEmpresaItems = lookups.empresa
     .filter((e) => e.active)
     .map((e, i) => ({
+      id: e.id,
       label: e.name,
       value: atividades.filter((a) => a.empresaId === e.id).length,
       color: BASE_ROTATION[i % BASE_ROTATION.length],
@@ -146,6 +187,7 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
           value={String(total).padStart(2, "0")}
           tone="dark"
           hint="controle vivo"
+          onClick={() => onFilter?.(DEFAULT_FILTERS)}
         />
         <KpiCard
           icon={CheckCircle2}
@@ -153,6 +195,7 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
           value={`${taxaConclusao}%`}
           tone="light"
           hint={`${concluidas} concluídas`}
+          onClick={() => onFilter?.({ status: "Concluído" })}
         />
         <KpiCard
           icon={AlarmClockOff}
@@ -160,6 +203,7 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
           value={String(prazoStatusCounts.vencido)}
           tone="light"
           hint={`${prazoStatusCounts.proximo} perto do prazo`}
+          onClick={() => onFilter?.({ prazo: "atrasadas" })}
         />
         <KpiCard
           icon={Wallet}
@@ -167,6 +211,49 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
           value={valorTotal > 0 ? formatCurrency(valorTotal) : "—"}
           tone="light"
           hint="propostas ativas"
+          onClick={tipoProposta ? () => onFilter?.({ tipoAtividadeId: tipoProposta.id }) : undefined}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <KpiCard
+          icon={Hourglass}
+          label="Pendentes"
+          value={String(pendentes)}
+          tone="light"
+          onClick={() => onFilter?.({ status: "Pendente" })}
+        />
+        <KpiCard
+          icon={Flame}
+          label="Prioridade urgente"
+          value={String(urgentes)}
+          tone="light"
+          onClick={() => onFilter?.({ prioridade: "Urgente" })}
+        />
+        <KpiCard
+          icon={AlertTriangle}
+          label="Prioridade importante"
+          value={String(importantes)}
+          tone="light"
+          onClick={() => onFilter?.({ prioridade: "Importante" })}
+        />
+        <KpiCard
+          icon={FileSignature}
+          label="Total de propostas"
+          value={String(propostasAtividades.length)}
+          tone="light"
+          onClick={tipoProposta ? () => onFilter?.({ tipoAtividadeId: tipoProposta.id }) : undefined}
+        />
+        <KpiCard
+          icon={FileSignature}
+          label="Propostas pendentes"
+          value={String(propostasPendentes)}
+          tone="light"
+          onClick={
+            tipoProposta
+              ? () => onFilter?.({ tipoAtividadeId: tipoProposta.id, status: "Pendente" })
+              : undefined
+          }
         />
       </div>
 
@@ -174,7 +261,12 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
         <Card>
           <CardContent className="flex flex-col gap-3">
             <span className="ledger-label">Distribuição por status</span>
-            <DonutChart segments={porStatus} centerLabel="atividades" centerValue={total} />
+            <DonutChart
+              segments={porStatus}
+              centerLabel="atividades"
+              centerValue={total}
+              onSegmentClick={(i) => onFilter?.({ status: porStatus[i].label })}
+            />
           </CardContent>
         </Card>
 
@@ -185,6 +277,7 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
               segments={porPrioridade}
               centerLabel="atividades"
               centerValue={total}
+              onSegmentClick={(i) => onFilter?.({ prioridade: porPrioridade[i].label })}
             />
           </CardContent>
         </Card>
@@ -198,14 +291,30 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
             <TrendLine points={trend} color="var(--base-1)" />
             <div className="divider-dashed" />
             <span className="ledger-label">Atividades por empresa</span>
-            {porEmpresa.length === 0 ? (
+            {porEmpresaItems.length === 0 ? (
               <span className="text-sm text-muted-foreground">Sem dados ainda</span>
             ) : (
-              <BarList items={porEmpresa} />
+              <BarList
+                items={porEmpresaItems}
+                onItemClick={(i) => onFilter?.({ empresaId: porEmpresaItems[i].id })}
+              />
             )}
           </CardContent>
         </Card>
       </div>
+
+      {temPropostaComStatus && (
+        <Card>
+          <CardContent className="flex flex-col gap-3">
+            <span className="ledger-label">Status de negociação das propostas</span>
+            <DonutChart
+              segments={statusNegociacaoCounts}
+              centerLabel="propostas"
+              centerValue={statusNegociacaoCounts.reduce((s, c) => s + c.value, 0)}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="flex flex-col gap-3">
@@ -215,16 +324,18 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
               {porTipo.slice(0, 12).map((t, i) => (
-                <div
-                  key={t.name}
-                  className={`flex flex-col justify-between gap-3 rounded-lg p-2.5 ${TILE_COLORS[i % TILE_COLORS.length]}`}
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => onFilter?.({ tipoAtividadeId: t.id })}
+                  className={`flex flex-col justify-between gap-3 rounded-lg p-2.5 text-left transition-transform hover:-translate-y-0.5 ${TILE_COLORS[i % TILE_COLORS.length]}`}
                   title={`${t.name}: ${t.count}`}
                 >
                   <span className="line-clamp-1 text-[10px] font-medium opacity-80">
                     {t.name}
                   </span>
                   <span className="font-mono text-lg font-bold">{t.count}</span>
-                </div>
+                </button>
               ))}
             </div>
           )}

@@ -6,6 +6,7 @@ import { Plus, Table2 } from "lucide-react";
 import { useAppData, makePlanilhaId } from "@/lib/app-data-context";
 import { useAutoOpenFromQuery } from "@/lib/use-auto-open";
 import { PlanilhaCard } from "@/components/planilhas/planilha-card";
+import { PlanilhaTable } from "@/components/planilhas/planilha-table";
 import { PlanilhaEditor } from "@/components/planilhas/planilha-editor";
 import {
   PlanilhaFilterBar,
@@ -112,13 +113,11 @@ export default function PlanilhasPage() {
       items: filtered.filter((p) => p.categoriaIds.length === 0),
     },
   ];
-  const columns = allColumns.filter((col) => col.items.length > 0);
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Planilhas</h2>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Planilhas</h2>
           <p className="mt-1 text-muted-foreground">
             Organizadas por categoria: vendas, comissão, faturamento, dados e consultoria.
           </p>
@@ -144,22 +143,7 @@ export default function PlanilhasPage() {
           </p>
         </div>
       ) : view === "lista" ? (
-        <div className="flex flex-col gap-8">
-          {columns.map((col) => (
-            <section key={col.id} className="flex flex-col gap-3">
-              <h2 className="text-lg font-semibold">{col.name}</h2>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {col.items.map((p) => (
-                  <PlanilhaCard
-                    key={p.id}
-                    planilha={p}
-                    onOpen={() => setEditingId(p.id)}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+        <PlanilhaTable planilhas={filtered} onOpen={(p) => setEditingId(p.id)} />
       ) : (
         <KanbanBoard
           columns={allColumns}

@@ -1,15 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarDays, CheckSquare, ListChecks } from "lucide-react";
+import { CalendarDays, CheckSquare, ListChecks, FileSignature } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { useAppData } from "@/lib/app-data-context";
+import { dateOnlyPart } from "@/lib/calculations";
 import type { Atividade } from "@/lib/types";
 import { PRIORIDADE_STYLES } from "@/lib/status-colors";
 
 interface CalendarEntry {
-  kind: "atividade" | "checklist";
+  kind: "atividade" | "checklist" | "execucao";
   atividade: Atividade;
   tipos: string[];
   texto: string | null;
@@ -42,16 +43,34 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
         .filter((t) => a.tipoAtividadeIds.includes(t.id))
         .map((t) => t.name);
       if (a.prazo) {
-        push(a.prazo, { kind: "atividade", atividade: a, tipos, texto: null });
+        push(dateOnlyPart(a.prazo), { kind: "atividade", atividade: a, tipos, texto: null });
       }
       a.checklist.forEach((c) => {
         if (c.prazo) {
-          push(c.prazo, {
+          push(dateOnlyPart(c.prazo), {
             kind: "checklist",
             atividade: a,
             tipos,
             texto: c.texto,
             concluido: c.concluido,
+          });
+        }
+      });
+      a.propostas.forEach((p) => {
+        if (p.prazoInicio) {
+          push(dateOnlyPart(p.prazoInicio), {
+            kind: "execucao",
+            atividade: a,
+            tipos,
+            texto: `Proposta ${p.numero} — início`,
+          });
+        }
+        if (p.prazoFim) {
+          push(dateOnlyPart(p.prazoFim), {
+            kind: "execucao",
+            atividade: a,
+            tipos,
+            texto: `Proposta ${p.numero} — fim`,
           });
         }
       });
@@ -80,7 +99,7 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
   }
 
   return (
-    <div className="panel-card flex flex-col gap-4 p-4">
+    <div className="panel-card flex flex-col gap-4 bg-[var(--base-3)] p-4 sm:flex-row">
       <Calendar
         mode="single"
         locale={{ code: "pt-BR" } as never}
@@ -90,6 +109,8 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
             prev && date && toKey(prev) === toKey(date) ? undefined : date
           )
         }
+        className="w-full flex-1 rounded-xl bg-card p-3 sm:max-w-md"
+        classNames={{ root: "w-full", months: "w-full", month: "w-full" }}
         modifiers={{
           singleUrgente: (date) => hasSinglePriority(date, "Urgente"),
           singleImportante: (date) => hasSinglePriority(date, "Importante"),
@@ -102,11 +123,11 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
           singleImportante: `${DOT_CLASS} after:bg-[var(--prioridade-importante)]`,
           singleMedio: `${DOT_CLASS} after:bg-[var(--prioridade-medio)]`,
           singleBaixo: `${DOT_CLASS} after:bg-[var(--prioridade-baixo)]`,
-          multiplas: `${DOT_CLASS} after:bg-[var(--base-3)]`,
+          multiplas: `${DOT_CLASS} after:bg-[var(--base-1)]`,
         }}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 rounded-xl bg-card p-3">
         {!selectedDate ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center text-muted-foreground">
             <CalendarDays className="size-8" />
@@ -146,15 +167,15 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
                           variant="outline"
                           className="flex shrink-0 items-center gap-1 text-[10px] uppercase"
                         >
-                          {entry.kind === "atividade" ? (
-                            <CalendarDays className="size-3" />
-                          ) : (
-                            <CheckSquare className="size-3" />
-                          )}
-                          {entry.kind === "atividade" ? "Atividade" : "Item de checklist"}
+                          {entry.kind === "atividade" && <CalendarDays className="size-3" />}
+                          {entry.kind === "checklist" && <CheckSquare className="size-3" />}
+                          {entry.kind === "execucao" && <FileSignature className="size-3" />}
+                          {entry.kind === "atividade" && "Atividade"}
+                          {entry.kind === "checklist" && "Item de checklist"}
+                          {entry.kind === "execucao" && "Execução"}
                         </Badge>
                       </div>
-                      {entry.kind === "checklist" && (
+                      {entry.kind !== "atividade" && (
                         <span className="text-xs text-muted-foreground">
                           {empresa?.name ?? "Sem empresa"}
                         </span>

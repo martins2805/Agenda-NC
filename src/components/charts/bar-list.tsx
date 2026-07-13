@@ -12,9 +12,11 @@ export interface BarListItem {
 export function BarList({
   items,
   className,
+  onItemClick,
 }: {
   items: BarListItem[];
   className?: string;
+  onItemClick?: (index: number) => void;
 }) {
   const [hover, setHover] = useState<number | null>(null);
   const max = Math.max(1, ...items.map((i) => i.value));
@@ -24,9 +26,10 @@ export function BarList({
       {items.map((item, i) => (
         <li
           key={item.label}
-          className="flex flex-col gap-1"
+          className={cn("flex flex-col gap-1", onItemClick && "cursor-pointer")}
           onMouseEnter={() => setHover(i)}
           onMouseLeave={() => setHover(null)}
+          onClick={() => onItemClick?.(i)}
         >
           <div className="flex items-center justify-between gap-2 text-xs">
             <span className="flex min-w-0 items-center gap-1.5 truncate">

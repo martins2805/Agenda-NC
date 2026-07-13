@@ -37,22 +37,61 @@ export const PRIORIDADE_OPTIONS: Prioridade[] = [
   "Baixo",
 ];
 
+export type TipoProposta = "MRR" | "PS";
+
+export const TIPO_PROPOSTA_OPTIONS: TipoProposta[] = ["MRR", "PS"];
+
+export type StatusNegociacao = "em_andamento" | "fup" | "aceite" | "na";
+
+export const STATUS_NEGOCIACAO_OPTIONS: StatusNegociacao[] = [
+  "em_andamento",
+  "fup",
+  "aceite",
+  "na",
+];
+
+export const STATUS_NEGOCIACAO_LABELS: Record<StatusNegociacao, string> = {
+  em_andamento: "Em andamento",
+  fup: "FUP",
+  aceite: "Aceite",
+  na: "N/A",
+};
+
 export interface ChecklistItem {
   id: string;
   texto: string;
   concluido: boolean;
-  prazo: string | null; // ISO date
+  prazo: string | null; // "YYYY-MM-DD" ou "YYYY-MM-DDTHH:mm"
+  parentId: string | null;
+}
+
+export interface ChecklistTemplateItem {
+  id: string;
+  texto: string;
+  parentId: string | null;
+}
+
+export interface ChecklistTemplate {
+  id: string;
+  nome: string;
+  itens: ChecklistTemplateItem[];
 }
 
 export interface Proposta {
   id: string;
   numero: number;
+  tipo: TipoProposta | null;
   servicoProdutoIds: string[];
+  detalhe: string;
   escopoIds: string[];
   amostragemIds: string[];
   quantidade: number | null;
   valorUnitario: number | null;
   valorTotal: number | null;
+  observacao: string;
+  prazoInicio: string | null;
+  prazoFim: string | null;
+  statusNegociacao: StatusNegociacao | null;
 }
 
 export interface Atividade {
@@ -65,13 +104,14 @@ export interface Atividade {
   oportunidadeTexto: string;
   propostas: Proposta[];
   contato: string;
-  prazo: string | null; // ISO date
+  prazo: string | null; // "YYYY-MM-DD" ou "YYYY-MM-DDTHH:mm"
   descricao: string;
   alinhamentos: string;
   status: StatusConclusao;
   prioridade: Prioridade;
   checklist: ChecklistItem[];
   createdAt: string; // ISO datetime
+  deletedAt?: string | null; // ISO datetime, presente apenas na lixeira
 }
 
 export interface RegistroTab {
@@ -90,6 +130,7 @@ export interface Registro {
   tabs: RegistroTab[];
   atividadeId: string | null;
   createdAt: string; // ISO datetime
+  deletedAt?: string | null;
 }
 
 export interface Planilha {
@@ -102,4 +143,5 @@ export interface Planilha {
   atividadeId: string | null;
   conteudo: Record<string, unknown> | null;
   createdAt: string; // ISO datetime
+  deletedAt?: string | null;
 }

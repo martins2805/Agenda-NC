@@ -50,6 +50,13 @@
 }
 
 :root {
+  /* Fonte única em toda a página (Inter, ver layout.tsx). --font-mono e
+     --font-display continuam existindo apenas para preservar a hierarquia
+     visual (peso/tracking) de rótulos e títulos, sem introduzir uma segunda
+     família tipográfica. */
+  --font-mono: var(--font-sans);
+  --font-display: var(--font-sans);
+
   /* Paper background + near-black ink, per brand spec */
   --background: #fbf9e4;
   --foreground: #252525;
@@ -85,19 +92,27 @@
   --base-3: #8baaad;
   --base-4: #d8d8d8;
 
-  /* Secondary (business-rule) palette — status, priority, deadline */
-  --status-concluido: #2e5749;
-  --status-pendente: #bf512c;
-  --status-outro: #da9b2b;
+  /* Secondary (business-rule) palette — status, priority, deadline.
+     Verde/laranja/vermelho conforme paleta de ícones da marca; o "outro"
+     (status neutro / prioridade média) reaproveita o slate da paleta base. */
+  --status-concluido: #998731;
+  --status-pendente: #cf5527;
+  --status-outro: #3e4c59;
 
-  --prioridade-urgente: #780001;
-  --prioridade-importante: #bf512c;
-  --prioridade-medio: #da9b2b;
-  --prioridade-baixo: #2e5749;
+  --prioridade-urgente: #a61414;
+  --prioridade-importante: #cf5527;
+  --prioridade-medio: #3e4c59;
+  --prioridade-baixo: #998731;
 
-  --prazo-em-dia: #2e5749;
-  --prazo-proximo: #da9b2b;
-  --prazo-vencido: #780001;
+  --prazo-em-dia: #998731;
+  --prazo-proximo: #cf5527;
+  --prazo-vencido: #a61414;
+
+  /* Status de negociação da proposta — cores fixas por especificação */
+  --negociacao-em-andamento: #da9b2b;
+  --negociacao-fup: #bf512c;
+  --negociacao-aceite: #2e5749;
+  --negociacao-na: #d8d8d8;
 
   --radius: 1rem;
   --sidebar: #1f2c43;
@@ -148,6 +163,10 @@
   --prazo-em-dia: #3f7563;
   --prazo-proximo: #e5ac3f;
   --prazo-vencido: #9c2c2c;
+  --negociacao-em-andamento: #e5ac3f;
+  --negociacao-fup: #d9673c;
+  --negociacao-aceite: #3f7563;
+  --negociacao-na: #33415a;
   --sidebar: #12182a;
   --sidebar-foreground: #eef2f0;
   --sidebar-primary: #8baaad;
@@ -164,18 +183,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image:
-      radial-gradient(circle at 8% -5%, color-mix(in oklch, var(--base-1), transparent 90%), transparent 40rem),
-      radial-gradient(circle at 100% 6%, color-mix(in oklch, var(--base-3), transparent 88%), transparent 36rem),
-      radial-gradient(circle at 90% 98%, color-mix(in oklch, var(--base-2), transparent 93%), transparent 34rem),
-      repeating-linear-gradient(
-        135deg,
-        color-mix(in oklch, var(--base-1), transparent 97%) 0px,
-        color-mix(in oklch, var(--base-1), transparent 97%) 1px,
-        transparent 1px,
-        transparent 26px
-      );
-    background-attachment: fixed, fixed, fixed, fixed;
   }
   html {
     @apply font-sans;
@@ -323,4 +330,8 @@
 .tiptap-content th {
   background: var(--muted);
   font-weight: 600;
+}
+.tiptap-content img {
+  max-width: 100%;
+  border-radius: 0.5em;
 }
