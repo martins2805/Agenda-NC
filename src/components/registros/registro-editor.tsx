@@ -68,6 +68,15 @@ export function RegistroEditor({
         </Button>
       </div>
 
+      <div className="flex flex-col gap-1.5">
+        <Label>Nome</Label>
+        <Input
+          value={registro.nome}
+          onChange={(e) => patch({ nome: e.target.value })}
+          placeholder="Ex: Ata de reunião — Kickoff Julho"
+        />
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <ManagedSelect
           label="Empresa"

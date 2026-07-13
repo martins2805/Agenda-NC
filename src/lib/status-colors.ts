@@ -12,7 +12,7 @@ export const STATUS_STYLES: Record<StatusConclusao, string> = {
 
 export const STATUS_HEX: Record<StatusConclusao, string> = {
   Concluído: "#998731",
-  Pendente: "#cf5527",
+  Pendente: "#bf512c",
   "Aguardando retorno interno": "#3e4c59",
   "Aguardando retorno cliente": "#3e4c59",
 };
@@ -25,8 +25,8 @@ export const PRIORIDADE_STYLES: Record<Prioridade, string> = {
 };
 
 export const PRIORIDADE_HEX: Record<Prioridade, string> = {
-  Urgente: "#a61414",
-  Importante: "#cf5527",
+  Urgente: "#780001",
+  Importante: "#bf512c",
   Médio: "#3e4c59",
   Baixo: "#998731",
 };

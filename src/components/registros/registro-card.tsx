@@ -43,11 +43,12 @@ export function RegistroCard({
             <FileText className="mt-0.5 size-4 shrink-0 text-[var(--base-1)]" />
             <div>
               <p className="font-semibold leading-tight">
-                {empresa?.name ?? "Sem empresa"}
+                {registro.nome || "Registro sem nome"}
               </p>
-              {registro.assunto && (
-                <p className="text-sm text-muted-foreground">{registro.assunto}</p>
-              )}
+              <p className="text-sm text-muted-foreground">
+                {empresa?.name ?? "Sem empresa"}
+                {registro.assunto && ` · ${registro.assunto}`}
+              </p>
             </div>
           </div>
           <Button

@@ -338,12 +338,12 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
                   key={c.id}
                   title={c.texto}
                   className={cn(
-                    "flex max-w-40 items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-medium",
+                    "flex max-w-56 items-start gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium",
                     status ? PRAZO_STYLES[status] : "bg-muted text-muted-foreground"
                   )}
                 >
-                  <CheckSquare className="size-3 shrink-0" />
-                  <span className="truncate">{c.texto || "Item"}</span>
+                  <CheckSquare className="mt-0.5 size-3 shrink-0" />
+                  <span className="break-words whitespace-normal">{c.texto || "Item"}</span>
                   <span className="shrink-0 opacity-80">
                     {formatLocalDateTime(c.prazo!)}
                   </span>

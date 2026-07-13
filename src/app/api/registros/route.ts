@@ -39,6 +39,7 @@ export async function POST(request: Request) {
     data: {
       id: body.id,
       userId,
+      nome: body.nome,
       empresaId: body.empresaId,
       unidadeId: body.unidadeId,
       contato: body.contato,

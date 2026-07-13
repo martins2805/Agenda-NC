@@ -147,6 +147,7 @@ model Registro {
   id           String        @id @default(cuid())
   userId       String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nome         String        @default("")
   empresaId    String?
   unidadeId    String?
   contato      String        @default("")

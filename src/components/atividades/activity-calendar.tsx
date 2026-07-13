@@ -109,8 +109,17 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
             prev && date && toKey(prev) === toKey(date) ? undefined : date
           )
         }
-        className="w-full flex-1 rounded-xl bg-card p-3 sm:max-w-md"
-        classNames={{ root: "w-full", months: "w-full", month: "w-full" }}
+        className="w-full rounded-xl bg-card p-3 sm:flex-[2]"
+        classNames={{
+          root: "w-full",
+          months: "w-full",
+          month: "w-full",
+          month_caption: "flex h-9 w-full items-center justify-center font-semibold text-[var(--base-1)]",
+          weekday: "flex-1 rounded-md text-[0.8rem] font-medium text-[var(--base-2)] select-none",
+          button_previous: "text-[var(--base-1)] hover:bg-[var(--base-3)]/30",
+          button_next: "text-[var(--base-1)] hover:bg-[var(--base-3)]/30",
+          today: "rounded-md bg-[var(--base-3)]/40 text-[var(--base-1)] font-semibold data-[selected=true]:rounded-none",
+        }}
         modifiers={{
           singleUrgente: (date) => hasSinglePriority(date, "Urgente"),
           singleImportante: (date) => hasSinglePriority(date, "Importante"),
@@ -127,10 +136,10 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
         }}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col gap-2 rounded-xl bg-card p-3">
+      <div className="flex min-w-0 flex-col gap-2 rounded-xl bg-card p-3 sm:flex-[1]">
         {!selectedDate ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center text-muted-foreground">
-            <CalendarDays className="size-8" />
+            <CalendarDays className="size-8 text-[var(--base-3)]" />
             <p className="text-sm">Clique em um dia para ver o que há nele.</p>
           </div>
         ) : (
@@ -152,20 +161,29 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
                   const empresa = lookups.empresa.find(
                     (e) => e.id === entry.atividade.empresaId
                   );
+                  const isExecucao = entry.kind === "execucao";
                   return (
                     <li
                       key={i}
-                      className="flex flex-col gap-1.5 rounded-md border px-2.5 py-2 text-sm"
+                      className={
+                        isExecucao
+                          ? "flex flex-col gap-1.5 rounded-md border border-dashed border-[var(--base-4)] bg-muted/20 px-2.5 py-2 text-sm opacity-80"
+                          : "flex flex-col gap-1.5 rounded-md border px-2.5 py-2 text-sm"
+                      }
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <span className="font-medium">
+                        <span className={isExecucao ? "font-normal text-muted-foreground" : "font-medium"}>
                           {entry.kind === "atividade"
                             ? (empresa?.name ?? "Sem empresa")
                             : entry.texto}
                         </span>
                         <Badge
-                          variant="outline"
-                          className="flex shrink-0 items-center gap-1 text-[10px] uppercase"
+                          variant={isExecucao ? "secondary" : "outline"}
+                          className={
+                            isExecucao
+                              ? "flex shrink-0 items-center gap-1 border-none bg-[var(--base-3)]/25 text-[10px] font-normal text-muted-foreground uppercase"
+                              : "flex shrink-0 items-center gap-1 text-[10px] uppercase"
+                          }
                         >
                           {entry.kind === "atividade" && <CalendarDays className="size-3" />}
                           {entry.kind === "checklist" && <CheckSquare className="size-3" />}

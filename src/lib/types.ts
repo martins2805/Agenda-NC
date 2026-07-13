@@ -122,6 +122,7 @@ export interface RegistroTab {
 
 export interface Registro {
   id: string;
+  nome: string;
   empresaId: string | null;
   unidadeId: string | null;
   contato: string;
