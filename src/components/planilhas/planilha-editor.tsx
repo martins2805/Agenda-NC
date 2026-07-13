@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { ArrowLeft, Link2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Link2, Plus, Trash2, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +16,7 @@ import {
 import { ManagedSelect } from "@/components/managed-select";
 import { ManagedMultiSelect } from "@/components/managed-multi-select";
 import { ActivityForm } from "@/components/atividades/activity-form";
-import { useAppData } from "@/lib/app-data-context";
+import { useAppData, useAssuntoSuggestions } from "@/lib/app-data-context";
 import type { Planilha } from "@/lib/types";
 
 const UniverSheet = dynamic(
@@ -47,6 +47,8 @@ export function PlanilhaEditor({
     deactivateLookupItem,
   } = useAppData();
   const [activityFormOpen, setActivityFormOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const assuntoSuggestions = useAssuntoSuggestions();
 
   function patch(p: Partial<Planilha>) {
     onChange({ ...planilha, ...p });
@@ -111,10 +113,16 @@ export function PlanilhaEditor({
         <div className="flex flex-col gap-1.5">
           <Label>Assunto</Label>
           <Input
+            list="assunto-sugestoes-planilha"
             value={planilha.assunto}
             onChange={(e) => patch({ assunto: e.target.value })}
             placeholder="Descreva o assunto em poucas palavras"
           />
+          <datalist id="assunto-sugestoes-planilha">
+            {assuntoSuggestions.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
         </div>
       </div>
 
@@ -184,12 +192,34 @@ export function PlanilhaEditor({
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label>Planilha</Label>
+        <div className="flex items-center justify-between">
+          <Label>Planilha</Label>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-xs text-muted-foreground"
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? (
+              <>
+                <Minimize2 className="size-3.5" />
+                Reduzir
+              </>
+            ) : (
+              <>
+                <Maximize2 className="size-3.5" />
+                Expandir
+              </>
+            )}
+          </Button>
+        </div>
         <UniverSheet
           workbookId={planilha.id}
           workbookName={planilha.nome || "Planilha"}
           initialData={planilha.conteudo}
           onChange={(conteudo) => patch({ conteudo })}
+          className={expanded ? "h-[85vh]" : "h-[520px]"}
         />
       </div>
 

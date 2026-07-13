@@ -51,7 +51,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
@@ -59,7 +59,21 @@ export async function DELETE(
   const userId = session.user.id;
 
   const { id } = await params;
-  const result = await prisma.planilha.deleteMany({ where: { id, userId } });
+  const permanent = new URL(request.url).searchParams.get("permanent") === "1";
+
+  if (permanent) {
+    const result = await prisma.planilha.deleteMany({ where: { id, userId } });
+    if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    deleteKnowledgeChunk(userId, "planilha", id).catch((error) =>
+      console.error("Falha ao remover indexação", error)
+    );
+    return NextResponse.json({ ok: true });
+  }
+
+  const result = await prisma.planilha.updateMany({
+    where: { id, userId },
+    data: { deletedAt: new Date() },
+  });
   if (result.count === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

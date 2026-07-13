@@ -13,6 +13,7 @@ import {
   type ActivityFilters,
 } from "@/components/atividades/filter-bar";
 import { ActivityCard } from "@/components/atividades/activity-card";
+import { ActivityTable } from "@/components/atividades/activity-table";
 import { ActivityForm } from "@/components/atividades/activity-form";
 import { ViewToggle, type ViewMode } from "@/components/view-toggle";
 import { KanbanBoard } from "@/components/kanban-board";
@@ -94,7 +95,7 @@ export default function AtividadesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Dashboard</h2>
           <p className="mt-1 text-muted-foreground">
             Filtros combinados, indicadores e visão rápida da operação.
           </p>
@@ -111,10 +112,11 @@ export default function AtividadesPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
-        <DashboardStats atividades={atividades} />
-        <ActivityCalendar atividades={atividades} />
-      </div>
+      <DashboardStats
+        atividades={atividades}
+        onFilter={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
+      />
+      <ActivityCalendar atividades={atividades} />
 
       <FilterBar filters={filters} onChange={setFilters} />
       <div className="flex justify-end">
@@ -131,18 +133,13 @@ export default function AtividadesPage() {
           </p>
         </div>
       ) : view === "lista" ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((a) => (
-            <ActivityCard
-              key={a.id}
-              atividade={a}
-              onEdit={() => {
-                setEditing(a);
-                setFormOpen(true);
-              }}
-            />
-          ))}
-        </div>
+        <ActivityTable
+          atividades={filtered}
+          onEdit={(a) => {
+            setEditing(a);
+            setFormOpen(true);
+          }}
+        />
       ) : (
         <KanbanBoard
           columns={STATUS_OPTIONS.map((status) => ({

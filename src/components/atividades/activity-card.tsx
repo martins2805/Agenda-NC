@@ -8,8 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarClock, Trash2, CheckSquare, Phone, Check, Building2 } from "lucide-react";
 import { useAppData } from "@/lib/app-data-context";
-import { diasEmPendencia, formatCurrency, parseLocalDate } from "@/lib/calculations";
-import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
+import {
+  diasEmPendencia,
+  diasEmAtraso,
+  formatCurrency,
+  formatLocalDateTime,
+} from "@/lib/calculations";
+import { PRIORIDADE_OPTIONS, STATUS_OPTIONS, STATUS_NEGOCIACAO_LABELS } from "@/lib/types";
 import type { Atividade } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
@@ -18,6 +23,8 @@ import {
   PRAZO_STYLES,
   PRAZO_LABELS,
   atividadePrazoStatus,
+  prazoStatusFor,
+  STATUS_NEGOCIACAO_STYLES,
 } from "@/lib/status-colors";
 
 function QuickStatusBadge({ atividade }: { atividade: Atividade }) {
@@ -121,7 +128,7 @@ function QuickPrazo({ atividade }: { atividade: Atividade }) {
   if (editing) {
     return (
       <Input
-        type="date"
+        type="datetime-local"
         autoFocus
         defaultValue={atividade.prazo ?? ""}
         onClick={(e) => e.stopPropagation()}
@@ -133,7 +140,7 @@ function QuickPrazo({ atividade }: { atividade: Atividade }) {
           if (e.key === "Enter") e.currentTarget.blur();
           if (e.key === "Escape") setEditing(false);
         }}
-        className="h-6 w-32 px-1.5 text-[11px]"
+        className="h-6 w-44 px-1.5 text-[11px]"
       />
     );
   }
@@ -147,9 +154,7 @@ function QuickPrazo({ atividade }: { atividade: Atividade }) {
       }}
       className="text-muted-foreground hover:underline"
     >
-      {atividade.prazo
-        ? `Prazo: ${parseLocalDate(atividade.prazo).toLocaleDateString("pt-BR")}`
-        : "+ prazo"}
+      {atividade.prazo ? `Prazo: ${formatLocalDateTime(atividade.prazo)}` : "+ prazo"}
     </button>
   );
 }
@@ -207,12 +212,17 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
     atividade.tipoAtividadeIds.includes(t.id)
   );
   const dias = diasEmPendencia(atividade);
+  const atraso = diasEmAtraso(atividade);
   const checkTotal = atividade.checklist.length;
   const checkDone = atividade.checklist.filter((c) => c.concluido).length;
   const checkPct = checkTotal > 0 ? Math.round((checkDone / checkTotal) * 100) : 0;
+  const checklistComPrazo = atividade.checklist.filter((c) => c.prazo && !c.concluido);
   const propostaTotal = atividade.propostas.reduce(
     (sum, p) => sum + (p.valorTotal ?? 0),
     0
+  );
+  const propostasComDetalhe = atividade.propostas.filter(
+    (p) => p.detalhe.trim() || p.statusNegociacao
   );
 
   const prazoStatus = atividadePrazoStatus(atividade);
@@ -275,6 +285,11 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
               {dias}d em pendência
             </span>
           )}
+          {atraso !== null && (
+            <span className={cn("rounded-full px-2.5 py-0.5 font-medium tracking-wide uppercase", PRAZO_STYLES.vencido)}>
+              {atraso}d em atraso
+            </span>
+          )}
           {checkTotal > 0 && (
             <span className="flex items-center gap-1 text-muted-foreground">
               <CheckSquare className="size-3.5" />
@@ -288,6 +303,55 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
             </span>
           )}
         </div>
+
+        {propostasComDetalhe.length > 0 && (
+          <div className="flex flex-col gap-1">
+            {propostasComDetalhe.map((p) => (
+              <div key={p.id} className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                {p.statusNegociacao && (
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 font-mono font-medium tracking-wide uppercase",
+                      STATUS_NEGOCIACAO_STYLES[p.statusNegociacao]
+                    )}
+                  >
+                    {STATUS_NEGOCIACAO_LABELS[p.statusNegociacao]}
+                  </span>
+                )}
+                {p.detalhe.trim() && (
+                  <span className="text-muted-foreground">{p.detalhe.trim()}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {checklistComPrazo.length > 0 && (
+          <div
+            className="flex flex-wrap gap-1.5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {checklistComPrazo.map((c) => {
+              const status = prazoStatusFor(c.prazo);
+              return (
+                <span
+                  key={c.id}
+                  title={c.texto}
+                  className={cn(
+                    "flex max-w-40 items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-medium",
+                    status ? PRAZO_STYLES[status] : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  <CheckSquare className="size-3 shrink-0" />
+                  <span className="truncate">{c.texto || "Item"}</span>
+                  <span className="shrink-0 opacity-80">
+                    {formatLocalDateTime(c.prazo!)}
+                  </span>
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         {checkTotal > 0 && (
           <div className="progress-track">

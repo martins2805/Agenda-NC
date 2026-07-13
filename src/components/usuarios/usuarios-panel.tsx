@@ -101,7 +101,7 @@ export function UsuariosPanel({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Usuários</h2>
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Usuários</h2>
         <p className="mt-1 text-muted-foreground">
           {isAdmin
             ? "Cadastre novas contas de acesso ao Agenda NC. Cada usuário vê apenas os próprios dados."
@@ -113,7 +113,7 @@ export function UsuariosPanel({ isAdmin }: { isAdmin: boolean }) {
         <Card className="w-fit border-none bg-[var(--chart-1)] text-white shadow-lg shadow-[var(--chart-1)]/20">
           <CardContent className="flex flex-col gap-1">
             <span className="ledger-label text-white/70">Contas cadastradas</span>
-            <p className="font-mono text-4xl font-bold tracking-tight">
+            <p className="font-mono text-3xl font-bold tracking-tight">
               {String(users.length).padStart(2, "0")}
             </p>
           </CardContent>

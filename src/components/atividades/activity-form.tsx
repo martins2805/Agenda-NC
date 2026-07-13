@@ -27,8 +27,10 @@ import { ManagedSelect } from "@/components/managed-select";
 import { ManagedMultiSelect } from "@/components/managed-multi-select";
 import { ChecklistEditor } from "@/components/checklist-editor";
 import { PropostaEditor } from "@/components/proposta-editor";
+import { RichTextEditor } from "@/components/registros/rich-text-editor";
 import {
   useAppData,
+  useAssuntoSuggestions,
   makeAtividadeId,
   makePropostaId,
   makeRegistroId,
@@ -65,6 +67,25 @@ function emptyAtividade(): Atividade {
   };
 }
 
+function emptyProposta(): Atividade["propostas"][number] {
+  return {
+    id: makePropostaId(),
+    numero: 1,
+    tipo: null,
+    servicoProdutoIds: [],
+    detalhe: "",
+    escopoIds: [],
+    amostragemIds: [],
+    quantidade: null,
+    valorUnitario: null,
+    valorTotal: null,
+    observacao: "",
+    prazoInicio: null,
+    prazoFim: null,
+    statusNegociacao: null,
+  };
+}
+
 interface ActivityFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -77,6 +98,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
     lookups,
     registros,
     planilhas,
+    checklistTemplates,
     addLookupItem,
     renameLookupItem,
     deactivateLookupItem,
@@ -86,7 +108,9 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
     updateRegistro,
     addPlanilha,
     updatePlanilha,
+    addChecklistTemplate,
   } = useAppData();
+  const assuntoSuggestions = useAssuntoSuggestions();
   const router = useRouter();
 
   const [draft, setDraft] = useState<Atividade>(emptyAtividade());
@@ -178,7 +202,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
   function handleSave() {
     let toSave = draft;
     if (showProposta && toSave.propostas.length === 0) {
-      toSave = { ...toSave, propostas: [{ id: makePropostaId(), numero: 1, servicoProdutoIds: [], escopoIds: [], amostragemIds: [], quantidade: null, valorUnitario: null, valorTotal: null }] };
+      toSave = { ...toSave, propostas: [emptyProposta()] };
     }
     if (editing) {
       updateAtividade(editing.id, toSave);
@@ -193,7 +217,9 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="overflow-y-auto data-[side=right]:inset-0 data-[side=right]:h-full data-[side=right]:w-full data-[side=right]:max-w-none data-[side=right]:sm:max-w-none">
         <SheetHeader>
-          <SheetTitle>{editing ? "Editar atividade" : "Nova atividade"}</SheetTitle>
+          <SheetTitle className="text-3xl font-bold tracking-tight sm:text-4xl">
+            {editing ? "Editar atividade" : "Nova atividade"}
+          </SheetTitle>
           <SheetDescription>
             Preencha os campos abaixo. Tudo já fica registrado nesta sessão.
           </SheetDescription>
@@ -237,10 +263,16 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
           <div className="flex flex-col gap-1.5">
             <Label>Assunto</Label>
             <Input
+              list="assunto-sugestoes-atividade"
               value={draft.assunto}
               onChange={(e) => patch({ assunto: e.target.value })}
               placeholder="Descreva o assunto em poucas palavras"
             />
+            <datalist id="assunto-sugestoes-atividade">
+              {assuntoSuggestions.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
           </div>
 
           <div className="flex flex-col gap-2.5 rounded-lg border bg-muted/30 p-3">
@@ -395,22 +427,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
 
           {showProposta && (
             <PropostaEditor
-              propostas={
-                draft.propostas.length > 0
-                  ? draft.propostas
-                  : [
-                      {
-                        id: makePropostaId(),
-                        numero: 1,
-                        servicoProdutoIds: [],
-                        escopoIds: [],
-                        amostragemIds: [],
-                        quantidade: null,
-                        valorUnitario: null,
-                        valorTotal: null,
-                      },
-                    ]
-              }
+              propostas={draft.propostas.length > 0 ? draft.propostas : [emptyProposta()]}
               onChange={(propostas) => patch({ propostas })}
             />
           )}
@@ -426,7 +443,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
           <div className="flex flex-col gap-1.5">
             <Label>Prazo</Label>
             <Input
-              type="date"
+              type="datetime-local"
               value={draft.prazo ?? ""}
               onChange={(e) => patch({ prazo: e.target.value || null })}
             />
@@ -434,20 +451,17 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
 
           <div className="flex flex-col gap-1.5">
             <Label>Descrição da atividade</Label>
-            <Textarea
-              rows={4}
-              value={draft.descricao}
-              onChange={(e) => patch({ descricao: e.target.value })}
+            <RichTextEditor
+              content={draft.descricao}
+              onChange={(html) => patch({ descricao: html })}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
             <Label>Alinhamentos</Label>
-            <Textarea
-              rows={3}
-              value={draft.alinhamentos}
-              onChange={(e) => patch({ alinhamentos: e.target.value })}
-              placeholder="Combinados e pontos alinhados com o cliente/equipe"
+            <RichTextEditor
+              content={draft.alinhamentos}
+              onChange={(html) => patch({ alinhamentos: html })}
             />
           </div>
 
@@ -492,6 +506,8 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
           <ChecklistEditor
             items={draft.checklist}
             onChange={(checklist) => patch({ checklist })}
+            templates={checklistTemplates}
+            onSaveTemplate={addChecklistTemplate}
           />
         </div>
 

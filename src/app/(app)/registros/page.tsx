@@ -6,6 +6,7 @@ import { Plus, FileText } from "lucide-react";
 import { useAppData, makeRegistroId, makeRegistroTabId } from "@/lib/app-data-context";
 import { useAutoOpenFromQuery } from "@/lib/use-auto-open";
 import { RegistroCard } from "@/components/registros/registro-card";
+import { RegistroTable } from "@/components/registros/registro-table";
 import { RegistroEditor } from "@/components/registros/registro-editor";
 import {
   RegistroFilterBar,
@@ -112,13 +113,11 @@ export default function RegistrosPage() {
       items: filtered.filter((r) => r.categoriaIds.length === 0),
     },
   ];
-  const columns = allColumns.filter((col) => col.items.length > 0);
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Registros</h2>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Registros</h2>
           <p className="mt-1 text-muted-foreground">
             Organizados por categoria, como uma biblioteca operacional.
           </p>
@@ -144,22 +143,7 @@ export default function RegistrosPage() {
           </p>
         </div>
       ) : view === "lista" ? (
-        <div className="flex flex-col gap-8">
-          {columns.map((col) => (
-            <section key={col.id} className="flex flex-col gap-3">
-              <h2 className="text-lg font-semibold">{col.name}</h2>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {col.items.map((r) => (
-                  <RegistroCard
-                    key={r.id}
-                    registro={r}
-                    onOpen={() => setEditingId(r.id)}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+        <RegistroTable registros={filtered} onOpen={(r) => setEditingId(r.id)} />
       ) : (
         <KanbanBoard
           columns={allColumns}

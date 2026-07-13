@@ -1,4 +1,4 @@
-import type { Atividade, Prioridade, StatusConclusao } from "./types";
+import type { Atividade, Prioridade, StatusConclusao, StatusNegociacao } from "./types";
 import { parseLocalDate } from "./calculations";
 
 // Secondary (business-rule) palette — used exclusively for status, priority and
@@ -11,10 +11,10 @@ export const STATUS_STYLES: Record<StatusConclusao, string> = {
 };
 
 export const STATUS_HEX: Record<StatusConclusao, string> = {
-  Concluído: "#2e5749",
-  Pendente: "#bf512c",
-  "Aguardando retorno interno": "#da9b2b",
-  "Aguardando retorno cliente": "#da9b2b",
+  Concluído: "#998731",
+  Pendente: "#cf5527",
+  "Aguardando retorno interno": "#3e4c59",
+  "Aguardando retorno cliente": "#3e4c59",
 };
 
 export const PRIORIDADE_STYLES: Record<Prioridade, string> = {
@@ -25,10 +25,10 @@ export const PRIORIDADE_STYLES: Record<Prioridade, string> = {
 };
 
 export const PRIORIDADE_HEX: Record<Prioridade, string> = {
-  Urgente: "#780001",
-  Importante: "#bf512c",
-  Médio: "#da9b2b",
-  Baixo: "#2e5749",
+  Urgente: "#a61414",
+  Importante: "#cf5527",
+  Médio: "#3e4c59",
+  Baixo: "#998731",
 };
 
 export type PrazoStatus = "em-dia" | "proximo" | "vencido";
@@ -63,3 +63,18 @@ export function atividadePrazoStatus(
   if (atividade.status === "Concluído") return null;
   return prazoStatusFor(atividade.prazo);
 }
+
+// Status de negociação da proposta — cores fixas por especificação.
+export const STATUS_NEGOCIACAO_STYLES: Record<StatusNegociacao, string> = {
+  em_andamento: "bg-[var(--negociacao-em-andamento)] text-white",
+  fup: "bg-[var(--negociacao-fup)] text-white",
+  aceite: "bg-[var(--negociacao-aceite)] text-white",
+  na: "bg-[var(--negociacao-na)] text-[var(--base-1)]",
+};
+
+export const STATUS_NEGOCIACAO_HEX: Record<StatusNegociacao, string> = {
+  em_andamento: "#da9b2b",
+  fup: "#bf512c",
+  aceite: "#2e5749",
+  na: "#d8d8d8",
+};

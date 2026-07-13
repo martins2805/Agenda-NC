@@ -11,6 +11,7 @@ import {
 } from "react";
 import type {
   Atividade,
+  ChecklistTemplate,
   LookupItem,
   LookupKind,
   Planilha,
@@ -71,9 +72,12 @@ interface AppDataContextValue {
   atividades: Atividade[];
   registros: Registro[];
   planilhas: Planilha[];
+  checklistTemplates: ChecklistTemplate[];
   loading: boolean;
   dataError: string | null;
   dismissDataError: () => void;
+  addChecklistTemplate: (template: ChecklistTemplate) => void;
+  deleteChecklistTemplate: (id: string) => void;
   addLookupItem: (kind: LookupKind, name: string, empresaId?: string | null) => string;
   renameLookupItem: (kind: LookupKind, id: string, name: string) => void;
   deactivateLookupItem: (kind: LookupKind, id: string) => void;
@@ -111,6 +115,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [atividades, setAtividades] = useState<Atividade[]>([]);
   const [registros, setRegistros] = useState<Registro[]>([]);
   const [planilhas, setPlanilhas] = useState<Planilha[]>([]);
+  const [checklistTemplates, setChecklistTemplates] = useState<ChecklistTemplate[]>([]);
   const [dataError, setDataError] = useState<string | null>(null);
   const planilhaSaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map()
@@ -129,12 +134,13 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const load = useCallback(async () => {
     const seq = ++loadSeq.current;
     try {
-      const [lookupsRes, atividadesRes, registrosRes, planilhasRes] =
+      const [lookupsRes, atividadesRes, registrosRes, planilhasRes, templatesRes] =
         await Promise.all([
           fetch("/api/lookups"),
           fetch("/api/atividades"),
           fetch("/api/registros"),
           fetch("/api/planilhas"),
+          fetch("/api/checklist-templates"),
         ]);
 
       if (loadSeq.current !== seq) return;
@@ -158,6 +164,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         const data = await planilhasRes.json();
         if (loadSeq.current !== seq) return;
         setPlanilhas(applyPending(data, pendingPlanilhas.current));
+      }
+      if (templatesRes.ok) {
+        const data = await templatesRes.json();
+        if (loadSeq.current !== seq) return;
+        setChecklistTemplates(data);
       }
     } catch (error) {
       if (loadSeq.current !== seq) return;
@@ -445,12 +456,44 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const addChecklistTemplate = useCallback((template: ChecklistTemplate) => {
+    setChecklistTemplates((prev) => [...prev, template]);
+    fetch("/api/checklist-templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(template),
+    }).catch((error) => {
+      console.error("Falha ao salvar modelo de checklist", error);
+      setChecklistTemplates((prev) => prev.filter((t) => t.id !== template.id));
+      setDataError("Não foi possível salvar o modelo de checklist. Tente novamente.");
+    });
+  }, []);
+
+  const deleteChecklistTemplate = useCallback((id: string) => {
+    setChecklistTemplates((prev) => {
+      const removed = prev.find((t) => t.id === id);
+      fetch(`/api/checklist-templates/${id}`, { method: "DELETE" }).catch((error) => {
+        console.error("Falha ao excluir modelo de checklist", error);
+        if (removed) {
+          setChecklistTemplates((cur) =>
+            cur.some((t) => t.id === id) ? cur : [...cur, removed]
+          );
+        }
+        setDataError("Não foi possível excluir o modelo de checklist.");
+      });
+      return prev.filter((t) => t.id !== id);
+    });
+  }, []);
+
   const value = useMemo(
     () => ({
       lookups,
       atividades,
       registros,
       planilhas,
+      checklistTemplates,
+      addChecklistTemplate,
+      deleteChecklistTemplate,
       loading,
       dataError,
       dismissDataError,
@@ -473,6 +516,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       atividades,
       registros,
       planilhas,
+      checklistTemplates,
+      addChecklistTemplate,
+      deleteChecklistTemplate,
       loading,
       dataError,
       dismissDataError,
@@ -519,6 +565,21 @@ export function useAppData() {
   return ctx;
 }
 
+// Assunto ficou como texto livre (decisão de produto já tomada no
+// histórico do projeto), mas ainda precisa ser fácil de reaproveitar: esta
+// lista traz os valores já digitados em qualquer atividade/registro/
+// planilha, para alimentar um <datalist> de sugestões nos formulários.
+export function useAssuntoSuggestions(): string[] {
+  const { atividades, registros, planilhas } = useAppData();
+  return useMemo(() => {
+    const set = new Set<string>();
+    for (const a of atividades) if (a.assunto.trim()) set.add(a.assunto.trim());
+    for (const r of registros) if (r.assunto.trim()) set.add(r.assunto.trim());
+    for (const p of planilhas) if (p.assunto.trim()) set.add(p.assunto.trim());
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [atividades, registros, planilhas]);
+}
+
 export function makeAtividadeId() {
   return makeId();
 }
@@ -528,6 +589,10 @@ export function makePropostaId() {
 }
 
 export function makeChecklistItemId() {
+  return makeId();
+}
+
+export function makeChecklistTemplateId() {
   return makeId();
 }
 

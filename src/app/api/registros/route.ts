@@ -6,21 +6,24 @@ import type { Registro } from "@/lib/types";
 
 const include = { tabs: true };
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const userId = session.user.id;
 
+  const trash = new URL(request.url).searchParams.get("trash") === "1";
+
   const registros = await prisma.registro.findMany({
-    where: { userId },
+    where: { userId, deletedAt: trash ? { not: null } : null },
     include,
-    orderBy: { createdAt: "desc" },
+    orderBy: trash ? { deletedAt: "desc" } : { createdAt: "desc" },
   });
   return NextResponse.json(
     registros.map((r) => ({
       ...r,
       tabs: r.tabs.sort((a, b) => a.ordem - b.ordem),
       createdAt: r.createdAt.toISOString(),
+      deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
     }))
   );
 }
