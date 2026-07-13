@@ -101,16 +101,23 @@ export default function PlanilhasPage() {
   }
 
   const activeCategorias = lookups.categoriaPlanilha.filter((c) => c.active);
+  // Cada planilha aparece em uma única coluna (a primeira categoria ativa que
+  // possuir), mesmo quando tem múltiplas categorias — evita cards duplicados.
+  const allocated = new Set<string>();
   const allColumns = [
     ...activeCategorias.map((cat) => ({
       id: cat.id,
       name: cat.name,
-      items: filtered.filter((p) => p.categoriaIds.includes(cat.id)),
+      items: filtered.filter((p) => {
+        if (allocated.has(p.id) || !p.categoriaIds.includes(cat.id)) return false;
+        allocated.add(p.id);
+        return true;
+      }),
     })),
     {
       id: SEM_CATEGORIA,
       name: "Sem categoria",
-      items: filtered.filter((p) => p.categoriaIds.length === 0),
+      items: filtered.filter((p) => !allocated.has(p.id)),
     },
   ];
   return (
@@ -150,11 +157,16 @@ export default function PlanilhasPage() {
           renderCard={(p) => (
             <PlanilhaCard planilha={p} onOpen={() => setEditingId(p.id)} />
           )}
-          onMove={(itemId, _fromColumnId, toColumnId) =>
-            updatePlanilha(itemId, {
-              categoriaIds: toColumnId === SEM_CATEGORIA ? [] : [toColumnId],
-            })
-          }
+          onMove={(itemId, fromColumnId, toColumnId) => {
+            const current = planilhas.find((p) => p.id === itemId);
+            if (!current) return;
+            const withoutOrigin = current.categoriaIds.filter((id) => id !== fromColumnId);
+            const nextCategoriaIds =
+              toColumnId === SEM_CATEGORIA || withoutOrigin.includes(toColumnId)
+                ? withoutOrigin
+                : [...withoutOrigin, toColumnId];
+            updatePlanilha(itemId, { categoriaIds: nextCategoriaIds });
+          }}
         />
       )}
     </div>

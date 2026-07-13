@@ -31,6 +31,7 @@ export async function PATCH(
     return tx.registro.update({
       where: { id },
       data: {
+        nome: body.nome,
         empresaId: body.empresaId,
         unidadeId: body.unidadeId,
         contato: body.contato,

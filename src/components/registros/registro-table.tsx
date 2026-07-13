@@ -20,6 +20,7 @@ export function RegistroTable({
       <table className="w-full min-w-max text-sm">
         <thead>
           <tr className="border-b text-left text-xs text-muted-foreground">
+            <th className="px-3 py-2 font-medium">Nome</th>
             <th className="px-3 py-2 font-medium">Empresa</th>
             <th className="px-3 py-2 font-medium">Unidade</th>
             <th className="px-3 py-2 font-medium">Tipo</th>
@@ -42,12 +43,16 @@ export function RegistroTable({
                 className="cursor-pointer border-b last:border-0 hover:bg-muted/40"
                 onClick={() => onOpen(r)}
               >
-                <td className="px-3 py-2 font-medium">{empresa?.name ?? "—"}</td>
+                <td className="px-3 py-2 font-medium">{r.nome || "—"}</td>
+                <td className="px-3 py-2 text-muted-foreground">{empresa?.name ?? "—"}</td>
                 <td className="px-3 py-2 text-muted-foreground">{unidade?.name ?? "—"}</td>
                 <td className="px-3 py-2 text-muted-foreground">
                   {categorias.map((c) => c.name).join(", ") || "—"}
                 </td>
-                <td className="max-w-56 truncate px-3 py-2 text-muted-foreground" title={r.assunto}>
+                <td
+                  className="max-w-64 min-w-40 px-3 py-2 whitespace-normal break-words text-muted-foreground"
+                  title={r.assunto}
+                >
                   {r.assunto || "—"}
                 </td>
                 <td className="px-3 py-2">

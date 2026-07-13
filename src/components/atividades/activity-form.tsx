@@ -3,7 +3,21 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FileText, Link2, Table2, Plus, X } from "lucide-react";
+import {
+  FileText,
+  Link2,
+  Table2,
+  Plus,
+  X,
+  Mail,
+  Sparkles,
+  Phone,
+  CalendarClock,
+  AlignLeft,
+  Users,
+  CheckCircle2,
+  Flame,
+} from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -158,6 +172,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
     if (!editing) return;
     const registro = {
       id: makeRegistroId(),
+      nome: "",
       empresaId: editing.empresaId,
       unidadeId: editing.unidadeId,
       contato: editing.contato,
@@ -261,7 +276,10 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
           />
 
           <div className="flex flex-col gap-1.5">
-            <Label>Assunto</Label>
+            <Label className="flex items-center gap-1.5">
+              <FileText className="size-3.5 text-[var(--base-1)]" />
+              Assunto
+            </Label>
             <Input
               list="assunto-sugestoes-atividade"
               value={draft.assunto}
@@ -277,7 +295,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
 
           <div className="flex flex-col gap-2.5 rounded-lg border bg-muted/30 p-3">
             <Label className="flex items-center gap-1.5">
-              <Link2 className="size-3.5" />
+              <Link2 className="size-3.5 text-[var(--base-3)]" />
               Vínculos
             </Label>
 
@@ -296,7 +314,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
                           className="flex flex-1 items-center gap-1.5 text-sm text-primary hover:underline"
                         >
                           <FileText className="size-3.5 shrink-0" />
-                          {r.tabs[0]?.titulo || "Registro"}
+                          {r.nome || "Registro"}
                         </Link>
                         <Button
                           type="button"
@@ -337,7 +355,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
                     items={{
                       [NONE]: "Vincular registro existente",
                       ...Object.fromEntries(
-                        unlinkedRegistros.map((r) => [r.id, r.tabs[0]?.titulo || "Registro"])
+                        unlinkedRegistros.map((r) => [r.id, r.nome || "Registro"])
                       ),
                     }}
                     value={NONE}
@@ -350,7 +368,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
                       <SelectItem value={NONE}>Vincular registro existente</SelectItem>
                       {unlinkedRegistros.map((r) => (
                         <SelectItem key={r.id} value={r.id}>
-                          {r.tabs[0]?.titulo || "Registro"}
+                          {r.nome || "Registro"}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -405,7 +423,10 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
 
           {showEmail && (
             <div className="flex flex-col gap-1.5">
-              <Label>Conteúdo do e-mail</Label>
+              <Label className="flex items-center gap-1.5">
+                <Mail className="size-3.5 text-[var(--negociacao-em-andamento)]" />
+                Conteúdo do e-mail
+              </Label>
               <Textarea
                 rows={4}
                 value={draft.emailConteudo}
@@ -416,7 +437,10 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
 
           {showOportunidade && (
             <div className="flex flex-col gap-1.5">
-              <Label>Oportunidade</Label>
+              <Label className="flex items-center gap-1.5">
+                <Sparkles className="size-3.5 text-[var(--negociacao-aceite)]" />
+                Oportunidade
+              </Label>
               <Input
                 value={draft.oportunidadeTexto}
                 onChange={(e) => patch({ oportunidadeTexto: e.target.value })}
@@ -433,7 +457,10 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
           )}
 
           <div className="flex flex-col gap-1.5">
-            <Label>Contato</Label>
+            <Label className="flex items-center gap-1.5">
+              <Phone className="size-3.5 text-[var(--base-2)]" />
+              Contato
+            </Label>
             <Input
               value={draft.contato}
               onChange={(e) => patch({ contato: e.target.value })}
@@ -441,7 +468,10 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Prazo</Label>
+            <Label className="flex items-center gap-1.5">
+              <CalendarClock className="size-3.5 text-[var(--base-1)]" />
+              Prazo
+            </Label>
             <Input
               type="datetime-local"
               value={draft.prazo ?? ""}
@@ -450,7 +480,10 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Descrição da atividade</Label>
+            <Label className="flex items-center gap-1.5">
+              <AlignLeft className="size-3.5 text-[var(--base-2)]" />
+              Descrição da atividade
+            </Label>
             <RichTextEditor
               content={draft.descricao}
               onChange={(html) => patch({ descricao: html })}
@@ -458,7 +491,10 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Alinhamentos</Label>
+            <Label className="flex items-center gap-1.5">
+              <Users className="size-3.5 text-[var(--base-3)]" />
+              Alinhamentos
+            </Label>
             <RichTextEditor
               content={draft.alinhamentos}
               onChange={(html) => patch({ alinhamentos: html })}
@@ -466,7 +502,10 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Status de conclusão</Label>
+            <Label className="flex items-center gap-1.5">
+              <CheckCircle2 className="size-3.5 text-[var(--status-concluido)]" />
+              Status de conclusão
+            </Label>
             <Select
               value={draft.status}
               onValueChange={(v) => patch({ status: v as Atividade["status"] })}
@@ -485,7 +524,10 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Prioridade</Label>
+            <Label className="flex items-center gap-1.5">
+              <Flame className="size-3.5 text-[var(--prioridade-urgente)]" />
+              Prioridade
+            </Label>
             <Select
               value={draft.prioridade}
               onValueChange={(v) => patch({ prioridade: v as Atividade["prioridade"] })}

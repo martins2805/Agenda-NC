@@ -96,17 +96,17 @@
      Verde/laranja/vermelho conforme paleta de ícones da marca; o "outro"
      (status neutro / prioridade média) reaproveita o slate da paleta base. */
   --status-concluido: #998731;
-  --status-pendente: #cf5527;
+  --status-pendente: #bf512c;
   --status-outro: #3e4c59;
 
-  --prioridade-urgente: #a61414;
-  --prioridade-importante: #cf5527;
+  --prioridade-urgente: #780001;
+  --prioridade-importante: #bf512c;
   --prioridade-medio: #3e4c59;
   --prioridade-baixo: #998731;
 
   --prazo-em-dia: #998731;
-  --prazo-proximo: #cf5527;
-  --prazo-vencido: #a61414;
+  --prazo-proximo: #bf512c;
+  --prazo-vencido: #780001;
 
   /* Status de negociação da proposta — cores fixas por especificação */
   --negociacao-em-andamento: #da9b2b;

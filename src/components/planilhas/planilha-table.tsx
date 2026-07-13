@@ -49,7 +49,10 @@ export function PlanilhaTable({
                 <td className="px-3 py-2 text-muted-foreground">
                   {categorias.map((c) => c.name).join(", ") || "—"}
                 </td>
-                <td className="max-w-56 truncate px-3 py-2 text-muted-foreground" title={p.assunto}>
+                <td
+                  className="max-w-64 min-w-40 px-3 py-2 whitespace-normal break-words text-muted-foreground"
+                  title={p.assunto}
+                >
                   {p.assunto || "—"}
                 </td>
                 <td className="px-3 py-2">

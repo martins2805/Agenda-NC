@@ -22,6 +22,7 @@ const SEM_CATEGORIA = "__sem_categoria__";
 function emptyRegistro(): Registro {
   return {
     id: makeRegistroId(),
+    nome: "",
     empresaId: null,
     unidadeId: null,
     contato: "",
@@ -56,7 +57,7 @@ export default function RegistrosPage() {
 
       if (keyword) {
         const empresa = lookups.empresa.find((e) => e.id === r.empresaId)?.name ?? "";
-        const haystack = [r.contato, empresa, r.assunto].join(" ").toLowerCase();
+        const haystack = [r.nome, r.contato, empresa, r.assunto].join(" ").toLowerCase();
         if (!haystack.includes(keyword)) return false;
       }
 
@@ -101,16 +102,23 @@ export default function RegistrosPage() {
   }
 
   const activeCategorias = lookups.categoriaRegistro.filter((c) => c.active);
+  // Cada registro aparece em uma única coluna (a primeira categoria ativa que
+  // possuir), mesmo quando tem múltiplas categorias — evita cards duplicados.
+  const allocated = new Set<string>();
   const allColumns = [
     ...activeCategorias.map((cat) => ({
       id: cat.id,
       name: cat.name,
-      items: filtered.filter((r) => r.categoriaIds.includes(cat.id)),
+      items: filtered.filter((r) => {
+        if (allocated.has(r.id) || !r.categoriaIds.includes(cat.id)) return false;
+        allocated.add(r.id);
+        return true;
+      }),
     })),
     {
       id: SEM_CATEGORIA,
       name: "Sem categoria",
-      items: filtered.filter((r) => r.categoriaIds.length === 0),
+      items: filtered.filter((r) => !allocated.has(r.id)),
     },
   ];
   return (
@@ -150,11 +158,16 @@ export default function RegistrosPage() {
           renderCard={(r) => (
             <RegistroCard registro={r} onOpen={() => setEditingId(r.id)} />
           )}
-          onMove={(itemId, _fromColumnId, toColumnId) =>
-            updateRegistro(itemId, {
-              categoriaIds: toColumnId === SEM_CATEGORIA ? [] : [toColumnId],
-            })
-          }
+          onMove={(itemId, fromColumnId, toColumnId) => {
+            const current = registros.find((r) => r.id === itemId);
+            if (!current) return;
+            const withoutOrigin = current.categoriaIds.filter((id) => id !== fromColumnId);
+            const nextCategoriaIds =
+              toColumnId === SEM_CATEGORIA || withoutOrigin.includes(toColumnId)
+                ? withoutOrigin
+                : [...withoutOrigin, toColumnId];
+            updateRegistro(itemId, { categoriaIds: nextCategoriaIds });
+          }}
         />
       )}
     </div>

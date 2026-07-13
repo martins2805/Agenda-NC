@@ -113,7 +113,7 @@ export default function AtividadesPage() {
       </div>
 
       <DashboardStats
-        atividades={atividades}
+        atividades={filtered}
         onFilter={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
       />
       <ActivityCalendar atividades={atividades} />

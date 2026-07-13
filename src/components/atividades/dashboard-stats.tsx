@@ -9,16 +9,12 @@ import {
   CheckCircle2,
   AlarmClockOff,
   Wallet,
-  TrendingUp,
   Hourglass,
   Flame,
   AlertTriangle,
   FileSignature,
 } from "lucide-react";
-import { TILE_COLORS } from "@/lib/tile-colors";
-import { DonutChart } from "@/components/charts/donut-chart";
-import { BarList } from "@/components/charts/bar-list";
-import { TrendLine } from "@/components/charts/trend-line";
+import { VerticalBarChart } from "@/components/charts/vertical-bar-chart";
 import {
   STATUS_HEX,
   PRIORIDADE_HEX,
@@ -43,6 +39,7 @@ function KpiCard({
   tone,
   hint,
   onClick,
+  accentHex,
 }: {
   icon: React.ElementType;
   label: string;
@@ -50,6 +47,7 @@ function KpiCard({
   tone: "dark" | "light";
   hint?: string;
   onClick?: () => void;
+  accentHex?: string;
 }) {
   return (
     <Card
@@ -57,12 +55,15 @@ function KpiCard({
       className={
         (tone === "dark"
           ? "border-none bg-[var(--base-1)] text-white shadow-lg shadow-[var(--base-1)]/25"
-          : "border-none ring-1 ring-foreground/10") + (onClick ? " cursor-pointer transition-transform hover:-translate-y-0.5" : "")
+          : "border-none border-l-4 ring-1 ring-foreground/10") +
+        (onClick ? " cursor-pointer transition-transform hover:-translate-y-0.5" : "")
       }
+      style={tone === "light" ? { borderLeftColor: accentHex ?? "var(--base-4)" } : undefined}
     >
       <CardContent className="flex flex-col gap-1.5">
         <div
-          className={`flex items-center gap-2 ${tone === "dark" ? "text-white/70" : "text-muted-foreground"}`}
+          className={`flex items-center gap-2 ${tone === "dark" ? "text-white/70" : accentHex ? "" : "text-muted-foreground"}`}
+          style={tone === "light" && accentHex ? { color: accentHex } : undefined}
         >
           <Icon className="size-3.5" />
           <span className={`ledger-label ${tone === "dark" ? "text-white/70" : ""}`}>
@@ -145,16 +146,6 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
   }));
   const temPropostaComStatus = statusNegociacaoCounts.some((s) => s.value > 0);
 
-  const porTipo = lookups.tipoAtividade
-    .filter((t) => t.active)
-    .map((t) => ({
-      id: t.id,
-      name: t.name,
-      count: atividades.filter((a) => a.tipoAtividadeIds.includes(t.id)).length,
-    }))
-    .filter((t) => t.count > 0)
-    .sort((a, b) => b.count - a.count);
-
   const porEmpresaItems = lookups.empresa
     .filter((e) => e.active)
     .map((e, i) => ({
@@ -166,17 +157,6 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
     .filter((e) => e.value > 0)
     .sort((a, b) => b.value - a.value)
     .slice(0, 6);
-
-  function localDateKey(d: Date) {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  }
-
-  const trend = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (13 - i));
-    const key = localDateKey(d);
-    return atividades.filter((a) => localDateKey(new Date(a.createdAt)) === key).length;
-  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -195,6 +175,7 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
           value={`${taxaConclusao}%`}
           tone="light"
           hint={`${concluidas} concluídas`}
+          accentHex="var(--base-3)"
           onClick={() => onFilter?.({ status: "Concluído" })}
         />
         <KpiCard
@@ -203,6 +184,7 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
           value={String(prazoStatusCounts.vencido)}
           tone="light"
           hint={`${prazoStatusCounts.proximo} perto do prazo`}
+          accentHex="var(--prazo-vencido)"
           onClick={() => onFilter?.({ prazo: "atrasadas" })}
         />
         <KpiCard
@@ -211,6 +193,7 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
           value={valorTotal > 0 ? formatCurrency(valorTotal) : "—"}
           tone="light"
           hint="propostas ativas"
+          accentHex="var(--negociacao-aceite)"
           onClick={tipoProposta ? () => onFilter?.({ tipoAtividadeId: tipoProposta.id }) : undefined}
         />
       </div>
@@ -221,6 +204,7 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
           label="Pendentes"
           value={String(pendentes)}
           tone="light"
+          accentHex="var(--status-pendente)"
           onClick={() => onFilter?.({ status: "Pendente" })}
         />
         <KpiCard
@@ -228,6 +212,7 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
           label="Prioridade urgente"
           value={String(urgentes)}
           tone="light"
+          accentHex="var(--prioridade-urgente)"
           onClick={() => onFilter?.({ prioridade: "Urgente" })}
         />
         <KpiCard
@@ -235,6 +220,7 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
           label="Prioridade importante"
           value={String(importantes)}
           tone="light"
+          accentHex="var(--prioridade-importante)"
           onClick={() => onFilter?.({ prioridade: "Importante" })}
         />
         <KpiCard
@@ -242,6 +228,7 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
           label="Total de propostas"
           value={String(propostasAtividades.length)}
           tone="light"
+          accentHex="var(--base-2)"
           onClick={tipoProposta ? () => onFilter?.({ tipoAtividadeId: tipoProposta.id }) : undefined}
         />
         <KpiCard
@@ -249,6 +236,7 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
           label="Propostas pendentes"
           value={String(propostasPendentes)}
           tone="light"
+          accentHex="var(--status-pendente)"
           onClick={
             tipoProposta
               ? () => onFilter?.({ tipoAtividadeId: tipoProposta.id, status: "Pendente" })
@@ -261,10 +249,8 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
         <Card>
           <CardContent className="flex flex-col gap-3">
             <span className="ledger-label">Distribuição por status</span>
-            <DonutChart
+            <VerticalBarChart
               segments={porStatus}
-              centerLabel="atividades"
-              centerValue={total}
               onSegmentClick={(i) => onFilter?.({ status: porStatus[i].label })}
             />
           </CardContent>
@@ -273,10 +259,8 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
         <Card>
           <CardContent className="flex flex-col gap-3">
             <span className="ledger-label">Distribuição por prioridade</span>
-            <DonutChart
+            <VerticalBarChart
               segments={porPrioridade}
-              centerLabel="atividades"
-              centerValue={total}
               onSegmentClick={(i) => onFilter?.({ prioridade: porPrioridade[i].label })}
             />
           </CardContent>
@@ -284,19 +268,13 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
 
         <Card>
           <CardContent className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="ledger-label">Evolução (14 dias)</span>
-              <TrendingUp className="size-3.5 text-muted-foreground" />
-            </div>
-            <TrendLine points={trend} color="var(--base-1)" />
-            <div className="divider-dashed" />
             <span className="ledger-label">Atividades por empresa</span>
             {porEmpresaItems.length === 0 ? (
               <span className="text-sm text-muted-foreground">Sem dados ainda</span>
             ) : (
-              <BarList
-                items={porEmpresaItems}
-                onItemClick={(i) => onFilter?.({ empresaId: porEmpresaItems[i].id })}
+              <VerticalBarChart
+                segments={porEmpresaItems}
+                onSegmentClick={(i) => onFilter?.({ empresaId: porEmpresaItems[i].id })}
               />
             )}
           </CardContent>
@@ -307,40 +285,10 @@ export function DashboardStats({ atividades, onFilter }: DashboardStatsProps) {
         <Card>
           <CardContent className="flex flex-col gap-3">
             <span className="ledger-label">Status de negociação das propostas</span>
-            <DonutChart
-              segments={statusNegociacaoCounts}
-              centerLabel="propostas"
-              centerValue={statusNegociacaoCounts.reduce((s, c) => s + c.value, 0)}
-            />
+            <VerticalBarChart segments={statusNegociacaoCounts} />
           </CardContent>
         </Card>
       )}
-
-      <Card>
-        <CardContent className="flex flex-col gap-3">
-          <span className="ledger-label">Por tipo de atividade</span>
-          {porTipo.length === 0 ? (
-            <span className="text-sm text-muted-foreground">Sem dados ainda</span>
-          ) : (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-              {porTipo.slice(0, 12).map((t, i) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => onFilter?.({ tipoAtividadeId: t.id })}
-                  className={`flex flex-col justify-between gap-3 rounded-lg p-2.5 text-left transition-transform hover:-translate-y-0.5 ${TILE_COLORS[i % TILE_COLORS.length]}`}
-                  title={`${t.name}: ${t.count}`}
-                >
-                  <span className="line-clamp-1 text-[10px] font-medium opacity-80">
-                    {t.name}
-                  </span>
-                  <span className="font-mono text-lg font-bold">{t.count}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -147,6 +147,7 @@ export async function serializeRegistro(r: FullDbRegistro): Promise<string> {
   const lines = [
     `Registro`,
     `id: ${r.id}`,
+    `Nome: ${r.nome}`,
     `Empresa: ${name(r.empresaId)}`,
     `Unidade: ${name(r.unidadeId)}`,
     `Assunto: ${r.assunto}`,
