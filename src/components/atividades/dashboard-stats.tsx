@@ -16,7 +16,7 @@ import { DonutChart } from "@/components/charts/donut-chart";
 import { BarList } from "@/components/charts/bar-list";
 import { TrendLine } from "@/components/charts/trend-line";
 import { STATUS_HEX, PRIORIDADE_HEX, atividadePrazoStatus } from "@/lib/status-colors";
-import { formatCurrency, todayLocalDateString } from "@/lib/calculations";
+import { formatCurrency } from "@/lib/calculations";
 
 const BASE_ROTATION = [
   "var(--chart-1)",
@@ -126,14 +126,16 @@ export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
     .sort((a, b) => b.value - a.value)
     .slice(0, 6);
 
-  const today = todayLocalDateString();
+  function localDateKey(d: Date) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
   const trend = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (13 - i));
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    return atividades.filter((a) => a.createdAt.slice(0, 10) === key).length;
+    const key = localDateKey(d);
+    return atividades.filter((a) => localDateKey(new Date(a.createdAt)) === key).length;
   });
-  void today;
 
   return (
     <div className="flex flex-col gap-4">
