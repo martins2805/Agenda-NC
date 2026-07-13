@@ -27,18 +27,27 @@ export function AppShell({
 
   return (
     <div className="flex min-h-full">
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-6 p-4 sm:flex">
-        <div className="flex flex-col gap-6 rounded-2xl border border-sidebar-border bg-sidebar p-4 h-full">
-          <div className="flex items-center gap-3 px-1">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent font-mono text-xs font-bold text-accent-foreground">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-6 p-4 sm:flex">
+        <div className="relative flex h-full flex-col gap-6 overflow-hidden rounded-2xl bg-sidebar p-4 text-sidebar-foreground shadow-xl shadow-[var(--base-1)]/25">
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-40 opacity-60"
+            style={{
+              background:
+                "radial-gradient(circle at 20% 0%, color-mix(in oklch, var(--base-3), transparent 55%), transparent 70%)",
+            }}
+          />
+
+          <div className="relative flex items-center gap-3 px-1">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary font-mono text-xs font-bold text-sidebar-primary-foreground shadow-md">
               NC
             </div>
-            <span className="font-display text-lg tracking-tight italic text-sidebar-foreground">
-              Agenda NC
-            </span>
+            <div className="flex flex-col leading-none">
+              <span className="font-display text-lg tracking-tight italic">Agenda NC</span>
+              <span className="ledger-label text-sidebar-foreground/50">painel executivo</span>
+            </div>
           </div>
 
-          <nav className="flex flex-col gap-1">
+          <nav className="relative flex flex-col gap-1">
             {NAV_ITEMS.map((item) => {
               const active = pathname?.startsWith(item.href);
               return (
@@ -46,10 +55,10 @@ export function AppShell({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-xl border-l-2 px-3 py-2.5 text-sm font-medium transition-colors",
                     active
-                      ? "border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "border-transparent text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      ? "border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                      : "border-transparent text-sidebar-foreground/65 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
                   )}
                 >
                   <item.icon className="size-4" />
@@ -59,8 +68,22 @@ export function AppShell({
             })}
           </nav>
 
-          <form action={logout} className="mt-auto">
-            <Button variant="ghost" className="w-full justify-start gap-3 px-3" type="submit">
+          <div className="divider-dashed relative border-sidebar-border" />
+
+          <div className="relative flex flex-col gap-2 rounded-xl bg-sidebar-accent/40 p-3 text-xs">
+            <span className="ledger-label text-sidebar-foreground/50">status do sistema</span>
+            <div className="flex items-center gap-2">
+              <span className="size-1.5 rounded-full bg-[var(--status-concluido)]" />
+              <span className="text-sidebar-foreground/80">Sincronizado</span>
+            </div>
+          </div>
+
+          <form action={logout} className="relative mt-auto">
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 px-3 text-sidebar-foreground/80 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
+              type="submit"
+            >
               <LogOut className="size-4" />
               Sair
             </Button>

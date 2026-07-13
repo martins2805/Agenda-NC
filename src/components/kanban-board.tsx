@@ -49,8 +49,8 @@ function DroppableColumn({ id, children }: { id: string; children: React.ReactNo
   return (
     <div
       ref={setNodeRef}
-      className={`flex min-h-24 flex-col gap-3 rounded-lg p-1 transition-colors ${
-        isOver ? "bg-primary/[0.06] ring-2 ring-primary/30" : ""
+      className={`flex min-h-24 flex-col gap-3 rounded-xl p-1 transition-colors ${
+        isOver ? "bg-[var(--base-1)]/[0.06] ring-2 ring-[var(--base-1)]/30" : ""
       }`}
     >
       {children}
@@ -83,10 +83,11 @@ export function KanbanBoard<T extends { id: string }>({
       <div className="flex gap-4 overflow-x-auto pb-2">
         {columns.map((col) => (
           <div key={col.id} className="flex w-72 shrink-0 flex-col gap-3">
-            <p className="text-sm font-semibold">
-              {col.name}{" "}
-              <span className="font-mono text-xs font-normal text-muted-foreground">
-                ({col.items.length})
+            <p className="flex items-center gap-2 text-sm font-semibold">
+              <span className="size-1.5 rounded-full bg-[var(--base-1)]" />
+              {col.name}
+              <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] font-normal text-muted-foreground">
+                {col.items.length}
               </span>
             </p>
             <DroppableColumn id={col.id}>

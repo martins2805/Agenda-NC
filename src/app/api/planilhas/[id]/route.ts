@@ -27,7 +27,7 @@ export async function PATCH(
   if (body.nome !== undefined) data.nome = body.nome;
   if (body.empresaId !== undefined) data.empresaId = body.empresaId;
   if (body.unidadeId !== undefined) data.unidadeId = body.unidadeId;
-  if (body.assuntoId !== undefined) data.assuntoId = body.assuntoId;
+  if (body.assunto !== undefined) data.assunto = body.assunto;
   if (body.categoriaIds !== undefined) data.categoriaIds = body.categoriaIds;
   if (body.atividadeId !== undefined) data.atividadeId = body.atividadeId;
   if (body.conteudo !== undefined) data.conteudo = body.conteudo;
@@ -38,7 +38,7 @@ export async function PATCH(
     body.nome !== undefined ||
     body.empresaId !== undefined ||
     body.unidadeId !== undefined ||
-    body.assuntoId !== undefined ||
+    body.assunto !== undefined ||
     body.categoriaIds !== undefined;
 
   if (metadataChanged) {

@@ -55,7 +55,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
     filters.prioridade;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border bg-card p-3">
+    <div className="panel-card flex flex-col gap-3 p-3">
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input

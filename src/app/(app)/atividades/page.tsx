@@ -63,7 +63,6 @@ export default function AtividadesPage() {
       if (keyword) {
         const empresa = lookups.empresa.find((e) => e.id === a.empresaId)?.name ?? "";
         const unidade = lookups.unidade.find((u) => u.id === a.unidadeId)?.name ?? "";
-        const assunto = lookups.assunto.find((s) => s.id === a.assuntoId)?.name ?? "";
         const tipos = lookups.tipoAtividade
           .filter((t) => a.tipoAtividadeIds.includes(t.id))
           .map((t) => t.name)
@@ -72,7 +71,7 @@ export default function AtividadesPage() {
         const haystack = [
           empresa,
           unidade,
-          assunto,
+          a.assunto,
           tipos,
           a.contato,
           a.descricao,
@@ -112,9 +111,10 @@ export default function AtividadesPage() {
         </Button>
       </div>
 
-      <DashboardStats atividades={atividades} />
-
-      <ActivityCalendar atividades={atividades} />
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
+        <DashboardStats atividades={atividades} />
+        <ActivityCalendar atividades={atividades} />
+      </div>
 
       <FilterBar filters={filters} onChange={setFilters} />
       <div className="flex justify-end">

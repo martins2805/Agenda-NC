@@ -20,7 +20,6 @@ import type {
 interface LookupState {
   empresa: LookupItem[];
   unidade: LookupItem[];
-  assunto: LookupItem[];
   tipoAtividade: LookupItem[];
   servicoProduto: LookupItem[];
   escopo: LookupItem[];
@@ -32,7 +31,6 @@ interface LookupState {
 const EMPTY_LOOKUPS: LookupState = {
   empresa: [],
   unidade: [],
-  assunto: [],
   tipoAtividade: [],
   servicoProduto: [],
   escopo: [],

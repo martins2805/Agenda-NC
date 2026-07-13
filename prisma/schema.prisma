@@ -13,7 +13,6 @@ datasource db {
 enum LookupKind {
   empresa
   unidade
-  assunto
   tipoAtividade
   servicoProduto
   escopo
@@ -60,7 +59,7 @@ model Atividade {
   user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   empresaId         String?
   unidadeId         String?
-  assuntoId         String?
+  assunto           String           @default("")
   tipoAtividadeIds  String[]
   emailConteudo     String           @default("")
   oportunidadeTexto String           @default("")
@@ -113,7 +112,7 @@ model Registro {
   empresaId    String?
   unidadeId    String?
   contato      String        @default("")
-  assuntoId    String?
+  assunto      String        @default("")
   categoriaIds String[]
   atividadeId  String?
   createdAt    DateTime      @default(now())
@@ -142,7 +141,7 @@ model Planilha {
   nome         String   @default("")
   empresaId    String?
   unidadeId    String?
-  assuntoId    String?
+  assunto      String   @default("")
   categoriaIds String[]
   atividadeId  String?
   conteudo     Json?

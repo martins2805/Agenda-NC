@@ -50,72 +50,112 @@
 }
 
 :root {
-  --background: #f1e4d6;
-  --foreground: #4a2a18;
+  /* Paper background + near-black ink, per brand spec */
+  --background: #fbf9e4;
+  --foreground: #252525;
   --card: #ffffff;
-  --card-foreground: #4a2a18;
+  --card-foreground: #252525;
   --popover: #ffffff;
-  --popover-foreground: #4a2a18;
-  --primary: #5c3620;
-  --primary-foreground: #fbf3ea;
-  --secondary: #f4d9be;
-  --secondary-foreground: #5c3620;
-  --muted: #ece0d2;
-  --muted-foreground: #a38f7d;
-  --accent: #e8792e;
-  --accent-foreground: #ffffff;
-  --destructive: #b23b2e;
-  --border: #e8dccd;
-  --input: #e8dccd;
-  --ring: #5c3620;
-  --chart-1: #e8792e;
-  --chart-2: #5c3620;
-  --chart-3: #c9a227;
-  --chart-4: #b23b2e;
-  --chart-5: #d9a066;
+  --popover-foreground: #252525;
+
+  /* Base palette — navy is the dominant accent */
+  --primary: #1f2c43;
+  --primary-foreground: #fbf9e4;
+  --secondary: #3e4c59;
+  --secondary-foreground: #ffffff;
+  --muted: #ece9d3;
+  --muted-foreground: #5c6570;
+  --accent: #8baaad;
+  --accent-foreground: #1f2c43;
+  --destructive: #780001;
+  --border: #d8d8d8;
+  --input: #d8d8d8;
+  --ring: #1f2c43;
+
+  /* Generic chart palette (non status/priority/deadline) reuses the base palette */
+  --chart-1: #1f2c43;
+  --chart-2: #3e4c59;
+  --chart-3: #8baaad;
+  --chart-4: #b9c6c8;
+  --chart-5: #d8d8d8;
+
+  /* Base palette tokens, exposed individually for tiles/badges/decoration */
+  --base-1: #1f2c43;
+  --base-2: #3e4c59;
+  --base-3: #8baaad;
+  --base-4: #d8d8d8;
+
+  /* Secondary (business-rule) palette — status, priority, deadline */
+  --status-concluido: #2e5749;
+  --status-pendente: #bf512c;
+  --status-outro: #da9b2b;
+
+  --prioridade-urgente: #780001;
+  --prioridade-importante: #bf512c;
+  --prioridade-medio: #da9b2b;
+  --prioridade-baixo: #2e5749;
+
+  --prazo-em-dia: #2e5749;
+  --prazo-proximo: #da9b2b;
+  --prazo-vencido: #780001;
+
   --radius: 1rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #4a2a18;
-  --sidebar-primary: #5c3620;
-  --sidebar-primary-foreground: #fbf3ea;
-  --sidebar-accent: #f4e7d8;
-  --sidebar-accent-foreground: #5c3620;
-  --sidebar-border: #e8dccd;
-  --sidebar-ring: #5c3620;
+  --sidebar: #1f2c43;
+  --sidebar-foreground: #eef2f0;
+  --sidebar-primary: #8baaad;
+  --sidebar-primary-foreground: #1f2c43;
+  --sidebar-accent: #3e4c59;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #33415a;
+  --sidebar-ring: #8baaad;
 }
 
 .dark {
-  --background: #1f140d;
-  --foreground: #f1e0d0;
-  --card: #2a1c12;
-  --card-foreground: #f1e0d0;
-  --popover: #2a1c12;
-  --popover-foreground: #f1e0d0;
-  --primary: #e8935a;
-  --primary-foreground: #241207;
-  --secondary: #3a2718;
-  --secondary-foreground: #f1e0d0;
-  --muted: #33241a;
-  --muted-foreground: #b8977f;
-  --accent: #e8792e;
-  --accent-foreground: #1f140d;
+  --background: #161b22;
+  --foreground: #eef1ea;
+  --card: #1f2c43;
+  --card-foreground: #eef1ea;
+  --popover: #1f2c43;
+  --popover-foreground: #eef1ea;
+  --primary: #8baaad;
+  --primary-foreground: #16202c;
+  --secondary: #3e4c59;
+  --secondary-foreground: #eef1ea;
+  --muted: #232d3d;
+  --muted-foreground: #9fb0ae;
+  --accent: #8baaad;
+  --accent-foreground: #16202c;
   --destructive: #e2574a;
-  --border: #3d2b1e;
-  --input: #3d2b1e;
-  --ring: #e8792e;
-  --chart-1: #e8792e;
-  --chart-2: #d9a066;
-  --chart-3: #d9b23a;
-  --chart-4: #e2574a;
-  --chart-5: #d9a066;
-  --sidebar: #241a12;
-  --sidebar-foreground: #f1e0d0;
-  --sidebar-primary: #e8792e;
-  --sidebar-primary-foreground: #1f140d;
-  --sidebar-accent: #34241a;
-  --sidebar-accent-foreground: #f1e0d0;
-  --sidebar-border: #3d2b1e;
-  --sidebar-ring: #e8792e;
+  --border: #33415a;
+  --input: #33415a;
+  --ring: #8baaad;
+  --chart-1: #8baaad;
+  --chart-2: #d8d8d8;
+  --chart-3: #3e4c59;
+  --chart-4: #5c6b78;
+  --chart-5: #b9c6c8;
+  --base-1: #1f2c43;
+  --base-2: #3e4c59;
+  --base-3: #8baaad;
+  --base-4: #d8d8d8;
+  --status-concluido: #3f7563;
+  --status-pendente: #d9673c;
+  --status-outro: #e5ac3f;
+  --prioridade-urgente: #9c2c2c;
+  --prioridade-importante: #d9673c;
+  --prioridade-medio: #e5ac3f;
+  --prioridade-baixo: #3f7563;
+  --prazo-em-dia: #3f7563;
+  --prazo-proximo: #e5ac3f;
+  --prazo-vencido: #9c2c2c;
+  --sidebar: #12182a;
+  --sidebar-foreground: #eef2f0;
+  --sidebar-primary: #8baaad;
+  --sidebar-primary-foreground: #12182a;
+  --sidebar-accent: #232d3d;
+  --sidebar-accent-foreground: #eef1ea;
+  --sidebar-border: #2a3547;
+  --sidebar-ring: #8baaad;
 }
 
 @layer base {
@@ -125,10 +165,17 @@
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(circle at 10% -5%, color-mix(in oklch, var(--primary), transparent 78%), transparent 38rem),
-      radial-gradient(circle at 100% 10%, color-mix(in oklch, var(--chart-5), transparent 78%), transparent 34rem),
-      radial-gradient(circle at 85% 95%, color-mix(in oklch, var(--chart-3), transparent 88%), transparent 32rem);
-    background-attachment: fixed, fixed, fixed;
+      radial-gradient(circle at 8% -5%, color-mix(in oklch, var(--base-1), transparent 90%), transparent 40rem),
+      radial-gradient(circle at 100% 6%, color-mix(in oklch, var(--base-3), transparent 88%), transparent 36rem),
+      radial-gradient(circle at 90% 98%, color-mix(in oklch, var(--base-2), transparent 93%), transparent 34rem),
+      repeating-linear-gradient(
+        135deg,
+        color-mix(in oklch, var(--base-1), transparent 97%) 0px,
+        color-mix(in oklch, var(--base-1), transparent 97%) 1px,
+        transparent 1px,
+        transparent 26px
+      );
+    background-attachment: fixed, fixed, fixed, fixed;
   }
   html {
     @apply font-sans;
@@ -161,6 +208,51 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted-foreground);
+}
+
+/* Rich card treatment used across dashboard/kanban/registro panels */
+.panel-card {
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  box-shadow:
+    0 1px 2px color-mix(in oklch, var(--base-1), transparent 92%),
+    0 8px 24px -12px color-mix(in oklch, var(--base-1), transparent 78%);
+}
+
+.kpi-value {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.trend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.divider-dashed {
+  border-top: 1px dashed var(--border);
+}
+
+.progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--muted);
+  overflow: hidden;
+}
+.progress-track > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
 }
 
 .tiptap-content {

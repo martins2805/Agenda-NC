@@ -18,7 +18,6 @@ export function RegistroCard({
   const { lookups, atividades } = useAppData();
 
   const empresa = lookups.empresa.find((e) => e.id === registro.empresaId);
-  const assunto = lookups.assunto.find((a) => a.id === registro.assuntoId);
   const categorias = lookups.categoriaRegistro.filter((c) =>
     registro.categoriaIds.includes(c.id)
   );
@@ -26,22 +25,27 @@ export function RegistroCard({
   const atividadeLabel = atividadeVinculada
     ? [
         lookups.empresa.find((e) => e.id === atividadeVinculada.empresaId)?.name,
-        lookups.assunto.find((s) => s.id === atividadeVinculada.assuntoId)?.name,
+        atividadeVinculada.assunto,
       ]
         .filter(Boolean)
         .join(" · ") || "Atividade vinculada"
     : null;
 
   return (
-    <Card className="cursor-pointer transition-shadow hover:shadow-md" onClick={onOpen}>
+    <Card
+      className="cursor-pointer border-l-4 border-l-[var(--base-1)] transition-shadow hover:shadow-md"
+      onClick={onOpen}
+    >
       <CardContent className="flex flex-col gap-2">
         <div className="flex items-start gap-2">
-          <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <FileText className="mt-0.5 size-4 shrink-0 text-[var(--base-1)]" />
           <div>
             <p className="font-semibold leading-tight">
               {empresa?.name ?? "Sem empresa"}
             </p>
-            {assunto && <p className="text-sm text-muted-foreground">{assunto.name}</p>}
+            {registro.assunto && (
+              <p className="text-sm text-muted-foreground">{registro.assunto}</p>
+            )}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -61,7 +65,7 @@ export function RegistroCard({
           <Link
             href={`/atividades?open=${registro.atividadeId}`}
             onClick={(e) => e.stopPropagation()}
-            className="flex w-fit items-center gap-1 rounded-full bg-[var(--chart-5)] px-2.5 py-0.5 text-xs font-medium text-[var(--chart-1)] hover:opacity-80"
+            className="flex w-fit items-center gap-1 rounded-full bg-[var(--base-3)] px-2.5 py-0.5 text-xs font-medium text-[var(--base-1)] hover:opacity-80"
           >
             <Link2 className="size-3" />
             {atividadeLabel}
