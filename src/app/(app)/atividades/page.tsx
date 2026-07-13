@@ -112,9 +112,10 @@ export default function AtividadesPage() {
         </Button>
       </div>
 
-      <DashboardStats atividades={atividades} />
-
-      <ActivityCalendar atividades={atividades} />
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
+        <DashboardStats atividades={atividades} />
+        <ActivityCalendar atividades={atividades} />
+      </div>
 
       <FilterBar filters={filters} onChange={setFilters} />
       <div className="flex justify-end">

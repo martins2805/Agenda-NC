@@ -5,7 +5,8 @@ import { CalendarDays, CheckSquare, ListChecks } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { useAppData } from "@/lib/app-data-context";
-import type { Atividade, Prioridade } from "@/lib/types";
+import type { Atividade } from "@/lib/types";
+import { PRIORIDADE_STYLES } from "@/lib/status-colors";
 
 interface CalendarEntry {
   kind: "atividade" | "checklist";
@@ -22,12 +23,8 @@ function toKey(date: Date) {
   return `${y}-${m}-${d}`;
 }
 
-const PRIORIDADE_STYLES: Record<Prioridade, string> = {
-  Urgente: "bg-[var(--chart-3)] text-white",
-  Importante: "bg-[var(--chart-1)] text-white",
-  Médio: "bg-[var(--chart-2)] text-white",
-  Baixo: "bg-muted text-muted-foreground",
-};
+const DOT_CLASS =
+  "relative after:absolute after:bottom-0.5 after:left-1/2 after:size-1.5 after:-translate-x-1/2 after:rounded-full";
 
 export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
   const { lookups } = useAppData();
@@ -65,8 +62,25 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
   const selectedKey = selectedDate ? toKey(selectedDate) : null;
   const entries = selectedKey ? entriesByDate.get(selectedKey) ?? [] : [];
 
+  const dayInfo = useMemo(() => {
+    const map = new Map<string, { count: number; priority: Atividade["prioridade"] | null }>();
+    entriesByDate.forEach((list, key) => {
+      const uniqueAtividadeIds = new Set(list.map((e) => e.atividade.id));
+      map.set(key, {
+        count: uniqueAtividadeIds.size,
+        priority: uniqueAtividadeIds.size === 1 ? list[0].atividade.prioridade : null,
+      });
+    });
+    return map;
+  }, [entriesByDate]);
+
+  function hasSinglePriority(date: Date, prioridade: Atividade["prioridade"]) {
+    const info = dayInfo.get(toKey(date));
+    return info?.count === 1 && info.priority === prioridade;
+  }
+
   return (
-    <div className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:flex-row sm:gap-6">
+    <div className="panel-card flex flex-col gap-4 p-4">
       <Calendar
         mode="single"
         locale={{ code: "pt-BR" } as never}
@@ -76,10 +90,19 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
             prev && date && toKey(prev) === toKey(date) ? undefined : date
           )
         }
-        modifiers={{ hasItems: (date) => entriesByDate.has(toKey(date)) }}
+        modifiers={{
+          singleUrgente: (date) => hasSinglePriority(date, "Urgente"),
+          singleImportante: (date) => hasSinglePriority(date, "Importante"),
+          singleMedio: (date) => hasSinglePriority(date, "Médio"),
+          singleBaixo: (date) => hasSinglePriority(date, "Baixo"),
+          multiplas: (date) => (dayInfo.get(toKey(date))?.count ?? 0) > 1,
+        }}
         modifiersClassNames={{
-          hasItems:
-            "relative after:absolute after:bottom-0.5 after:left-1/2 after:size-1 after:-translate-x-1/2 after:rounded-full after:bg-primary",
+          singleUrgente: `${DOT_CLASS} after:bg-[var(--prioridade-urgente)]`,
+          singleImportante: `${DOT_CLASS} after:bg-[var(--prioridade-importante)]`,
+          singleMedio: `${DOT_CLASS} after:bg-[var(--prioridade-medio)]`,
+          singleBaixo: `${DOT_CLASS} after:bg-[var(--prioridade-baixo)]`,
+          multiplas: `${DOT_CLASS} after:bg-[var(--base-3)]`,
         }}
       />
 

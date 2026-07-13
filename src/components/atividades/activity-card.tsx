@@ -6,26 +6,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarClock, Trash2, CheckSquare, Phone, Check } from "lucide-react";
+import { CalendarClock, Trash2, CheckSquare, Phone, Check, Building2 } from "lucide-react";
 import { useAppData } from "@/lib/app-data-context";
 import { diasEmPendencia, formatCurrency, parseLocalDate } from "@/lib/calculations";
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
 import type { Atividade } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-const PRIORIDADE_STYLES: Record<Atividade["prioridade"], string> = {
-  Urgente: "bg-[var(--chart-3)] text-white",
-  Importante: "bg-[var(--chart-1)] text-white",
-  Médio: "bg-[var(--chart-2)] text-white",
-  Baixo: "bg-muted text-muted-foreground",
-};
-
-const STATUS_STYLES: Record<Atividade["status"], string> = {
-  Concluído: "bg-[var(--chart-2)] text-white",
-  Pendente: "bg-[var(--chart-4)] text-[var(--chart-1)]",
-  "Aguardando retorno interno": "bg-[var(--chart-1)] text-white",
-  "Aguardando retorno cliente": "bg-[var(--chart-3)] text-white",
-};
+import {
+  PRIORIDADE_STYLES,
+  STATUS_STYLES,
+  PRAZO_STYLES,
+  PRAZO_LABELS,
+  atividadePrazoStatus,
+} from "@/lib/status-colors";
 
 function QuickStatusBadge({ atividade }: { atividade: Atividade }) {
   const { updateAtividade } = useAppData();
@@ -223,12 +216,18 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
     0
   );
 
+  const prazoStatus = atividadePrazoStatus(atividade);
+
   return (
-    <Card className="cursor-pointer transition-shadow hover:shadow-md" onClick={onEdit}>
+    <Card
+      className="cursor-pointer border-l-4 border-l-[var(--base-1)] transition-shadow hover:shadow-md"
+      onClick={onEdit}
+    >
       <CardContent className="flex flex-col gap-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex flex-col gap-0.5">
-            <p className="font-semibold leading-tight">
+            <p className="flex items-center gap-1.5 font-semibold leading-tight">
+              <Building2 className="size-3.5 shrink-0 text-[var(--base-1)]" />
               {empresa?.name ?? "Sem empresa"}
               {unidade && <span className="text-muted-foreground"> · {unidade.name}</span>}
             </p>
@@ -266,6 +265,11 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
         >
           <QuickStatusBadge atividade={atividade} />
           <QuickPrioridadeBadge atividade={atividade} />
+          {prazoStatus && (
+            <span className={cn("rounded-full px-2.5 py-0.5 font-medium tracking-wide uppercase", PRAZO_STYLES[prazoStatus])}>
+              {PRAZO_LABELS[prazoStatus]}
+            </span>
+          )}
           {dias !== null && (
             <span className="flex items-center gap-1 text-muted-foreground">
               <CalendarClock className="size-3.5" />
@@ -280,15 +284,17 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
           )}
           <QuickPrazo atividade={atividade} />
           {propostaTotal > 0 && (
-            <span className="rounded-full bg-[var(--chart-5)] px-2.5 py-0.5 font-medium text-[var(--chart-1)]">
+            <span className="rounded-full bg-[var(--base-3)] px-2.5 py-0.5 font-medium text-[var(--base-1)]">
               {formatCurrency(propostaTotal)}
             </span>
           )}
         </div>
 
         {checkTotal > 0 && (
-          <div className="stat-bar">
-            <span style={{ width: `${checkPct}%` }} />
+          <div className="progress-track">
+            <span
+              style={{ width: `${checkPct}%`, background: "var(--base-1)" }}
+            />
           </div>
         )}
       </CardContent>
