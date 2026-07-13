@@ -160,11 +160,14 @@ export default function PlanilhasPage() {
           onMove={(itemId, fromColumnId, toColumnId) => {
             const current = planilhas.find((p) => p.id === itemId);
             if (!current) return;
+            if (toColumnId === SEM_CATEGORIA) {
+              updatePlanilha(itemId, { categoriaIds: [] });
+              return;
+            }
             const withoutOrigin = current.categoriaIds.filter((id) => id !== fromColumnId);
-            const nextCategoriaIds =
-              toColumnId === SEM_CATEGORIA || withoutOrigin.includes(toColumnId)
-                ? withoutOrigin
-                : [...withoutOrigin, toColumnId];
+            const nextCategoriaIds = withoutOrigin.includes(toColumnId)
+              ? withoutOrigin
+              : [...withoutOrigin, toColumnId];
             updatePlanilha(itemId, { categoriaIds: nextCategoriaIds });
           }}
         />

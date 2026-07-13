@@ -161,11 +161,14 @@ export default function RegistrosPage() {
           onMove={(itemId, fromColumnId, toColumnId) => {
             const current = registros.find((r) => r.id === itemId);
             if (!current) return;
+            if (toColumnId === SEM_CATEGORIA) {
+              updateRegistro(itemId, { categoriaIds: [] });
+              return;
+            }
             const withoutOrigin = current.categoriaIds.filter((id) => id !== fromColumnId);
-            const nextCategoriaIds =
-              toColumnId === SEM_CATEGORIA || withoutOrigin.includes(toColumnId)
-                ? withoutOrigin
-                : [...withoutOrigin, toColumnId];
+            const nextCategoriaIds = withoutOrigin.includes(toColumnId)
+              ? withoutOrigin
+              : [...withoutOrigin, toColumnId];
             updateRegistro(itemId, { categoriaIds: nextCategoriaIds });
           }}
         />
