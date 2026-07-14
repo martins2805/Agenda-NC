@@ -27,7 +27,7 @@ export async function PATCH(
   if (body.nome !== undefined) data.nome = body.nome;
   if (body.empresaId !== undefined) data.empresaId = body.empresaId;
   if (body.unidadeId !== undefined) data.unidadeId = body.unidadeId;
-  if (body.assuntoId !== undefined) data.assuntoId = body.assuntoId;
+  if (body.assunto !== undefined) data.assunto = body.assunto;
   if (body.categoriaIds !== undefined) data.categoriaIds = body.categoriaIds;
   if (body.atividadeId !== undefined) data.atividadeId = body.atividadeId;
   if (body.conteudo !== undefined) data.conteudo = body.conteudo;
@@ -38,7 +38,7 @@ export async function PATCH(
     body.nome !== undefined ||
     body.empresaId !== undefined ||
     body.unidadeId !== undefined ||
-    body.assuntoId !== undefined ||
+    body.assunto !== undefined ||
     body.categoriaIds !== undefined;
 
   if (metadataChanged) {
@@ -51,7 +51,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
@@ -59,7 +59,21 @@ export async function DELETE(
   const userId = session.user.id;
 
   const { id } = await params;
-  const result = await prisma.planilha.deleteMany({ where: { id, userId } });
+  const permanent = new URL(request.url).searchParams.get("permanent") === "1";
+
+  if (permanent) {
+    const result = await prisma.planilha.deleteMany({ where: { id, userId } });
+    if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    deleteKnowledgeChunk(userId, "planilha", id).catch((error) =>
+      console.error("Falha ao remover indexação", error)
+    );
+    return NextResponse.json({ ok: true });
+  }
+
+  const result = await prisma.planilha.updateMany({
+    where: { id, userId },
+    data: { deletedAt: new Date() },
+  });
   if (result.count === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

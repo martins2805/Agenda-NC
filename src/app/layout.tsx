@@ -1,19 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, JetBrains_Mono, Inter } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const displayFont = Cormorant_Garamond({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  style: ["normal", "italic"],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-});
-
+// Uma única família tipográfica em toda a página (Inter). As variáveis
+// --font-display/--font-mono continuam existindo para preservar a hierarquia
+// visual (peso/tracking) usada em títulos e rótulos, mas todas apontam para
+// a mesma fonte — sem misturar famílias diferentes.
 const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
@@ -35,10 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="pt-BR"
-      className={`${displayFont.variable} ${jetbrainsMono.variable} ${inter.variable} h-full antialiased`}
-    >
+    <html lang="pt-BR" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

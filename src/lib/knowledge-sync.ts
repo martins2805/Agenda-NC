@@ -76,7 +76,6 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
   const ids = [
     a.empresaId,
     a.unidadeId,
-    a.assuntoId,
     ...a.tipoAtividadeIds,
     ...a.propostas.flatMap((p) => [
       ...p.servicoProdutoIds,
@@ -92,16 +91,16 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
     `id: ${a.id}`,
     `Empresa: ${name(a.empresaId)}`,
     `Unidade: ${name(a.unidadeId)}`,
-    `Assunto: ${name(a.assuntoId)}`,
+    `Assunto: ${a.assunto}`,
     `Tipos: ${a.tipoAtividadeIds.map(name).filter(Boolean).join(", ")}`,
     `Contato: ${a.contato}`,
     `Prazo: ${a.prazo ?? ""}`,
     `Status: ${a.status}`,
     `Prioridade: ${a.prioridade}`,
-    `Descrição: ${a.descricao}`,
+    `Descrição: ${stripHtml(a.descricao)}`,
   ];
 
-  if (a.alinhamentos) lines.push(`Alinhamentos: ${a.alinhamentos}`);
+  if (a.alinhamentos) lines.push(`Alinhamentos: ${stripHtml(a.alinhamentos)}`);
   if (a.emailConteudo) lines.push(`E-mail: ${a.emailConteudo}`);
   if (a.oportunidadeTexto) lines.push(`Oportunidade: ${a.oportunidadeTexto}`);
 
@@ -118,10 +117,10 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
 
   a.propostas.forEach((p) => {
     lines.push(
-      `Proposta ${p.numero}: serviços=${p.servicoProdutoIds
+      `Proposta ${p.numero} (${p.tipo ?? "tipo não definido"}): serviços=${p.servicoProdutoIds
         .map(name)
         .filter(Boolean)
-        .join(", ")}; escopo=${p.escopoIds
+        .join(", ")}; detalhe=${p.detalhe}; escopo=${p.escopoIds
         .map(name)
         .filter(Boolean)
         .join(", ")}; amostragem=${p.amostragemIds
@@ -129,7 +128,9 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
         .filter(Boolean)
         .join(", ")}; quantidade=${p.quantidade ?? ""}; valorUnitario=${
         p.valorUnitario ?? ""
-      }; valorTotal=${p.valorTotal ?? ""}`
+      }; valorTotal=${p.valorTotal ?? ""}; observação=${p.observacao}; statusNegociacao=${
+        p.statusNegociacao ?? ""
+      }`
     );
   });
 
@@ -139,7 +140,7 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
 type FullDbRegistro = DbRegistro & { tabs: DbRegistroTab[] };
 
 export async function serializeRegistro(r: FullDbRegistro): Promise<string> {
-  const ids = [r.empresaId, r.unidadeId, r.assuntoId, ...r.categoriaIds];
+  const ids = [r.empresaId, r.unidadeId, ...r.categoriaIds];
   const names = await lookupNames(r.userId, ids);
   const name = (id: string | null) => (id ? names.get(id) ?? "" : "");
 
@@ -148,7 +149,7 @@ export async function serializeRegistro(r: FullDbRegistro): Promise<string> {
     `id: ${r.id}`,
     `Empresa: ${name(r.empresaId)}`,
     `Unidade: ${name(r.unidadeId)}`,
-    `Assunto: ${name(r.assuntoId)}`,
+    `Assunto: ${r.assunto}`,
     `Contato: ${r.contato}`,
     `Categorias: ${r.categoriaIds.map(name).filter(Boolean).join(", ")}`,
   ];
@@ -161,7 +162,7 @@ export async function serializeRegistro(r: FullDbRegistro): Promise<string> {
 }
 
 export async function serializePlanilha(p: DbPlanilha): Promise<string> {
-  const ids = [p.empresaId, p.unidadeId, p.assuntoId, ...p.categoriaIds];
+  const ids = [p.empresaId, p.unidadeId, ...p.categoriaIds];
   const names = await lookupNames(p.userId, ids);
   const name = (id: string | null) => (id ? names.get(id) ?? "" : "");
 
@@ -170,7 +171,7 @@ export async function serializePlanilha(p: DbPlanilha): Promise<string> {
     `id: ${p.id}`,
     `Empresa: ${name(p.empresaId)}`,
     `Unidade: ${name(p.unidadeId)}`,
-    `Assunto: ${name(p.assuntoId)}`,
+    `Assunto: ${p.assunto}`,
     `Categorias: ${p.categoriaIds.map(name).filter(Boolean).join(", ")}`,
   ].join("\n");
 }
