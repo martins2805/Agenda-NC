@@ -13,10 +13,7 @@ import {
   type PlanilhaFilters,
 } from "@/components/planilhas/planilha-filter-bar";
 import { ViewToggle, type ViewMode } from "@/components/view-toggle";
-import { KanbanBoard } from "@/components/kanban-board";
 import type { Planilha } from "@/lib/types";
-
-const SEM_CATEGORIA = "__sem_categoria__";
 
 function emptyPlanilha(): Planilha {
   return {
@@ -33,12 +30,12 @@ function emptyPlanilha(): Planilha {
 }
 
 export default function PlanilhasPage() {
-  const { lookups, planilhas, loading, addPlanilha, updatePlanilha, deletePlanilha } =
+  const { lookups, atividades, planilhas, loading, addPlanilha, updatePlanilha, deletePlanilha } =
     useAppData();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftNew, setDraftNew] = useState<Planilha | null>(null);
   const [filters, setFilters] = useState<PlanilhaFilters>(DEFAULT_PLANILHA_FILTERS);
-  const [view, setView] = useState<ViewMode>("lista");
+  const [view, setView] = useState<ViewMode>("cards");
 
   const editing = draftNew ?? planilhas.find((p) => p.id === editingId) ?? null;
 
@@ -101,21 +98,6 @@ export default function PlanilhasPage() {
     );
   }
 
-  const activeCategorias = lookups.categoriaPlanilha.filter((c) => c.active);
-  const allColumns = [
-    ...activeCategorias.map((cat) => ({
-      id: cat.id,
-      name: cat.name,
-      items: filtered.filter((p) => p.categoriaIds.includes(cat.id)),
-    })),
-    {
-      id: SEM_CATEGORIA,
-      name: "Sem categoria",
-      items: filtered.filter((p) => p.categoriaIds.length === 0),
-    },
-  ];
-  const columns = allColumns.filter((col) => col.items.length > 0);
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -145,35 +127,60 @@ export default function PlanilhasPage() {
               : "Nenhuma planilha encontrada com esses filtros."}
           </p>
         </div>
-      ) : view === "lista" ? (
-        <div className="flex flex-col gap-8">
-          {columns.map((col) => (
-            <section key={col.id} className="flex flex-col gap-3">
-              <h2 className="text-lg font-semibold">{col.name}</h2>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {col.items.map((p) => (
-                  <PlanilhaCard
-                    key={p.id}
-                    planilha={p}
-                    onOpen={() => setEditingId(p.id)}
-                  />
-                ))}
-              </div>
-            </section>
+      ) : view === "cards" ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((p) => (
+            <PlanilhaCard
+              key={p.id}
+              planilha={p}
+              onOpen={() => setEditingId(p.id)}
+            />
           ))}
         </div>
       ) : (
-        <KanbanBoard
-          columns={allColumns}
-          renderCard={(p) => (
-            <PlanilhaCard planilha={p} onOpen={() => setEditingId(p.id)} />
-          )}
-          onMove={(itemId, _fromColumnId, toColumnId) =>
-            updatePlanilha(itemId, {
-              categoriaIds: toColumnId === SEM_CATEGORIA ? [] : [toColumnId],
-            })
-          }
-        />
+        <div className="overflow-x-auto rounded-lg border bg-card">
+          <table className="w-full min-w-[840px] text-sm">
+            <thead className="bg-muted/60 text-left text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2">Nome</th>
+                <th className="px-3 py-2">Empresa</th>
+                <th className="px-3 py-2">Unidade</th>
+                <th className="px-3 py-2">Tipo</th>
+                <th className="px-3 py-2">Assunto</th>
+                <th className="px-3 py-2">Vinculo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((p) => {
+                const empresa = lookups.empresa.find((e) => e.id === p.empresaId)?.name ?? "Sem empresa";
+                const unidade = lookups.unidade.find((u) => u.id === p.unidadeId)?.name ?? "-";
+                const assunto = lookups.assunto.find((a) => a.id === p.assuntoId)?.name ?? "-";
+                const categorias = lookups.categoriaPlanilha
+                  .filter((c) => p.categoriaIds.includes(c.id))
+                  .map((c) => c.name)
+                  .join(", ") || "-";
+                const atividade = atividades.find((a) => a.id === p.atividadeId);
+                const vinculo = atividade
+                  ? lookups.empresa.find((e) => e.id === atividade.empresaId)?.name ?? "Atividade vinculada"
+                  : "-";
+                return (
+                  <tr
+                    key={p.id}
+                    className="cursor-pointer border-t hover:bg-muted/30"
+                    onClick={() => setEditingId(p.id)}
+                  >
+                    <td className="px-3 py-2 font-medium">{p.nome || "Planilha"}</td>
+                    <td className="px-3 py-2">{empresa}</td>
+                    <td className="px-3 py-2">{unidade}</td>
+                    <td className="px-3 py-2">{categorias}</td>
+                    <td className="px-3 py-2">{assunto}</td>
+                    <td className="px-3 py-2">{vinculo}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus, LayoutDashboard } from "lucide-react";
 import { useAppData } from "@/lib/app-data-context";
@@ -15,9 +16,7 @@ import {
 import { ActivityCard } from "@/components/atividades/activity-card";
 import { ActivityForm } from "@/components/atividades/activity-form";
 import { ViewToggle, type ViewMode } from "@/components/view-toggle";
-import { KanbanBoard } from "@/components/kanban-board";
-import { STATUS_OPTIONS } from "@/lib/types";
-import type { Atividade, StatusConclusao } from "@/lib/types";
+import type { Atividade } from "@/lib/types";
 import { parseLocalDate } from "@/lib/calculations";
 
 function matchesPrazo(prazo: string | null, mode: ActivityFilters["prazo"]) {
@@ -35,11 +34,11 @@ function matchesPrazo(prazo: string | null, mode: ActivityFilters["prazo"]) {
 }
 
 export default function AtividadesPage() {
-  const { lookups, atividades, loading, updateAtividade } = useAppData();
+  const { lookups, atividades, atividadesGerais, loading } = useAppData();
   const [filters, setFilters] = useState<ActivityFilters>(DEFAULT_FILTERS);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Atividade | null>(null);
-  const [view, setView] = useState<ViewMode>("lista");
+  const [view, setView] = useState<ViewMode>("cards");
 
   useAutoOpenFromQuery(atividades, loading, (a) => {
     setEditing(a);
@@ -100,21 +99,30 @@ export default function AtividadesPage() {
             Filtros combinados, indicadores e visão rápida da operação.
           </p>
         </div>
-        <Button
-          className="gap-2 sm:w-fit"
-          onClick={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-        >
-          <Plus className="size-4" />
-          Nova atividade
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            className="gap-2 sm:w-fit"
+            onClick={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+          >
+            <Plus className="size-4" />
+            Nova atividade
+          </Button>
+          <Link
+            href="/atividades-gerais"
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-[var(--chart-2)] px-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--chart-2)]/90 sm:w-fit"
+          >
+            <Plus className="size-4" />
+            Nova atividade geral
+          </Link>
+        </div>
       </div>
 
-      <DashboardStats atividades={atividades} />
+      <DashboardStats atividades={filtered} atividadesGerais={atividadesGerais} />
 
-      <ActivityCalendar atividades={atividades} />
+      <ActivityCalendar atividades={atividades} atividadesGerais={atividadesGerais} />
 
       <FilterBar filters={filters} onChange={setFilters} />
       <div className="flex justify-end">
@@ -130,7 +138,7 @@ export default function AtividadesPage() {
               : "Nenhuma atividade encontrada com esses filtros."}
           </p>
         </div>
-      ) : view === "lista" ? (
+      ) : view === "cards" ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((a) => (
             <ActivityCard
@@ -144,25 +152,55 @@ export default function AtividadesPage() {
           ))}
         </div>
       ) : (
-        <KanbanBoard
-          columns={STATUS_OPTIONS.map((status) => ({
-            id: status,
-            name: status,
-            items: filtered.filter((a) => a.status === status),
-          }))}
-          renderCard={(a) => (
-            <ActivityCard
-              atividade={a}
-              onEdit={() => {
-                setEditing(a);
-                setFormOpen(true);
-              }}
-            />
-          )}
-          onMove={(itemId, _fromStatus, toStatus) =>
-            updateAtividade(itemId, { status: toStatus as StatusConclusao })
-          }
-        />
+        <div className="overflow-x-auto rounded-lg border bg-card">
+          <table className="w-full min-w-[920px] text-sm">
+            <thead className="bg-muted/60 text-left text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2">Empresa</th>
+                <th className="px-3 py-2">Unidade</th>
+                <th className="px-3 py-2">Tipo</th>
+                <th className="px-3 py-2">Assunto</th>
+                <th className="px-3 py-2">Prazo</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">Prioridade</th>
+                <th className="px-3 py-2">Checklist</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((a) => {
+                const empresa = lookups.empresa.find((e) => e.id === a.empresaId)?.name ?? "Sem empresa";
+                const unidade = lookups.unidade.find((u) => u.id === a.unidadeId)?.name ?? "-";
+                const assunto = lookups.assunto.find((s) => s.id === a.assuntoId)?.name ?? "-";
+                const tipos = lookups.tipoAtividade
+                  .filter((t) => a.tipoAtividadeIds.includes(t.id))
+                  .map((t) => t.name)
+                  .join(", ") || "-";
+                const total = a.checklist.length;
+                const done = a.checklist.filter((c) => c.concluido).length;
+                const pct = total ? Math.round((done / total) * 100) : 0;
+                return (
+                  <tr
+                    key={a.id}
+                    className="cursor-pointer border-t hover:bg-muted/30"
+                    onClick={() => {
+                      setEditing(a);
+                      setFormOpen(true);
+                    }}
+                  >
+                    <td className="px-3 py-2 font-medium">{empresa}</td>
+                    <td className="px-3 py-2">{unidade}</td>
+                    <td className="px-3 py-2">{tipos}</td>
+                    <td className="px-3 py-2">{assunto}</td>
+                    <td className="px-3 py-2">{a.prazo ? parseLocalDate(a.prazo).toLocaleDateString("pt-BR") : "-"}</td>
+                    <td className="px-3 py-2">{a.status}</td>
+                    <td className="px-3 py-2">{a.prioridade}</td>
+                    <td className="px-3 py-2">{total ? `${pct}% (${done}/${total})` : "-"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
 
       <ActivityForm open={formOpen} onOpenChange={setFormOpen} editing={editing} />

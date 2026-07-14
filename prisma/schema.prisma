@@ -20,6 +20,8 @@ enum LookupKind {
   amostragem
   categoriaRegistro
   categoriaPlanilha
+  tipoAtividadeGeral
+  setorInterno
 }
 
 enum StatusConclusao {
@@ -90,6 +92,8 @@ model Proposta {
   quantidade        Float?
   valorUnitario     Float?
   valorTotal        Float?
+  prazoInicio       DateTime?
+  prazoFim          DateTime?
 
   @@index([atividadeId])
 }
@@ -106,10 +110,45 @@ model ChecklistItem {
   @@index([atividadeId])
 }
 
+model AtividadeGeral {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipoIds     String[]
+  assunto     String           @default("")
+  vinculos    String           @default("")
+  prazo       DateTime?
+  descricao   String           @default("")
+  status      StatusConclusao  @default(Pendente)
+  prioridade  Prioridade       @default(Medio)
+  setorIds    String[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  checklist ChecklistGeralItem[]
+
+  @@index([userId])
+}
+
+model ChecklistGeralItem {
+  id                String           @id @default(cuid())
+  atividadeGeralId  String
+  atividadeGeral    AtividadeGeral   @relation(fields: [atividadeGeralId], references: [id], onDelete: Cascade)
+  parentId          String?
+  texto             String
+  status            String           @default("Pendente")
+  prioridade        Prioridade       @default(Medio)
+  prazo             DateTime?
+  ordem             Int              @default(0)
+
+  @@index([atividadeGeralId])
+}
+
 model Registro {
   id           String        @id @default(cuid())
   userId       String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nome         String        @default("")
   empresaId    String?
   unidadeId    String?
   contato      String        @default("")
@@ -163,6 +202,7 @@ model User {
   atividades      Atividade[]
   registros       Registro[]
   planilhas       Planilha[]
+  atividadesGerais AtividadeGeral[]
   knowledgeChunks  KnowledgeChunk[]
   chatMessages     ChatMessage[]
   pendingDeletions PendingDeletion[]

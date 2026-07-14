@@ -39,9 +39,11 @@ export function RegistroCard({
           <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <div>
             <p className="font-semibold leading-tight">
-              {empresa?.name ?? "Sem empresa"}
+              {registro.nome || empresa?.name || "Registro sem nome"}
             </p>
-            {assunto && <p className="text-sm text-muted-foreground">{assunto.name}</p>}
+            <p className="text-sm text-muted-foreground">
+              {[empresa?.name, assunto?.name].filter(Boolean).join(" · ") || "Sem empresa/assunto"}
+            </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">

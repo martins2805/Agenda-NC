@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, CalendarClock, X, ChevronUp, ChevronDown } from "lucide-react";
+import { CalendarClock, GripVertical, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,6 +16,7 @@ interface ChecklistEditorProps {
 
 export function ChecklistEditor({ items, onChange }: ChecklistEditorProps) {
   const [draft, setDraft] = useState("");
+  const [draggingId, setDraggingId] = useState<string | null>(null);
 
   function addItem() {
     const texto = draft.trim();
@@ -28,45 +29,39 @@ export function ChecklistEditor({ items, onChange }: ChecklistEditorProps) {
     onChange(items.map((i) => (i.id === id ? { ...i, ...patch } : i)));
   }
 
-  function moveItem(index: number, direction: -1 | 1) {
-    const target = index + direction;
-    if (target < 0 || target >= items.length) return;
+  function moveDragged(overId: string) {
+    if (!draggingId || draggingId === overId) return;
+    const from = items.findIndex((item) => item.id === draggingId);
+    const to = items.findIndex((item) => item.id === overId);
+    if (from < 0 || to < 0) return;
     const next = [...items];
-    [next[index], next[target]] = [next[target], next[index]];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
     onChange(next);
   }
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium">Checklist de próximos passos</label>
+      <label className="text-sm font-medium">Checklist de proximos passos</label>
       <div className="flex flex-col gap-1.5">
-        {items.map((item, index) => (
-          <div key={item.id} className="flex flex-col gap-1 rounded-md border px-2 py-1.5">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            draggable
+            onDragStart={() => setDraggingId(item.id)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              moveDragged(item.id);
+            }}
+            onDragEnd={() => setDraggingId(null)}
+            className={`flex flex-col gap-1 rounded-md border px-2 py-1.5 ${
+              draggingId === item.id ? "bg-muted shadow-md" : ""
+            }`}
+          >
             <div className="flex items-center gap-2">
-              <div className="flex shrink-0 flex-col">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-4 text-muted-foreground disabled:opacity-30"
-                  disabled={index === 0}
-                  title="Mover para cima"
-                  onClick={() => moveItem(index, -1)}
-                >
-                  <ChevronUp className="size-3" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-4 text-muted-foreground disabled:opacity-30"
-                  disabled={index === items.length - 1}
-                  title="Mover para baixo"
-                  onClick={() => moveItem(index, 1)}
-                >
-                  <ChevronDown className="size-3" />
-                </Button>
-              </div>
+              <span className="cursor-grab text-muted-foreground active:cursor-grabbing" title="Arrastar para reorganizar">
+                <GripVertical className="size-4" />
+              </span>
               <Checkbox
                 checked={item.concluido}
                 onCheckedChange={(checked) =>
@@ -76,7 +71,7 @@ export function ChecklistEditor({ items, onChange }: ChecklistEditorProps) {
               <Input
                 value={item.texto}
                 onChange={(e) => updateItem(item.id, { texto: e.target.value })}
-                className={`h-8 border-none px-1 shadow-none focus-visible:ring-0 ${
+                className={`h-auto min-h-8 border-none px-1 shadow-none focus-visible:ring-0 ${
                   item.concluido ? "text-muted-foreground line-through" : ""
                 }`}
               />

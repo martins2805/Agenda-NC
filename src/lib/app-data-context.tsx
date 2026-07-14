@@ -11,6 +11,7 @@ import {
 } from "react";
 import type {
   Atividade,
+  AtividadeGeral,
   LookupItem,
   LookupKind,
   Planilha,
@@ -27,6 +28,8 @@ interface LookupState {
   amostragem: LookupItem[];
   categoriaRegistro: LookupItem[];
   categoriaPlanilha: LookupItem[];
+  tipoAtividadeGeral: LookupItem[];
+  setorInterno: LookupItem[];
 }
 
 const EMPTY_LOOKUPS: LookupState = {
@@ -39,6 +42,8 @@ const EMPTY_LOOKUPS: LookupState = {
   amostragem: [],
   categoriaRegistro: [],
   categoriaPlanilha: [],
+  tipoAtividadeGeral: [],
+  setorInterno: [],
 };
 
 // A write that hasn't been confirmed by the server yet. load() re-applies
@@ -71,6 +76,7 @@ function applyPending<T extends { id: string }>(
 interface AppDataContextValue {
   lookups: LookupState;
   atividades: Atividade[];
+  atividadesGerais: AtividadeGeral[];
   registros: Registro[];
   planilhas: Planilha[];
   loading: boolean;
@@ -82,6 +88,9 @@ interface AppDataContextValue {
   addAtividade: (atividade: Atividade) => void;
   updateAtividade: (id: string, patch: Partial<Atividade>) => void;
   deleteAtividade: (id: string) => void;
+  addAtividadeGeral: (atividade: AtividadeGeral) => void;
+  updateAtividadeGeral: (id: string, patch: Partial<AtividadeGeral>) => void;
+  deleteAtividadeGeral: (id: string) => void;
   addRegistro: (registro: Registro) => void;
   updateRegistro: (id: string, patch: Partial<Registro>) => void;
   deleteRegistro: (id: string) => void;
@@ -111,6 +120,7 @@ function groupLookups(items: (LookupItem & { kind: LookupKind })[]): LookupState
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [lookups, setLookups] = useState<LookupState>(EMPTY_LOOKUPS);
   const [atividades, setAtividades] = useState<Atividade[]>([]);
+  const [atividadesGerais, setAtividadesGerais] = useState<AtividadeGeral[]>([]);
   const [registros, setRegistros] = useState<Registro[]>([]);
   const [planilhas, setPlanilhas] = useState<Planilha[]>([]);
   const [dataError, setDataError] = useState<string | null>(null);
@@ -122,6 +132,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   // Tracks writes that have been applied optimistically but not yet
   // acknowledged by the server, keyed by entity id, per entity type.
   const pendingAtividades = useRef<Map<string, PendingOp<Atividade>>>(new Map());
+  const pendingAtividadesGerais = useRef<Map<string, PendingOp<AtividadeGeral>>>(new Map());
   const pendingRegistros = useRef<Map<string, PendingOp<Registro>>>(new Map());
   const pendingPlanilhas = useRef<Map<string, PendingOp<Planilha>>>(new Map());
 
@@ -131,10 +142,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const load = useCallback(async () => {
     const seq = ++loadSeq.current;
     try {
-      const [lookupsRes, atividadesRes, registrosRes, planilhasRes] =
+      const [lookupsRes, atividadesRes, atividadesGeraisRes, registrosRes, planilhasRes] =
         await Promise.all([
           fetch("/api/lookups"),
           fetch("/api/atividades"),
+          fetch("/api/atividades-gerais"),
           fetch("/api/registros"),
           fetch("/api/planilhas"),
         ]);
@@ -150,6 +162,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         const data = await atividadesRes.json();
         if (loadSeq.current !== seq) return;
         setAtividades(applyPending(data, pendingAtividades.current));
+      }
+      if (atividadesGeraisRes.ok) {
+        const data = await atividadesGeraisRes.json();
+        if (loadSeq.current !== seq) return;
+        setAtividadesGerais(applyPending(data, pendingAtividadesGerais.current));
       }
       if (registrosRes.ok) {
         const data = await registrosRes.json();
@@ -303,6 +320,75 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const addAtividadeGeral = useCallback((atividade: AtividadeGeral) => {
+    setAtividadesGerais((prev) => [atividade, ...prev]);
+    pendingAtividadesGerais.current.set(atividade.id, { type: "add", item: atividade });
+    fetch("/api/atividades-gerais", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(atividade),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`POST atividade geral falhou: ${res.status}`);
+      })
+      .catch((error) => {
+        console.error("Falha ao criar atividade geral", error);
+        setAtividadesGerais((prev) => prev.filter((a) => a.id !== atividade.id));
+        setDataError("Nao foi possivel criar a atividade geral. Tente novamente.");
+      })
+      .finally(() => pendingAtividadesGerais.current.delete(atividade.id));
+  }, []);
+
+  const updateAtividadeGeral = useCallback((id: string, patch: Partial<AtividadeGeral>) => {
+    setAtividadesGerais((prev) => {
+      const previous = prev.find((a) => a.id === id);
+      if (!previous) return prev;
+      const next = prev.map((a) => (a.id === id ? { ...a, ...patch } : a));
+      const updated = next.find((a) => a.id === id)!;
+
+      pendingAtividadesGerais.current.set(id, { type: "update", patch });
+      fetch(`/api/atividades-gerais/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error(`PATCH atividade geral falhou: ${res.status}`);
+        })
+        .catch((error) => {
+          console.error("Falha ao atualizar atividade geral", error);
+          setAtividadesGerais((cur) => cur.map((a) => (a.id === id ? previous : a)));
+          setDataError("Nao foi possivel salvar a atividade geral. A edicao foi desfeita.");
+        })
+        .finally(() => pendingAtividadesGerais.current.delete(id));
+
+      return next;
+    });
+  }, []);
+
+  const deleteAtividadeGeral = useCallback((id: string) => {
+    setAtividadesGerais((prev) => {
+      const removed = prev.find((a) => a.id === id);
+      pendingAtividadesGerais.current.set(id, { type: "delete" });
+      fetch(`/api/atividades-gerais/${id}`, { method: "DELETE" })
+        .then((res) => {
+          if (!res.ok) throw new Error(`DELETE atividade geral falhou: ${res.status}`);
+        })
+        .catch((error) => {
+          console.error("Falha ao excluir atividade geral", error);
+          if (removed) {
+            setAtividadesGerais((cur) =>
+              cur.some((a) => a.id === id) ? cur : [removed, ...cur]
+            );
+          }
+          setDataError("Nao foi possivel excluir a atividade geral. Ela foi restaurada.");
+        })
+        .finally(() => pendingAtividadesGerais.current.delete(id));
+
+      return prev.filter((a) => a.id !== id);
+    });
+  }, []);
+
   const addRegistro = useCallback((registro: Registro) => {
     setRegistros((prev) => [registro, ...prev]);
     pendingRegistros.current.set(registro.id, { type: "add", item: registro });
@@ -451,6 +537,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     () => ({
       lookups,
       atividades,
+      atividadesGerais,
       registros,
       planilhas,
       loading,
@@ -462,6 +549,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addAtividade,
       updateAtividade,
       deleteAtividade,
+      addAtividadeGeral,
+      updateAtividadeGeral,
+      deleteAtividadeGeral,
       addRegistro,
       updateRegistro,
       deleteRegistro,
@@ -473,6 +563,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     [
       lookups,
       atividades,
+      atividadesGerais,
       registros,
       planilhas,
       loading,
@@ -484,6 +575,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addAtividade,
       updateAtividade,
       deleteAtividade,
+      addAtividadeGeral,
+      updateAtividadeGeral,
+      deleteAtividadeGeral,
       addRegistro,
       updateRegistro,
       deleteRegistro,
@@ -530,6 +624,14 @@ export function makePropostaId() {
 }
 
 export function makeChecklistItemId() {
+  return makeId();
+}
+
+export function makeAtividadeGeralId() {
+  return makeId();
+}
+
+export function makeChecklistGeralItemId() {
   return makeId();
 }
 

@@ -68,6 +68,14 @@ export function RegistroEditor({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <Label>Nome</Label>
+          <Input
+            value={registro.nome}
+            onChange={(e) => patch({ nome: e.target.value })}
+            placeholder="Ex: Reuniao de alinhamento"
+          />
+        </div>
         <ManagedSelect
           label="Empresa"
           items={lookups.empresa}

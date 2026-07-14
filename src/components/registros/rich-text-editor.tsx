@@ -1,6 +1,7 @@
 "use client";
 
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
+import { Mark, mergeAttributes } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
@@ -29,8 +30,31 @@ import {
   Highlighter,
   Undo,
   Redo,
+  Palette,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const TEXT_COLORS = ["#1F2C43", "#3E4C59", "#8BAAAD", "#2E5749", "#BF512C", "#DA9B2B", "#780001"];
+
+const TextColor = Mark.create({
+  name: "textColor",
+  addAttributes() {
+    return {
+      color: {
+        default: null,
+        parseHTML: (element) => element.style.color || null,
+        renderHTML: (attributes) =>
+          attributes.color ? { style: `color: ${attributes.color}` } : {},
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: "span[style*=color]" }];
+  },
+  renderHTML({ HTMLAttributes }) {
+    return ["span", mergeAttributes(HTMLAttributes), 0];
+  },
+});
 
 interface RichTextEditorProps {
   content: string;
@@ -103,6 +127,25 @@ function Toolbar({ editor }: { editor: Editor }) {
       >
         <Highlighter className="size-4" />
       </ToolbarButton>
+      <div className="flex items-center gap-0.5 px-1">
+        <Palette className="size-4 text-muted-foreground" />
+        {TEXT_COLORS.map((color) => (
+          <button
+            key={color}
+            type="button"
+            aria-label={`Cor ${color}`}
+            className="size-5 rounded-sm border border-border"
+            style={{ backgroundColor: color }}
+            onClick={() =>
+              editor
+                .chain()
+                .focus()
+                .setMark("textColor", { color })
+                .run()
+            }
+          />
+        ))}
+      </div>
 
       <Separator orientation="vertical" className="mx-1 h-6" />
 
@@ -238,6 +281,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Link.configure({ openOnClick: false, autolink: true }),
       Highlight,
+      TextColor,
       Table.configure({ resizable: true }),
       TableRow,
       TableHeader,

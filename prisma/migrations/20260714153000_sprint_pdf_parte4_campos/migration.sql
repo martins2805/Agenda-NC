@@ -1,0 +1,6 @@
+ALTER TABLE "Proposta"
+ADD COLUMN "prazoInicio" TIMESTAMP(3),
+ADD COLUMN "prazoFim" TIMESTAMP(3);
+
+ALTER TABLE "Registro"
+ADD COLUMN "nome" TEXT NOT NULL DEFAULT '';

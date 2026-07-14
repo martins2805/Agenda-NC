@@ -1,11 +1,21 @@
 import type {
+  AtividadeGeral as DbAtividadeGeral,
   Atividade as DbAtividade,
   Proposta as DbProposta,
   ChecklistItem as DbChecklistItem,
+  ChecklistGeralItem as DbChecklistGeralItem,
   StatusConclusao as DbStatus,
   Prioridade as DbPrioridade,
 } from "@/generated/prisma/client";
-import type { Atividade, Proposta, ChecklistItem, StatusConclusao, Prioridade } from "@/lib/types";
+import type {
+  Atividade,
+  AtividadeGeral,
+  ChecklistGeralItem,
+  Proposta,
+  ChecklistItem,
+  StatusConclusao,
+  Prioridade,
+} from "@/lib/types";
 
 const STATUS_TO_DB: Record<StatusConclusao, DbStatus> = {
   Pendente: "Pendente",
@@ -83,6 +93,8 @@ function propostaFromDb(p: DbProposta): Proposta {
     quantidade: p.quantidade,
     valorUnitario: p.valorUnitario,
     valorTotal: p.valorTotal,
+    prazoInicio: p.prazoInicio ? p.prazoInicio.toISOString().slice(0, 10) : null,
+    prazoFim: p.prazoFim ? p.prazoFim.toISOString().slice(0, 10) : null,
   };
 }
 
@@ -91,6 +103,39 @@ function checklistItemFromDb(c: DbChecklistItem): ChecklistItem {
     id: c.id,
     texto: c.texto,
     concluido: c.concluido,
+    prazo: c.prazo ? c.prazo.toISOString().slice(0, 10) : null,
+  };
+}
+
+type FullDbAtividadeGeral = DbAtividadeGeral & {
+  checklist: DbChecklistGeralItem[];
+};
+
+export function atividadeGeralFromDb(a: FullDbAtividadeGeral): AtividadeGeral {
+  return {
+    id: a.id,
+    tipoIds: a.tipoIds,
+    assunto: a.assunto,
+    vinculos: a.vinculos,
+    prazo: a.prazo ? a.prazo.toISOString().slice(0, 10) : null,
+    descricao: a.descricao,
+    status: STATUS_FROM_DB[a.status],
+    prioridade: PRIORIDADE_FROM_DB[a.prioridade],
+    setorIds: a.setorIds,
+    createdAt: a.createdAt.toISOString(),
+    checklist: a.checklist
+      .sort((x, y) => x.ordem - y.ordem)
+      .map(checklistGeralItemFromDb),
+  };
+}
+
+function checklistGeralItemFromDb(c: DbChecklistGeralItem): ChecklistGeralItem {
+  return {
+    id: c.id,
+    parentId: c.parentId,
+    texto: c.texto,
+    status: c.status as ChecklistGeralItem["status"],
+    prioridade: PRIORIDADE_FROM_DB[c.prioridade],
     prazo: c.prazo ? c.prazo.toISOString().slice(0, 10) : null,
   };
 }

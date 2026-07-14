@@ -107,7 +107,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
   function handleSave() {
     let toSave = draft;
     if (showProposta && toSave.propostas.length === 0) {
-      toSave = { ...toSave, propostas: [{ id: makePropostaId(), numero: 1, servicoProdutoIds: [], escopoIds: [], amostragemIds: [], quantidade: null, valorUnitario: null, valorTotal: null }] };
+      toSave = { ...toSave, propostas: [{ id: makePropostaId(), numero: 1, servicoProdutoIds: [], escopoIds: [], amostragemIds: [], quantidade: null, valorUnitario: null, valorTotal: null, prazoInicio: null, prazoFim: null }] };
     }
     if (editing) {
       updateAtividade(editing.id, toSave);
@@ -187,7 +187,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
                     className="flex items-center gap-1.5 text-sm text-primary hover:underline"
                   >
                     <FileText className="size-3.5 shrink-0" />
-                    {r.tabs[0]?.titulo || "Registro"}
+                    {r.nome || r.tabs[0]?.titulo || "Registro"}
                   </Link>
                 ))}
                 {linkedPlanilhas.map((p) => (
@@ -241,6 +241,8 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
                         quantidade: null,
                         valorUnitario: null,
                         valorTotal: null,
+                        prazoInicio: null,
+                        prazoFim: null,
                       },
                     ]
               }

@@ -7,7 +7,9 @@ export type LookupKind =
   | "escopo"
   | "amostragem"
   | "categoriaRegistro"
-  | "categoriaPlanilha";
+  | "categoriaPlanilha"
+  | "tipoAtividadeGeral"
+  | "setorInterno";
 
 export interface LookupItem {
   id: string;
@@ -45,6 +47,15 @@ export interface ChecklistItem {
   prazo: string | null; // ISO date
 }
 
+export interface ChecklistGeralItem {
+  id: string;
+  parentId: string | null;
+  texto: string;
+  status: "Concluído" | "Pendente" | "Em andamento";
+  prioridade: Prioridade;
+  prazo: string | null;
+}
+
 export interface Proposta {
   id: string;
   numero: number;
@@ -54,6 +65,8 @@ export interface Proposta {
   quantidade: number | null;
   valorUnitario: number | null;
   valorTotal: number | null;
+  prazoInicio: string | null;
+  prazoFim: string | null;
 }
 
 export interface Atividade {
@@ -83,6 +96,7 @@ export interface RegistroTab {
 
 export interface Registro {
   id: string;
+  nome: string;
   empresaId: string | null;
   unidadeId: string | null;
   contato: string;
@@ -103,4 +117,18 @@ export interface Planilha {
   atividadeId: string | null;
   conteudo: Record<string, unknown> | null;
   createdAt: string; // ISO datetime
+}
+
+export interface AtividadeGeral {
+  id: string;
+  tipoIds: string[];
+  assunto: string;
+  vinculos: string;
+  prazo: string | null;
+  descricao: string;
+  status: StatusConclusao;
+  prioridade: Prioridade;
+  setorIds: string[];
+  checklist: ChecklistGeralItem[];
+  createdAt: string;
 }

@@ -13,14 +13,12 @@ import {
   type RegistroFilters,
 } from "@/components/registros/registro-filter-bar";
 import { ViewToggle, type ViewMode } from "@/components/view-toggle";
-import { KanbanBoard } from "@/components/kanban-board";
 import type { Registro } from "@/lib/types";
-
-const SEM_CATEGORIA = "__sem_categoria__";
 
 function emptyRegistro(): Registro {
   return {
     id: makeRegistroId(),
+    nome: "",
     empresaId: null,
     unidadeId: null,
     contato: "",
@@ -33,12 +31,12 @@ function emptyRegistro(): Registro {
 }
 
 export default function RegistrosPage() {
-  const { lookups, registros, loading, addRegistro, updateRegistro, deleteRegistro } =
+  const { lookups, atividades, registros, loading, addRegistro, updateRegistro, deleteRegistro } =
     useAppData();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftNew, setDraftNew] = useState<Registro | null>(null);
   const [filters, setFilters] = useState<RegistroFilters>(DEFAULT_REGISTRO_FILTERS);
-  const [view, setView] = useState<ViewMode>("lista");
+  const [view, setView] = useState<ViewMode>("cards");
 
   const editing = draftNew ?? registros.find((r) => r.id === editingId) ?? null;
 
@@ -57,7 +55,7 @@ export default function RegistrosPage() {
       if (keyword) {
         const empresa = lookups.empresa.find((e) => e.id === r.empresaId)?.name ?? "";
         const assunto = lookups.assunto.find((a) => a.id === r.assuntoId)?.name ?? "";
-        const haystack = [r.contato, empresa, assunto].join(" ").toLowerCase();
+        const haystack = [r.nome, r.contato, empresa, assunto].join(" ").toLowerCase();
         if (!haystack.includes(keyword)) return false;
       }
 
@@ -101,21 +99,6 @@ export default function RegistrosPage() {
     );
   }
 
-  const activeCategorias = lookups.categoriaRegistro.filter((c) => c.active);
-  const allColumns = [
-    ...activeCategorias.map((cat) => ({
-      id: cat.id,
-      name: cat.name,
-      items: filtered.filter((r) => r.categoriaIds.includes(cat.id)),
-    })),
-    {
-      id: SEM_CATEGORIA,
-      name: "Sem categoria",
-      items: filtered.filter((r) => r.categoriaIds.length === 0),
-    },
-  ];
-  const columns = allColumns.filter((col) => col.items.length > 0);
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -145,35 +128,60 @@ export default function RegistrosPage() {
               : "Nenhum registro encontrado com esses filtros."}
           </p>
         </div>
-      ) : view === "lista" ? (
-        <div className="flex flex-col gap-8">
-          {columns.map((col) => (
-            <section key={col.id} className="flex flex-col gap-3">
-              <h2 className="text-lg font-semibold">{col.name}</h2>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {col.items.map((r) => (
-                  <RegistroCard
-                    key={r.id}
-                    registro={r}
-                    onOpen={() => setEditingId(r.id)}
-                  />
-                ))}
-              </div>
-            </section>
+      ) : view === "cards" ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((r) => (
+            <RegistroCard
+              key={r.id}
+              registro={r}
+              onOpen={() => setEditingId(r.id)}
+            />
           ))}
         </div>
       ) : (
-        <KanbanBoard
-          columns={allColumns}
-          renderCard={(r) => (
-            <RegistroCard registro={r} onOpen={() => setEditingId(r.id)} />
-          )}
-          onMove={(itemId, _fromColumnId, toColumnId) =>
-            updateRegistro(itemId, {
-              categoriaIds: toColumnId === SEM_CATEGORIA ? [] : [toColumnId],
-            })
-          }
-        />
+        <div className="overflow-x-auto rounded-lg border bg-card">
+          <table className="w-full min-w-[840px] text-sm">
+            <thead className="bg-muted/60 text-left text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2">Nome</th>
+                <th className="px-3 py-2">Empresa</th>
+                <th className="px-3 py-2">Unidade</th>
+                <th className="px-3 py-2">Tipo</th>
+                <th className="px-3 py-2">Assunto</th>
+                <th className="px-3 py-2">Vinculo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r) => {
+                const empresa = lookups.empresa.find((e) => e.id === r.empresaId)?.name ?? "Sem empresa";
+                const unidade = lookups.unidade.find((u) => u.id === r.unidadeId)?.name ?? "-";
+                const assunto = lookups.assunto.find((a) => a.id === r.assuntoId)?.name ?? "-";
+                const categorias = lookups.categoriaRegistro
+                  .filter((c) => r.categoriaIds.includes(c.id))
+                  .map((c) => c.name)
+                  .join(", ") || "-";
+                const atividade = atividades.find((a) => a.id === r.atividadeId);
+                const vinculo = atividade
+                  ? lookups.empresa.find((e) => e.id === atividade.empresaId)?.name ?? "Atividade vinculada"
+                  : "-";
+                return (
+                  <tr
+                    key={r.id}
+                    className="cursor-pointer border-t hover:bg-muted/30"
+                    onClick={() => setEditingId(r.id)}
+                  >
+                    <td className="px-3 py-2 font-medium">{r.nome || r.tabs[0]?.titulo || "Registro"}</td>
+                    <td className="px-3 py-2">{empresa}</td>
+                    <td className="px-3 py-2">{unidade}</td>
+                    <td className="px-3 py-2">{categorias}</td>
+                    <td className="px-3 py-2">{assunto}</td>
+                    <td className="px-3 py-2">{vinculo}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

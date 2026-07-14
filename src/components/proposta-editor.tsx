@@ -21,6 +21,8 @@ function emptyProposta(numero: number): Proposta {
     quantidade: null,
     valorUnitario: null,
     valorTotal: null,
+    prazoInicio: null,
+    prazoFim: null,
   };
 }
 
@@ -179,6 +181,33 @@ export function PropostaEditor({ propostas, onChange }: PropostaEditorProps) {
                       p,
                       e.target.value === "" ? null : Number(e.target.value)
                     )
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label>Prazo de execucao - inicio</Label>
+                <Input
+                  type="date"
+                  value={p.prazoInicio ?? ""}
+                  onChange={(e) =>
+                    updateProposta(p.id, {
+                      prazoInicio: e.target.value || null,
+                      prazoFim: e.target.value ? p.prazoFim : null,
+                    })
+                  }
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Prazo de execucao - fim</Label>
+                <Input
+                  type="date"
+                  min={p.prazoInicio ?? undefined}
+                  value={p.prazoFim ?? ""}
+                  disabled={!p.prazoInicio}
+                  onChange={(e) =>
+                    updateProposta(p.id, { prazoFim: e.target.value || null })
                   }
                 />
               </div>

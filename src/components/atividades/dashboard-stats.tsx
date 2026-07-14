@@ -1,120 +1,165 @@
 "use client";
 
+import { AlertTriangle, CheckCircle2, ClipboardList, Flame, FileClock } from "lucide-react";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAppData } from "@/lib/app-data-context";
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
 import type { Atividade } from "@/lib/types";
-import { ClipboardList } from "lucide-react";
-import { TILE_COLORS } from "@/lib/tile-colors";
+import type { AtividadeGeral } from "@/lib/types";
+import { parseLocalDate } from "@/lib/calculations";
 
-function StatBar({ value, max }: { value: number; max: number }) {
+const STATUS_COLORS: Record<string, string> = {
+  Pendente: "#BF512C",
+  "Aguardando retorno interno": "#DA9B2B",
+  "Aguardando retorno cliente": "#3E4C59",
+  "Concluído": "#8BAAAD",
+};
+
+const PRIORIDADE_COLORS: Record<string, string> = {
+  Urgente: "#780001",
+  Importante: "#BF512C",
+  "Médio": "#DA9B2B",
+  Baixo: "#8BAAAD",
+};
+
+function isOverdue(atividade: Atividade) {
+  if (!atividade.prazo || atividade.status === "Concluído") return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return parseLocalDate(atividade.prazo).getTime() < today.getTime();
+}
+
+function findTipoByName(items: { id: string; name: string }[], name: string) {
+  return items.find((item) => item.name.toLowerCase() === name.toLowerCase());
+}
+
+function StatCard({
+  label,
+  value,
+  color,
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  icon: typeof ClipboardList;
+}) {
   return (
-    <div className="stat-bar">
-      <span style={{ width: `${max > 0 ? (value / max) * 100 : 0}%` }} />
-    </div>
+    <Card className="border-none shadow-sm">
+      <CardContent className="flex items-center gap-3">
+        <span
+          className="flex size-10 shrink-0 items-center justify-center rounded-md text-white"
+          style={{ backgroundColor: color }}
+        >
+          <Icon className="size-5" />
+        </span>
+        <div className="min-w-0">
+          <p className="ledger-label truncate">{label}</p>
+          <p className="font-mono text-3xl font-bold">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
-export function DashboardStats({ atividades }: { atividades: Atividade[] }) {
-  const { lookups } = useAppData();
-
-  const total = atividades.length;
-
-  const porStatus = STATUS_OPTIONS.map((s) => ({
-    label: s,
-    count: atividades.filter((a) => a.status === s).length,
-  }));
-  const porPrioridade = PRIORIDADE_OPTIONS.map((p) => ({
-    label: p,
-    count: atividades.filter((a) => a.prioridade === p).length,
-  }));
-
-  const porTipo = lookups.tipoAtividade
-    .filter((t) => t.active)
-    .map((t) => ({
-      name: t.name,
-      count: atividades.filter((a) => a.tipoAtividadeIds.includes(t.id)).length,
-    }))
-    .filter((t) => t.count > 0)
-    .sort((a, b) => b.count - a.count);
-
-  const maxStatus = Math.max(1, ...porStatus.map((s) => s.count));
-  const maxPrioridade = Math.max(1, ...porPrioridade.map((p) => p.count));
+function VerticalBars({
+  title,
+  data,
+}: {
+  title: string;
+  data: { label: string; count: number; color: string }[];
+}) {
+  const max = Math.max(1, ...data.map((item) => item.count));
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <Card className="lg:col-span-1 border-none bg-[var(--chart-1)] text-white shadow-lg shadow-[var(--chart-1)]/20">
-        <CardContent className="flex flex-col gap-1">
-          <div className="flex items-center gap-2 text-white/70">
-            <ClipboardList className="size-3.5" />
-            <span className="ledger-label text-white/70">Total de atividades</span>
-          </div>
-          <p className="font-mono text-4xl font-bold tracking-tight">
-            {String(total).padStart(2, "0")}
-          </p>
-          <span className="w-fit rounded-full bg-white/15 px-2.5 py-0.5 font-mono text-[10px] tracking-wide uppercase">
-            controle vivo
-          </span>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="flex flex-col gap-2">
-          <span className="ledger-label">Por status</span>
-          <div className="flex flex-col gap-2 text-sm">
-            {porStatus.map((s) => (
-              <div key={s.label} className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <span className="truncate">{s.label}</span>
-                  <span className="font-semibold">{s.count}</span>
-                </div>
-                <StatBar value={s.count} max={maxStatus} />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="flex flex-col gap-2">
-          <span className="ledger-label">Por prioridade</span>
-          <div className="flex flex-col gap-2 text-sm">
-            {porPrioridade.map((p) => (
-              <div key={p.label} className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <span>{p.label}</span>
-                  <span className="font-semibold">{p.count}</span>
-                </div>
-                <StatBar value={p.count} max={maxPrioridade} />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="flex flex-col gap-2">
-          <span className="ledger-label">Por tipo de atividade</span>
-          {porTipo.length === 0 ? (
-            <span className="text-sm text-muted-foreground">Sem dados ainda</span>
-          ) : (
-            <div className="mt-1 grid grid-cols-3 gap-1.5">
-              {porTipo.slice(0, 6).map((t, i) => (
+    <Card>
+      <CardContent className="flex min-h-64 flex-col gap-4">
+        <span className="ledger-label">{title}</span>
+        <div className="flex flex-1 items-end gap-3">
+          {data.map((item) => (
+            <div key={item.label} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+              <div className="flex h-36 w-full items-end rounded-md bg-muted/60 p-1">
                 <div
-                  key={t.name}
-                  className={`flex flex-col justify-between gap-2 rounded-lg p-2 ${TILE_COLORS[i % TILE_COLORS.length]}`}
-                  title={`${t.name}: ${t.count}`}
-                >
-                  <span className="line-clamp-1 text-[10px] font-medium opacity-80">
-                    {t.name}
-                  </span>
-                  <span className="font-mono text-lg font-bold">{t.count}</span>
-                </div>
-              ))}
+                  className="w-full rounded-sm"
+                  style={{
+                    height: `${Math.max(5, (item.count / max) * 100)}%`,
+                    backgroundColor: item.color,
+                  }}
+                  title={`${item.label}: ${item.count}`}
+                />
+              </div>
+              <span className="font-mono text-sm font-semibold">{item.count}</span>
+              <span className="line-clamp-2 text-center text-[11px] text-muted-foreground">
+                {item.label}
+              </span>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function DashboardStats({
+  atividades,
+  atividadesGerais,
+}: {
+  atividades: Atividade[];
+  atividadesGerais: AtividadeGeral[];
+}) {
+  const { lookups } = useAppData();
+  const tipoProposta = findTipoByName(lookups.tipoAtividade, "Proposta");
+  const propostas = tipoProposta
+    ? atividades.filter((a) => a.tipoAtividadeIds.includes(tipoProposta.id))
+    : [];
+  const propostasPendentes = propostas.filter((a) => a.status === "Pendente");
+
+  const statusData = STATUS_OPTIONS.map((status) => ({
+    label: status,
+    count: atividades.filter((a) => a.status === status).length,
+    color: STATUS_COLORS[status] ?? "#3E4C59",
+  }));
+  const prioridadeData = PRIORIDADE_OPTIONS.map((prioridade) => ({
+    label: prioridade,
+    count: atividades.filter((a) => a.prioridade === prioridade).length,
+    color: PRIORIDADE_COLORS[prioridade] ?? "#3E4C59",
+  }));
+  const empresaData = lookups.empresa
+    .filter((empresa) => empresa.active)
+    .map((empresa, index) => ({
+      label: empresa.name,
+      count: atividades.filter((a) => a.empresaId === empresa.id).length,
+      color: ["#8BAAAD", "#2E5749", "#BF512C", "#DA9B2B", "#780001"][index % 5],
+    }))
+    .filter((item) => item.count > 0)
+    .slice(0, 8);
+  const propostaStatusData = STATUS_OPTIONS.map((status) => ({
+    label: status,
+    count: propostas.filter((a) => a.status === status).length,
+    color: STATUS_COLORS[status] ?? "#3E4C59",
+  }));
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Total de atividades" value={atividades.length} color="#1F2C43" icon={ClipboardList} />
+        <StatCard label="Vencidas" value={atividades.filter(isOverdue).length} color="#780001" icon={AlertTriangle} />
+        <StatCard label="Pendentes" value={atividades.filter((a) => a.status === "Pendente").length} color="#BF512C" icon={FileClock} />
+        <StatCard label="Prioridade urgente" value={atividades.filter((a) => a.prioridade === "Urgente").length} color="#780001" icon={Flame} />
+        <StatCard label="Prioridade importante" value={atividades.filter((a) => a.prioridade === "Importante").length} color="#BF512C" icon={Flame} />
+        <StatCard label="Tipo propostas" value={propostas.length} color="#8BAAAD" icon={CheckCircle2} />
+        <StatCard label="Propostas pendentes" value={propostasPendentes.length} color="#BF512C" icon={FileClock} />
+        <Link href="/atividades-gerais">
+          <StatCard label="Atividades gerais" value={atividadesGerais.length} color="#2E5749" icon={ClipboardList} />
+        </Link>
+      </div>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <VerticalBars title="Status das propostas" data={propostaStatusData} />
+        <VerticalBars title="Status das atividades" data={statusData} />
+        <VerticalBars title="Atividades por prioridade" data={prioridadeData} />
+        <VerticalBars title="Atividades por empresa" data={empresaData.length ? empresaData : [{ label: "Sem dados", count: 0, color: "#D8D8D8" }]} />
+      </div>
     </div>
   );
 }

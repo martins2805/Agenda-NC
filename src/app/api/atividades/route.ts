@@ -53,6 +53,8 @@ export async function POST(request: Request) {
           quantidade: p.quantidade,
           valorUnitario: p.valorUnitario,
           valorTotal: p.valorTotal,
+          prazoInicio: p.prazoInicio ? new Date(p.prazoInicio) : null,
+          prazoFim: p.prazoFim ? new Date(p.prazoFim) : null,
         })),
       },
       checklist: {

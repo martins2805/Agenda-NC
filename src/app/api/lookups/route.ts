@@ -14,6 +14,8 @@ const VALID_KINDS: LookupKind[] = [
   "amostragem",
   "categoriaRegistro",
   "categoriaPlanilha",
+  "tipoAtividadeGeral",
+  "setorInterno",
 ];
 
 export async function GET() {

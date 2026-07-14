@@ -94,4 +94,6 @@ export const LOOKUP_SEED_DATA: { kind: LookupKind; name: string }[] = [
     "Produtos/Serviços",
     "Consultoria",
   ]),
+  ...entries("tipoAtividadeGeral", ["Geral", "Interna", "Administrativa"]),
+  ...entries("setorInterno", ["Comercial", "Operacional", "Financeiro", "Administrativo"]),
 ];

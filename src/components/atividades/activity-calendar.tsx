@@ -5,11 +5,12 @@ import { CalendarDays, CheckSquare, ListChecks } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { useAppData } from "@/lib/app-data-context";
-import type { Atividade, Prioridade } from "@/lib/types";
+import type { Atividade, AtividadeGeral, Prioridade } from "@/lib/types";
 
 interface CalendarEntry {
-  kind: "atividade" | "checklist";
-  atividade: Atividade;
+  kind: "atividade" | "checklist" | "execucao" | "geral";
+  atividade?: Atividade;
+  atividadeGeral?: AtividadeGeral;
   tipos: string[];
   texto: string | null;
   concluido?: boolean;
@@ -29,7 +30,13 @@ const PRIORIDADE_STYLES: Record<Prioridade, string> = {
   Baixo: "bg-muted text-muted-foreground",
 };
 
-export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
+export function ActivityCalendar({
+  atividades,
+  atividadesGerais,
+}: {
+  atividades: Atividade[];
+  atividadesGerais: AtividadeGeral[];
+}) {
   const { lookups } = useAppData();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
@@ -58,15 +65,55 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
           });
         }
       });
+      a.propostas.forEach((p) => {
+        if (!p.prazoInicio) return;
+        push(p.prazoInicio, {
+          kind: "execucao",
+          atividade: a,
+          tipos,
+          texto: `Proposta ${p.numero}`,
+        });
+        if (p.prazoFim && p.prazoFim !== p.prazoInicio) {
+          push(p.prazoFim, {
+            kind: "execucao",
+            atividade: a,
+            tipos,
+            texto: `Proposta ${p.numero}`,
+          });
+        }
+      });
+    });
+    atividadesGerais.forEach((a) => {
+      const tipos = lookups.tipoAtividadeGeral
+        .filter((t) => a.tipoIds.includes(t.id))
+        .map((t) => t.name);
+      if (a.prazo) {
+        push(a.prazo, {
+          kind: "geral",
+          atividadeGeral: a,
+          tipos,
+          texto: a.assunto,
+        });
+      }
+      a.checklist.forEach((item) => {
+        if (item.prazo) {
+          push(item.prazo, {
+            kind: "geral",
+            atividadeGeral: a,
+            tipos,
+            texto: item.texto,
+          });
+        }
+      });
     });
     return map;
-  }, [atividades, lookups.tipoAtividade]);
+  }, [atividades, atividadesGerais, lookups.tipoAtividade, lookups.tipoAtividadeGeral]);
 
   const selectedKey = selectedDate ? toKey(selectedDate) : null;
   const entries = selectedKey ? entriesByDate.get(selectedKey) ?? [] : [];
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:flex-row sm:gap-6">
+    <div className="flex flex-col gap-4 rounded-lg border bg-[var(--chart-1)] p-4 text-[var(--primary)] sm:flex-row sm:gap-6">
       <Calendar
         mode="single"
         locale={{ code: "pt-BR" } as never}
@@ -81,9 +128,10 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
           hasItems:
             "relative after:absolute after:bottom-0.5 after:left-1/2 after:size-1 after:-translate-x-1/2 after:rounded-full after:bg-primary",
         }}
+        className="shrink-0 rounded-md bg-[var(--background)]"
       />
 
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 rounded-md bg-[var(--background)] p-3">
         {!selectedDate ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center text-muted-foreground">
             <CalendarDays className="size-8" />
@@ -105,9 +153,11 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
             ) : (
               <ul className="flex flex-col gap-2 overflow-y-auto">
                 {entries.map((entry, i) => {
-                  const empresa = lookups.empresa.find(
-                    (e) => e.id === entry.atividade.empresaId
-                  );
+                  const empresa =
+                    entry.atividade &&
+                    lookups.empresa.find((e) => e.id === entry.atividade?.empresaId);
+                  const prioridade =
+                    entry.atividade?.prioridade ?? entry.atividadeGeral?.prioridade ?? "Médio";
                   return (
                     <li
                       key={i}
@@ -117,6 +167,10 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
                         <span className="font-medium">
                           {entry.kind === "atividade"
                             ? (empresa?.name ?? "Sem empresa")
+                            : entry.kind === "geral"
+                              ? `${entry.tipos.join(", ") || "Atividade Geral"} · ${
+                                  entry.atividadeGeral?.assunto || entry.texto || "Sem assunto"
+                                }`
                             : entry.texto}
                         </span>
                         <Badge
@@ -125,22 +179,34 @@ export function ActivityCalendar({ atividades }: { atividades: Atividade[] }) {
                         >
                           {entry.kind === "atividade" ? (
                             <CalendarDays className="size-3" />
-                          ) : (
+                          ) : entry.kind === "checklist" ? (
                             <CheckSquare className="size-3" />
+                          ) : entry.kind === "execucao" ? (
+                            <ListChecks className="size-3" />
+                          ) : (
+                            <CalendarDays className="size-3" />
                           )}
-                          {entry.kind === "atividade" ? "Atividade" : "Item de checklist"}
+                          {entry.kind === "atividade"
+                            ? "Atividade"
+                            : entry.kind === "checklist"
+                              ? "Item de checklist"
+                              : entry.kind === "execucao"
+                                ? "Execucao"
+                                : "Atividade Geral"}
                         </Badge>
                       </div>
-                      {entry.kind === "checklist" && (
+                      {entry.kind !== "atividade" && (
                         <span className="text-xs text-muted-foreground">
-                          {empresa?.name ?? "Sem empresa"}
+                          {entry.kind === "geral"
+                            ? `${entry.texto || "Prazo geral"} · ${prioridade}`
+                            : empresa?.name ?? "Sem empresa"}
                         </span>
                       )}
                       <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                         <span
-                          className={`rounded-full px-2 py-0.5 font-medium tracking-wide uppercase ${PRIORIDADE_STYLES[entry.atividade.prioridade]}`}
+                          className={`rounded-full px-2 py-0.5 font-medium tracking-wide uppercase ${PRIORIDADE_STYLES[prioridade]}`}
                         >
-                          {entry.atividade.prioridade}
+                          {prioridade}
                         </span>
                         {entry.tipos.map((t) => (
                           <span
