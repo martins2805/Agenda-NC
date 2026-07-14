@@ -62,7 +62,7 @@ export default function AtividadesPage() {
       if (keyword) {
         const empresa = lookups.empresa.find((e) => e.id === a.empresaId)?.name ?? "";
         const unidade = lookups.unidade.find((u) => u.id === a.unidadeId)?.name ?? "";
-        const assunto = lookups.assunto.find((s) => s.id === a.assuntoId)?.name ?? "";
+        const assunto = a.assunto;
         const tipos = lookups.tipoAtividade
           .filter((t) => a.tipoAtividadeIds.includes(t.id))
           .map((t) => t.name)
@@ -170,7 +170,7 @@ export default function AtividadesPage() {
               {filtered.map((a) => {
                 const empresa = lookups.empresa.find((e) => e.id === a.empresaId)?.name ?? "Sem empresa";
                 const unidade = lookups.unidade.find((u) => u.id === a.unidadeId)?.name ?? "-";
-                const assunto = lookups.assunto.find((s) => s.id === a.assuntoId)?.name ?? "-";
+                const assunto = a.assunto || "-";
                 const tipos = lookups.tipoAtividade
                   .filter((t) => a.tipoAtividadeIds.includes(t.id))
                   .map((t) => t.name)

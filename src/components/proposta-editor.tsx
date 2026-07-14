@@ -21,8 +21,12 @@ function emptyProposta(numero: number): Proposta {
     quantidade: null,
     valorUnitario: null,
     valorTotal: null,
+    tipo: null,
+    detalhe: "",
+    observacao: "",
     prazoInicio: null,
     prazoFim: null,
+    statusNegociacao: null,
   };
 }
 

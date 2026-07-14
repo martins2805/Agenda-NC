@@ -22,7 +22,7 @@ function emptyRegistro(): Registro {
     empresaId: null,
     unidadeId: null,
     contato: "",
-    assuntoId: null,
+    assunto: "",
     categoriaIds: [],
     tabs: [{ id: makeRegistroTabId(), titulo: "Aba 1", conteudo: "" }],
     atividadeId: null,
@@ -46,7 +46,6 @@ export default function RegistrosPage() {
     const keyword = filters.keyword.trim().toLowerCase();
     return registros.filter((r) => {
       if (filters.empresaId && r.empresaId !== filters.empresaId) return false;
-      if (filters.assuntoId && r.assuntoId !== filters.assuntoId) return false;
       if (filters.categoriaId && !r.categoriaIds.includes(filters.categoriaId))
         return false;
       if (filters.vinculo === "vinculado" && !r.atividadeId) return false;
@@ -54,7 +53,7 @@ export default function RegistrosPage() {
 
       if (keyword) {
         const empresa = lookups.empresa.find((e) => e.id === r.empresaId)?.name ?? "";
-        const assunto = lookups.assunto.find((a) => a.id === r.assuntoId)?.name ?? "";
+        const assunto = r.assunto;
         const haystack = [r.nome, r.contato, empresa, assunto].join(" ").toLowerCase();
         if (!haystack.includes(keyword)) return false;
       }
@@ -155,7 +154,7 @@ export default function RegistrosPage() {
               {filtered.map((r) => {
                 const empresa = lookups.empresa.find((e) => e.id === r.empresaId)?.name ?? "Sem empresa";
                 const unidade = lookups.unidade.find((u) => u.id === r.unidadeId)?.name ?? "-";
-                const assunto = lookups.assunto.find((a) => a.id === r.assuntoId)?.name ?? "-";
+                const assunto = r.assunto || "-";
                 const categorias = lookups.categoriaRegistro
                   .filter((c) => r.categoriaIds.includes(c.id))
                   .map((c) => c.name)

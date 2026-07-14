@@ -13,7 +13,6 @@ datasource db {
 enum LookupKind {
   empresa
   unidade
-  assunto
   tipoAtividade
   servicoProduto
   escopo
@@ -62,7 +61,7 @@ model Atividade {
   user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   empresaId         String?
   unidadeId         String?
-  assuntoId         String?
+  assunto           String           @default("")
   tipoAtividadeIds  String[]
   emailConteudo     String           @default("")
   oportunidadeTexto String           @default("")
@@ -74,11 +73,13 @@ model Atividade {
   prioridade        Prioridade       @default(Medio)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
+  deletedAt         DateTime?
 
   propostas Proposta[]
   checklist ChecklistItem[]
 
   @@index([userId])
+  @@index([deletedAt])
 }
 
 model Proposta {
@@ -92,8 +93,12 @@ model Proposta {
   quantidade        Float?
   valorUnitario     Float?
   valorTotal        Float?
+  tipo              String?
+  detalhe           String           @default("")
+  observacao        String           @default("")
   prazoInicio       DateTime?
   prazoFim          DateTime?
+  statusNegociacao  String?
 
   @@index([atividadeId])
 }
@@ -106,8 +111,38 @@ model ChecklistItem {
   concluido   Boolean   @default(false)
   ordem       Int       @default(0)
   prazo       DateTime?
+  parentId    String?
+  parent      ChecklistItem?  @relation("ChecklistSubitems", fields: [parentId], references: [id], onDelete: Cascade)
+  subitems    ChecklistItem[] @relation("ChecklistSubitems")
 
   @@index([atividadeId])
+  @@index([parentId])
+}
+
+model ChecklistTemplate {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nome      String
+  createdAt DateTime @default(now())
+
+  itens ChecklistTemplateItem[]
+
+  @@index([userId])
+}
+
+model ChecklistTemplateItem {
+  id         String   @id @default(cuid())
+  templateId String
+  template   ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  texto      String
+  ordem      Int      @default(0)
+  parentId   String?
+  parent     ChecklistTemplateItem? @relation("TemplateSubitems", fields: [parentId], references: [id], onDelete: Cascade)
+  subitems   ChecklistTemplateItem[] @relation("TemplateSubitems")
+
+  @@index([templateId])
+  @@index([parentId])
 }
 
 model AtividadeGeral {
@@ -152,15 +187,17 @@ model Registro {
   empresaId    String?
   unidadeId    String?
   contato      String        @default("")
-  assuntoId    String?
+  assunto      String        @default("")
   categoriaIds String[]
   atividadeId  String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
 
   tabs RegistroTab[]
 
   @@index([userId])
+  @@index([deletedAt])
 }
 
 model RegistroTab {
@@ -181,14 +218,16 @@ model Planilha {
   nome         String   @default("")
   empresaId    String?
   unidadeId    String?
-  assuntoId    String?
+  assunto      String   @default("")
   categoriaIds String[]
   atividadeId  String?
   conteudo     Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
 
   @@index([userId])
+  @@index([deletedAt])
 }
 
 model User {
@@ -203,6 +242,7 @@ model User {
   registros       Registro[]
   planilhas       Planilha[]
   atividadesGerais AtividadeGeral[]
+  checklistTemplates ChecklistTemplate[]
   knowledgeChunks  KnowledgeChunk[]
   chatMessages     ChatMessage[]
   pendingDeletions PendingDeletion[]

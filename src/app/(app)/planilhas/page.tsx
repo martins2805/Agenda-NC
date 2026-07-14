@@ -21,7 +21,7 @@ function emptyPlanilha(): Planilha {
     nome: "Nova planilha",
     empresaId: null,
     unidadeId: null,
-    assuntoId: null,
+    assunto: "",
     categoriaIds: [],
     atividadeId: null,
     conteudo: null,
@@ -45,7 +45,6 @@ export default function PlanilhasPage() {
     const keyword = filters.keyword.trim().toLowerCase();
     return planilhas.filter((p) => {
       if (filters.empresaId && p.empresaId !== filters.empresaId) return false;
-      if (filters.assuntoId && p.assuntoId !== filters.assuntoId) return false;
       if (filters.categoriaId && !p.categoriaIds.includes(filters.categoriaId))
         return false;
       if (filters.vinculo === "vinculado" && !p.atividadeId) return false;
@@ -53,7 +52,7 @@ export default function PlanilhasPage() {
 
       if (keyword) {
         const empresa = lookups.empresa.find((e) => e.id === p.empresaId)?.name ?? "";
-        const assunto = lookups.assunto.find((a) => a.id === p.assuntoId)?.name ?? "";
+        const assunto = p.assunto;
         const haystack = [p.nome, empresa, assunto].join(" ").toLowerCase();
         if (!haystack.includes(keyword)) return false;
       }
@@ -154,7 +153,7 @@ export default function PlanilhasPage() {
               {filtered.map((p) => {
                 const empresa = lookups.empresa.find((e) => e.id === p.empresaId)?.name ?? "Sem empresa";
                 const unidade = lookups.unidade.find((u) => u.id === p.unidadeId)?.name ?? "-";
-                const assunto = lookups.assunto.find((a) => a.id === p.assuntoId)?.name ?? "-";
+                const assunto = p.assunto || "-";
                 const categorias = lookups.categoriaPlanilha
                   .filter((c) => p.categoriaIds.includes(c.id))
                   .map((c) => c.name)

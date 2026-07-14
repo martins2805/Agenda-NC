@@ -13,7 +13,7 @@ export async function GET() {
   const userId = session.user.id;
 
   const atividades = await prisma.atividade.findMany({
-    where: { userId },
+    where: { userId, deletedAt: null },
     include,
     orderBy: { createdAt: "desc" },
   });
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       userId,
       empresaId: body.empresaId,
       unidadeId: body.unidadeId,
-      assuntoId: body.assuntoId,
+      assunto: body.assunto,
       tipoAtividadeIds: body.tipoAtividadeIds,
       emailConteudo: body.emailConteudo,
       oportunidadeTexto: body.oportunidadeTexto,
@@ -53,8 +53,12 @@ export async function POST(request: Request) {
           quantidade: p.quantidade,
           valorUnitario: p.valorUnitario,
           valorTotal: p.valorTotal,
+          tipo: p.tipo,
+          detalhe: p.detalhe,
+          observacao: p.observacao,
           prazoInicio: p.prazoInicio ? new Date(p.prazoInicio) : null,
           prazoFim: p.prazoFim ? new Date(p.prazoFim) : null,
+          statusNegociacao: p.statusNegociacao,
         })),
       },
       checklist: {
@@ -62,6 +66,7 @@ export async function POST(request: Request) {
           id: c.id,
           texto: c.texto,
           concluido: c.concluido,
+          parentId: c.parentId ?? null,
           ordem: i,
           prazo: c.prazo ? new Date(c.prazo) : null,
         })),

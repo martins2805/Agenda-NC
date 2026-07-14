@@ -26,7 +26,12 @@ import { ManagedSelect } from "@/components/managed-select";
 import { ManagedMultiSelect } from "@/components/managed-multi-select";
 import { ChecklistEditor } from "@/components/checklist-editor";
 import { PropostaEditor } from "@/components/proposta-editor";
-import { useAppData, makeAtividadeId, makePropostaId } from "@/lib/app-data-context";
+import {
+  useAppData,
+  useAssuntoSuggestions,
+  makeAtividadeId,
+  makePropostaId,
+} from "@/lib/app-data-context";
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
 import type { Atividade } from "@/lib/types";
 
@@ -39,7 +44,7 @@ function emptyAtividade(): Atividade {
     id: makeAtividadeId(),
     empresaId: null,
     unidadeId: null,
-    assuntoId: null,
+    assunto: "",
     tipoAtividadeIds: [],
     emailConteudo: "",
     oportunidadeTexto: "",
@@ -73,6 +78,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
     addAtividade,
     updateAtividade,
   } = useAppData();
+  const assuntoSuggestions = useAssuntoSuggestions();
 
   const [draft, setDraft] = useState<Atividade>(emptyAtividade());
   const [prevOpen, setPrevOpen] = useState(open);
@@ -107,7 +113,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
   function handleSave() {
     let toSave = draft;
     if (showProposta && toSave.propostas.length === 0) {
-      toSave = { ...toSave, propostas: [{ id: makePropostaId(), numero: 1, servicoProdutoIds: [], escopoIds: [], amostragemIds: [], quantidade: null, valorUnitario: null, valorTotal: null, prazoInicio: null, prazoFim: null }] };
+      toSave = { ...toSave, propostas: [{ id: makePropostaId(), numero: 1, servicoProdutoIds: [], escopoIds: [], amostragemIds: [], quantidade: null, valorUnitario: null, valorTotal: null, tipo: null, detalhe: "", observacao: "", prazoInicio: null, prazoFim: null, statusNegociacao: null }] };
     }
     if (editing) {
       updateAtividade(editing.id, toSave);
@@ -163,15 +169,20 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
             onDeactivate={(id) => deactivateLookupItem("tipoAtividade", id)}
           />
 
-          <ManagedSelect
-            label="Assunto"
-            items={lookups.assunto}
-            value={draft.assuntoId}
-            onChange={(id) => patch({ assuntoId: id })}
-            onCreate={(name) => addLookupItem("assunto", name)}
-            onRename={(id, name) => renameLookupItem("assunto", id, name)}
-            onDeactivate={(id) => deactivateLookupItem("assunto", id)}
-          />
+          <div className="flex flex-col gap-1.5">
+            <Label>Assunto</Label>
+            <Input
+              list="assunto-sugestoes-atividade"
+              value={draft.assunto}
+              onChange={(e) => patch({ assunto: e.target.value })}
+              placeholder="Descreva o assunto em poucas palavras"
+            />
+            <datalist id="assunto-sugestoes-atividade">
+              {assuntoSuggestions.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+          </div>
 
           {(linkedRegistros.length > 0 || linkedPlanilhas.length > 0) && (
             <div className="flex flex-col gap-1.5 rounded-lg border bg-muted/30 p-3">
@@ -241,8 +252,12 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
                         quantidade: null,
                         valorUnitario: null,
                         valorTotal: null,
+                        tipo: null,
+                        detalhe: "",
+                        observacao: "",
                         prazoInicio: null,
                         prazoFim: null,
+                        statusNegociacao: null,
                       },
                     ]
               }

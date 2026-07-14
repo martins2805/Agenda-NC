@@ -21,7 +21,6 @@ import type {
 interface LookupState {
   empresa: LookupItem[];
   unidade: LookupItem[];
-  assunto: LookupItem[];
   tipoAtividade: LookupItem[];
   servicoProduto: LookupItem[];
   escopo: LookupItem[];
@@ -35,7 +34,6 @@ interface LookupState {
 const EMPTY_LOOKUPS: LookupState = {
   empresa: [],
   unidade: [],
-  assunto: [],
   tipoAtividade: [],
   servicoProduto: [],
   escopo: [],
@@ -613,6 +611,17 @@ export function useAppData() {
   const ctx = useContext(AppDataContext);
   if (!ctx) throw new Error("useAppData must be used within AppDataProvider");
   return ctx;
+}
+
+export function useAssuntoSuggestions() {
+  const { atividades, registros, planilhas } = useAppData();
+  return Array.from(
+    new Set(
+      [...atividades, ...registros, ...planilhas]
+        .map((item) => item.assunto?.trim())
+        .filter((assunto): assunto is string => !!assunto)
+    )
+  ).sort((a, b) => a.localeCompare(b, "pt-BR"));
 }
 
 export function makeAtividadeId() {

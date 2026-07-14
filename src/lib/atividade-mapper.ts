@@ -63,7 +63,7 @@ export function atividadeFromDb(a: FullDbAtividade): Atividade {
     id: a.id,
     empresaId: a.empresaId,
     unidadeId: a.unidadeId,
-    assuntoId: a.assuntoId,
+    assunto: a.assunto,
     tipoAtividadeIds: a.tipoAtividadeIds,
     emailConteudo: a.emailConteudo,
     oportunidadeTexto: a.oportunidadeTexto,
@@ -74,6 +74,7 @@ export function atividadeFromDb(a: FullDbAtividade): Atividade {
     status: STATUS_FROM_DB[a.status],
     prioridade: PRIORIDADE_FROM_DB[a.prioridade],
     createdAt: a.createdAt.toISOString(),
+    deletedAt: a.deletedAt ? a.deletedAt.toISOString() : null,
     propostas: a.propostas
       .sort((x, y) => x.numero - y.numero)
       .map(propostaFromDb),
@@ -93,8 +94,12 @@ function propostaFromDb(p: DbProposta): Proposta {
     quantidade: p.quantidade,
     valorUnitario: p.valorUnitario,
     valorTotal: p.valorTotal,
+    tipo: p.tipo,
+    detalhe: p.detalhe,
+    observacao: p.observacao,
     prazoInicio: p.prazoInicio ? p.prazoInicio.toISOString().slice(0, 10) : null,
     prazoFim: p.prazoFim ? p.prazoFim.toISOString().slice(0, 10) : null,
+    statusNegociacao: p.statusNegociacao as Proposta["statusNegociacao"],
   };
 }
 
@@ -104,7 +109,27 @@ function checklistItemFromDb(c: DbChecklistItem): ChecklistItem {
     texto: c.texto,
     concluido: c.concluido,
     prazo: c.prazo ? c.prazo.toISOString().slice(0, 10) : null,
+    parentId: c.parentId,
   };
+}
+
+export function orderChecklistForInsert<T extends { parentId?: string | null; ordem: number }>(
+  items: T[]
+): T[] {
+  const byParent = new Map<string | null, T[]>();
+  for (const item of items) {
+    const key = item.parentId ?? null;
+    byParent.set(key, [...(byParent.get(key) ?? []), item]);
+  }
+  const ordered: T[] = [];
+  function visit(parentId: string | null) {
+    for (const item of (byParent.get(parentId) ?? []).sort((a, b) => a.ordem - b.ordem)) {
+      ordered.push(item);
+      visit((item as T & { id?: string }).id ?? null);
+    }
+  }
+  visit(null);
+  return ordered.map((item, ordem) => ({ ...item, ordem }));
 }
 
 type FullDbAtividadeGeral = DbAtividadeGeral & {
