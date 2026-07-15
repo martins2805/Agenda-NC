@@ -68,13 +68,19 @@ export interface ChecklistTemplate {
   itens: ChecklistTemplateItem[];
 }
 
+export type StatusGeral = "Concluído" | "Pendente" | "Em andamento";
+
+export const STATUS_GERAL_OPTIONS: StatusGeral[] = ["Pendente", "Em andamento", "Concluído"];
+
 export interface ChecklistGeralItem {
   id: string;
   parentId: string | null;
   texto: string;
-  status: "Concluído" | "Pendente" | "Em andamento";
+  status: StatusGeral;
   prioridade: Prioridade;
   prazo: string | null;
+  empresaId: string | null;
+  unidadeId: string | null;
 }
 
 export interface Proposta {
@@ -149,12 +155,14 @@ export interface Planilha {
 
 export interface AtividadeGeral {
   id: string;
+  empresaId: string | null;
+  unidadeId: string | null;
   tipoIds: string[];
   assunto: string;
   vinculos: string;
   prazo: string | null;
   descricao: string;
-  status: StatusConclusao;
+  status: StatusGeral;
   prioridade: Prioridade;
   setorIds: string[];
   checklist: ChecklistGeralItem[];

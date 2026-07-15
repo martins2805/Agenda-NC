@@ -11,8 +11,8 @@ export const STATUS_STYLES: Record<StatusConclusao, string> = {
 };
 
 export const STATUS_HEX: Record<StatusConclusao, string> = {
-  Concluído: "#998731",
-  Pendente: "#cf5527",
+  Concluído: "#2e5749",
+  Pendente: "#da9b2b",
   "Aguardando retorno interno": "#3e4c59",
   "Aguardando retorno cliente": "#3e4c59",
 };
@@ -25,10 +25,17 @@ export const PRIORIDADE_STYLES: Record<Prioridade, string> = {
 };
 
 export const PRIORIDADE_HEX: Record<Prioridade, string> = {
-  Urgente: "#a61414",
-  Importante: "#cf5527",
-  Médio: "#3e4c59",
-  Baixo: "#998731",
+  Urgente: "#780001",
+  Importante: "#bf512c",
+  Médio: "#da9b2b",
+  Baixo: "#2e5749",
+};
+
+// Status geral usado em Atividade Geral e nos itens de checklist geral.
+export const STATUS_GERAL_STYLES: Record<"Concluído" | "Pendente" | "Em andamento", string> = {
+  Concluído: "bg-[var(--status-concluido)] text-white",
+  Pendente: "bg-[var(--status-pendente)] text-white",
+  "Em andamento": "bg-[var(--status-em-andamento)] text-white",
 };
 
 export type PrazoStatus = "em-dia" | "proximo" | "vencido";
@@ -69,7 +76,7 @@ export const STATUS_NEGOCIACAO_STYLES: Record<StatusNegociacao, string> = {
   em_andamento: "bg-[var(--negociacao-em-andamento)] text-white",
   fup: "bg-[var(--negociacao-fup)] text-white",
   aceite: "bg-[var(--negociacao-aceite)] text-white",
-  na: "bg-[var(--negociacao-na)] text-[var(--base-1)]",
+  na: "bg-[var(--negociacao-na)] text-white",
 };
 
 export const STATUS_NEGOCIACAO_HEX: Record<StatusNegociacao, string> = {

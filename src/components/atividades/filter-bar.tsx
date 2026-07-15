@@ -2,37 +2,38 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FilterMultiSelect } from "@/components/filter-multi-select";
 import { Search, X } from "lucide-react";
 import { useAppData } from "@/lib/app-data-context";
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
 import type { Prioridade, StatusConclusao } from "@/lib/types";
 
+export type PrazoRange = "atrasadas" | "hoje" | "7dias" | "30dias";
+
 export interface ActivityFilters {
-  empresaId: string | null;
-  tipoAtividadeId: string | null;
-  status: StatusConclusao | null;
-  prazo: "todos" | "atrasadas" | "hoje" | "7dias" | "30dias";
+  empresaIds: string[];
+  tipoAtividadeIds: string[];
+  status: StatusConclusao[];
+  prazos: PrazoRange[];
   keyword: string;
-  prioridade: Prioridade | null;
+  prioridades: Prioridade[];
 }
 
 export const DEFAULT_FILTERS: ActivityFilters = {
-  empresaId: null,
-  tipoAtividadeId: null,
-  status: null,
-  prazo: "todos",
+  empresaIds: [],
+  tipoAtividadeIds: [],
+  status: [],
+  prazos: [],
   keyword: "",
-  prioridade: null,
+  prioridades: [],
 };
 
-const ALL = "__all__";
+const PRAZO_OPTIONS: { value: PrazoRange; label: string }[] = [
+  { value: "atrasadas", label: "Atrasadas" },
+  { value: "hoje", label: "Vencem hoje" },
+  { value: "7dias", label: "Próximos 7 dias" },
+  { value: "30dias", label: "Próximos 30 dias" },
+];
 
 interface FilterBarProps {
   filters: ActivityFilters;
@@ -47,12 +48,21 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
   }
 
   const hasActiveFilters =
-    filters.empresaId ||
-    filters.tipoAtividadeId ||
-    filters.status ||
-    filters.prazo !== "todos" ||
+    filters.empresaIds.length > 0 ||
+    filters.tipoAtividadeIds.length > 0 ||
+    filters.status.length > 0 ||
+    filters.prazos.length > 0 ||
     filters.keyword ||
-    filters.prioridade;
+    filters.prioridades.length > 0;
+
+  const empresaOptions = lookups.empresa
+    .filter((e) => e.active)
+    .map((e) => ({ value: e.id, label: e.name }));
+  const tipoOptions = lookups.tipoAtividade
+    .filter((t) => t.active)
+    .map((t) => ({ value: t.id, label: t.name }));
+  const statusOptions = STATUS_OPTIONS.map((s) => ({ value: s, label: s }));
+  const prioridadeOptions = PRIORIDADE_OPTIONS.map((p) => ({ value: p, label: p }));
 
   return (
     <div className="panel-card flex flex-col gap-3 p-3">
@@ -67,117 +77,36 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        <Select
-          items={{
-            [ALL]: "Todas as empresas",
-            ...Object.fromEntries(
-              lookups.empresa.filter((e) => e.active).map((e) => [e.id, e.name])
-            ),
-          }}
-          value={filters.empresaId ?? ALL}
-          onValueChange={(v) => patch({ empresaId: v === ALL ? null : v })}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Empresa" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todas as empresas</SelectItem>
-            {lookups.empresa
-              .filter((e) => e.active)
-              .map((e) => (
-                <SelectItem key={e.id} value={e.id}>
-                  {e.name}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          items={{
-            [ALL]: "Todos os tipos",
-            ...Object.fromEntries(
-              lookups.tipoAtividade.filter((t) => t.active).map((t) => [t.id, t.name])
-            ),
-          }}
-          value={filters.tipoAtividadeId ?? ALL}
-          onValueChange={(v) => patch({ tipoAtividadeId: v === ALL ? null : v })}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todos os tipos</SelectItem>
-            {lookups.tipoAtividade
-              .filter((t) => t.active)
-              .map((t) => (
-                <SelectItem key={t.id} value={t.id}>
-                  {t.name}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          items={{ [ALL]: "Todos os status", ...Object.fromEntries(STATUS_OPTIONS.map((s) => [s, s])) }}
-          value={filters.status ?? ALL}
-          onValueChange={(v) => patch({ status: v === ALL ? null : (v as StatusConclusao) })}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todos os status</SelectItem>
-            {STATUS_OPTIONS.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          items={{
-            [ALL]: "Todas as prioridades",
-            ...Object.fromEntries(PRIORIDADE_OPTIONS.map((p) => [p, p])),
-          }}
-          value={filters.prioridade ?? ALL}
-          onValueChange={(v) => patch({ prioridade: v === ALL ? null : (v as Prioridade) })}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Prioridade" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todas as prioridades</SelectItem>
-            {PRIORIDADE_OPTIONS.map((p) => (
-              <SelectItem key={p} value={p}>
-                {p}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          items={{
-            todos: "Qualquer prazo",
-            atrasadas: "Atrasadas",
-            hoje: "Vencem hoje",
-            "7dias": "Próximos 7 dias",
-            "30dias": "Próximos 30 dias",
-          }}
-          value={filters.prazo}
-          onValueChange={(v) => patch({ prazo: v as ActivityFilters["prazo"] })}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Prazo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Qualquer prazo</SelectItem>
-            <SelectItem value="atrasadas">Atrasadas</SelectItem>
-            <SelectItem value="hoje">Vencem hoje</SelectItem>
-            <SelectItem value="7dias">Próximos 7 dias</SelectItem>
-            <SelectItem value="30dias">Próximos 30 dias</SelectItem>
-          </SelectContent>
-        </Select>
+        <FilterMultiSelect
+          placeholder="Empresa"
+          options={empresaOptions}
+          value={filters.empresaIds}
+          onChange={(empresaIds) => patch({ empresaIds })}
+        />
+        <FilterMultiSelect
+          placeholder="Tipo"
+          options={tipoOptions}
+          value={filters.tipoAtividadeIds}
+          onChange={(tipoAtividadeIds) => patch({ tipoAtividadeIds })}
+        />
+        <FilterMultiSelect
+          placeholder="Status"
+          options={statusOptions}
+          value={filters.status}
+          onChange={(status) => patch({ status: status as StatusConclusao[] })}
+        />
+        <FilterMultiSelect
+          placeholder="Prioridade"
+          options={prioridadeOptions}
+          value={filters.prioridades}
+          onChange={(prioridades) => patch({ prioridades: prioridades as Prioridade[] })}
+        />
+        <FilterMultiSelect
+          placeholder="Prazo"
+          options={PRAZO_OPTIONS}
+          value={filters.prazos}
+          onChange={(prazos) => patch({ prazos: prazos as PrazoRange[] })}
+        />
       </div>
 
       {hasActiveFilters && (

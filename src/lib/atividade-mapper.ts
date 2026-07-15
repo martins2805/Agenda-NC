@@ -45,6 +45,19 @@ const PRIORIDADE_FROM_DB: Record<DbPrioridade, Prioridade> = {
   Baixo: "Baixo",
 };
 
+// Builds a "YYYY-MM-DDTHH:mm" string from the Date's *local* components,
+// matching how `new Date("YYYY-MM-DDTHH:mm")` parsed it on write. Using
+// `toISOString()` here would convert through UTC and shift the displayed
+// time by the server's timezone offset.
+function toLocalDateTimeString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 export function statusToDb(status: StatusConclusao): DbStatus {
   return STATUS_TO_DB[status];
 }
@@ -68,7 +81,7 @@ export function atividadeFromDb(a: FullDbAtividade): Atividade {
     emailConteudo: a.emailConteudo,
     oportunidadeTexto: a.oportunidadeTexto,
     contato: a.contato,
-    prazo: a.prazo ? a.prazo.toISOString().slice(0, 10) : null,
+    prazo: a.prazo ? toLocalDateTimeString(a.prazo) : null,
     descricao: a.descricao,
     alinhamentos: a.alinhamentos,
     status: STATUS_FROM_DB[a.status],
@@ -139,12 +152,14 @@ type FullDbAtividadeGeral = DbAtividadeGeral & {
 export function atividadeGeralFromDb(a: FullDbAtividadeGeral): AtividadeGeral {
   return {
     id: a.id,
+    empresaId: a.empresaId,
+    unidadeId: a.unidadeId,
     tipoIds: a.tipoIds,
     assunto: a.assunto,
     vinculos: a.vinculos,
     prazo: a.prazo ? a.prazo.toISOString().slice(0, 10) : null,
     descricao: a.descricao,
-    status: STATUS_FROM_DB[a.status],
+    status: a.status as AtividadeGeral["status"],
     prioridade: PRIORIDADE_FROM_DB[a.prioridade],
     setorIds: a.setorIds,
     createdAt: a.createdAt.toISOString(),
@@ -162,5 +177,7 @@ function checklistGeralItemFromDb(c: DbChecklistGeralItem): ChecklistGeralItem {
     status: c.status as ChecklistGeralItem["status"],
     prioridade: PRIORIDADE_FROM_DB[c.prioridade],
     prazo: c.prazo ? c.prazo.toISOString().slice(0, 10) : null,
+    empresaId: c.empresaId,
+    unidadeId: c.unidadeId,
   };
 }

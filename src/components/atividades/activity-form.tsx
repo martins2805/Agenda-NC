@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FileText, Link2, Table2 } from "lucide-react";
+import { FileText, Link2, Plus, Table2, X } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -25,13 +25,20 @@ import {
 import { ManagedSelect } from "@/components/managed-select";
 import { ManagedMultiSelect } from "@/components/managed-multi-select";
 import { ChecklistEditor } from "@/components/checklist-editor";
+import { ChecklistTemplateManager } from "@/components/checklist-template-manager";
 import { PropostaEditor } from "@/components/proposta-editor";
+import { RichTextEditor } from "@/components/registros/rich-text-editor";
 import {
   useAppData,
   useAssuntoSuggestions,
   makeAtividadeId,
   makePropostaId,
+  makeRegistroId,
+  makeRegistroTabId,
+  makePlanilhaId,
+  makeChecklistItemId,
 } from "@/lib/app-data-context";
+import { applyChecklistTemplate } from "@/lib/checklist-templates";
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
 import type { Atividade } from "@/lib/types";
 
@@ -77,6 +84,10 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
     deactivateLookupItem,
     addAtividade,
     updateAtividade,
+    addRegistro,
+    updateRegistro,
+    addPlanilha,
+    updatePlanilha,
   } = useAppData();
   const assuntoSuggestions = useAssuntoSuggestions();
 
@@ -99,15 +110,42 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
     !!tipoOportunidade && draft.tipoAtividadeIds.includes(tipoOportunidade.id);
   const showProposta = !!tipoProposta && draft.tipoAtividadeIds.includes(tipoProposta.id);
 
-  const linkedRegistros = editing
-    ? registros.filter((r) => r.atividadeId === editing.id)
-    : [];
-  const linkedPlanilhas = editing
-    ? planilhas.filter((p) => p.atividadeId === editing.id)
-    : [];
+  const linkedRegistros = registros.filter((r) => r.atividadeId === draft.id);
+  const linkedPlanilhas = planilhas.filter((p) => p.atividadeId === draft.id);
+  const unlinkedRegistros = registros.filter((r) => !r.atividadeId && !r.deletedAt);
+  const unlinkedPlanilhas = planilhas.filter((p) => !p.atividadeId && !p.deletedAt);
 
   function patch(p: Partial<Atividade>) {
     setDraft((prev) => ({ ...prev, ...p }));
+  }
+
+  function createRegistroVinculado() {
+    addRegistro({
+      id: makeRegistroId(),
+      nome: "",
+      empresaId: draft.empresaId,
+      unidadeId: draft.unidadeId,
+      contato: "",
+      assunto: draft.assunto,
+      categoriaIds: [],
+      tabs: [{ id: makeRegistroTabId(), titulo: "Principal", conteudo: "" }],
+      atividadeId: draft.id,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  function createPlanilhaVinculada() {
+    addPlanilha({
+      id: makePlanilhaId(),
+      nome: "",
+      empresaId: draft.empresaId,
+      unidadeId: draft.unidadeId,
+      assunto: draft.assunto,
+      categoriaIds: [],
+      atividadeId: draft.id,
+      conteudo: null,
+      createdAt: new Date().toISOString(),
+    });
   }
 
   function handleSave() {
@@ -184,36 +222,102 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
             </datalist>
           </div>
 
-          {(linkedRegistros.length > 0 || linkedPlanilhas.length > 0) && (
-            <div className="flex flex-col gap-1.5 rounded-lg border bg-muted/30 p-3">
-              <Label className="flex items-center gap-1.5">
-                <Link2 className="size-3.5" />
-                Vínculos
-              </Label>
+          <div className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-3">
+            <Label className="flex items-center gap-1.5">
+              <Link2 className="size-3.5" />
+              Vínculos
+            </Label>
+
+            {(linkedRegistros.length > 0 || linkedPlanilhas.length > 0) && (
               <div className="flex flex-col gap-1.5">
                 {linkedRegistros.map((r) => (
-                  <Link
-                    key={r.id}
-                    href={`/registros?open=${r.id}`}
-                    className="flex items-center gap-1.5 text-sm text-primary hover:underline"
-                  >
-                    <FileText className="size-3.5 shrink-0" />
-                    {r.nome || r.tabs[0]?.titulo || "Registro"}
-                  </Link>
+                  <div key={r.id} className="flex items-center gap-1.5">
+                    <Link
+                      href={`/registros?open=${r.id}`}
+                      className="flex flex-1 items-center gap-1.5 text-sm text-primary hover:underline"
+                    >
+                      <FileText className="size-3.5 shrink-0" />
+                      {r.nome || r.tabs[0]?.titulo || "Registro"}
+                    </Link>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0 text-muted-foreground"
+                      title="Desvincular"
+                      onClick={() => updateRegistro(r.id, { atividadeId: null })}
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  </div>
                 ))}
                 {linkedPlanilhas.map((p) => (
-                  <Link
-                    key={p.id}
-                    href={`/planilhas?open=${p.id}`}
-                    className="flex items-center gap-1.5 text-sm text-primary hover:underline"
-                  >
-                    <Table2 className="size-3.5 shrink-0" />
-                    {p.nome || "Planilha"}
-                  </Link>
+                  <div key={p.id} className="flex items-center gap-1.5">
+                    <Link
+                      href={`/planilhas?open=${p.id}`}
+                      className="flex flex-1 items-center gap-1.5 text-sm text-primary hover:underline"
+                    >
+                      <Table2 className="size-3.5 shrink-0" />
+                      {p.nome || "Planilha"}
+                    </Link>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0 text-muted-foreground"
+                      title="Desvincular"
+                      onClick={() => updatePlanilha(p.id, { atividadeId: null })}
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  </div>
                 ))}
               </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className="flex gap-1.5">
+                <Select
+                  value=""
+                  onValueChange={(id) => id && updateRegistro(id, { atividadeId: draft.id })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Vincular registro existente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unlinkedRegistros.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.nome || r.tabs[0]?.titulo || "Registro sem nome"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="button" variant="outline" size="icon" className="shrink-0" title="Criar novo registro vinculado" onClick={createRegistroVinculado}>
+                  <Plus className="size-4" />
+                </Button>
+              </div>
+              <div className="flex gap-1.5">
+                <Select
+                  value=""
+                  onValueChange={(id) => id && updatePlanilha(id, { atividadeId: draft.id })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Vincular planilha existente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unlinkedPlanilhas.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nome || "Planilha sem nome"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="button" variant="outline" size="icon" className="shrink-0" title="Criar nova planilha vinculada" onClick={createPlanilhaVinculada}>
+                  <Plus className="size-4" />
+                </Button>
+              </div>
             </div>
-          )}
+          </div>
 
           {showEmail && (
             <div className="flex flex-col gap-1.5">
@@ -276,7 +380,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
           <div className="flex flex-col gap-1.5">
             <Label>Prazo</Label>
             <Input
-              type="date"
+              type="datetime-local"
               value={draft.prazo ?? ""}
               onChange={(e) => patch({ prazo: e.target.value || null })}
             />
@@ -284,20 +388,17 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
 
           <div className="flex flex-col gap-1.5">
             <Label>Descrição da atividade</Label>
-            <Textarea
-              rows={4}
-              value={draft.descricao}
-              onChange={(e) => patch({ descricao: e.target.value })}
+            <RichTextEditor
+              content={draft.descricao}
+              onChange={(html) => patch({ descricao: html })}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
             <Label>Alinhamentos</Label>
-            <Textarea
-              rows={3}
-              value={draft.alinhamentos}
-              onChange={(e) => patch({ alinhamentos: e.target.value })}
-              placeholder="Combinados e pontos alinhados com o cliente/equipe"
+            <RichTextEditor
+              content={draft.alinhamentos}
+              onChange={(html) => patch({ alinhamentos: html })}
             />
           </div>
 
@@ -342,6 +443,25 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
           <ChecklistEditor
             items={draft.checklist}
             onChange={(checklist) => patch({ checklist })}
+            headerActions={
+              <ChecklistTemplateManager
+                currentItems={draft.checklist}
+                onApply={(template) =>
+                  patch({
+                    checklist: [
+                      ...draft.checklist,
+                      ...applyChecklistTemplate(template, (texto, parentId) => ({
+                        id: makeChecklistItemId(),
+                        texto,
+                        concluido: false,
+                        prazo: null,
+                        parentId,
+                      })),
+                    ],
+                  })
+                }
+              />
+            }
           />
         </div>
 

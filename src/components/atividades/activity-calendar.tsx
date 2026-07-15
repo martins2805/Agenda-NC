@@ -4,17 +4,37 @@ import { useMemo, useState } from "react";
 import { CalendarDays, CheckSquare, ListChecks } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAppData } from "@/lib/app-data-context";
-import type { Atividade, AtividadeGeral, Prioridade } from "@/lib/types";
+import { PRIORIDADE_STYLES } from "@/lib/status-colors";
+import type { Atividade, AtividadeGeral } from "@/lib/types";
+
+type EntryKind = "atividade" | "checklist" | "execucao" | "geral";
 
 interface CalendarEntry {
-  kind: "atividade" | "checklist" | "execucao" | "geral";
+  kind: EntryKind;
   atividade?: Atividade;
   atividadeGeral?: AtividadeGeral;
+  empresaId: string | null;
   tipos: string[];
   texto: string | null;
   concluido?: boolean;
 }
+
+const ALL = "__all__";
+
+const KIND_LABELS: Record<EntryKind, string> = {
+  atividade: "Atividade",
+  checklist: "Item de checklist",
+  geral: "Atividade Geral",
+  execucao: "Execução",
+};
 
 function toKey(date: Date) {
   const y = date.getFullYear();
@@ -22,13 +42,6 @@ function toKey(date: Date) {
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
-
-const PRIORIDADE_STYLES: Record<Prioridade, string> = {
-  Urgente: "bg-[var(--chart-3)] text-white",
-  Importante: "bg-[var(--chart-1)] text-white",
-  Médio: "bg-[var(--chart-2)] text-white",
-  Baixo: "bg-muted text-muted-foreground",
-};
 
 export function ActivityCalendar({
   atividades,
@@ -39,6 +52,8 @@ export function ActivityCalendar({
 }) {
   const { lookups } = useAppData();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [filterEmpresaId, setFilterEmpresaId] = useState<string | null>(null);
+  const [filterKind, setFilterKind] = useState<EntryKind | null>(null);
 
   const entriesByDate = useMemo(() => {
     const map = new Map<string, CalendarEntry[]>();
@@ -52,13 +67,14 @@ export function ActivityCalendar({
         .filter((t) => a.tipoAtividadeIds.includes(t.id))
         .map((t) => t.name);
       if (a.prazo) {
-        push(a.prazo, { kind: "atividade", atividade: a, tipos, texto: null });
+        push(a.prazo, { kind: "atividade", atividade: a, empresaId: a.empresaId, tipos, texto: null });
       }
       a.checklist.forEach((c) => {
         if (c.prazo) {
           push(c.prazo, {
             kind: "checklist",
             atividade: a,
+            empresaId: a.empresaId,
             tipos,
             texto: c.texto,
             concluido: c.concluido,
@@ -70,6 +86,7 @@ export function ActivityCalendar({
         push(p.prazoInicio, {
           kind: "execucao",
           atividade: a,
+          empresaId: a.empresaId,
           tipos,
           texto: `Proposta ${p.numero}`,
         });
@@ -77,6 +94,7 @@ export function ActivityCalendar({
           push(p.prazoFim, {
             kind: "execucao",
             atividade: a,
+            empresaId: a.empresaId,
             tipos,
             texto: `Proposta ${p.numero}`,
           });
@@ -91,6 +109,7 @@ export function ActivityCalendar({
         push(a.prazo, {
           kind: "geral",
           atividadeGeral: a,
+          empresaId: a.empresaId,
           tipos,
           texto: a.assunto,
         });
@@ -100,6 +119,7 @@ export function ActivityCalendar({
           push(item.prazo, {
             kind: "geral",
             atividadeGeral: a,
+            empresaId: item.empresaId ?? a.empresaId,
             tipos,
             texto: item.texto,
           });
@@ -109,11 +129,72 @@ export function ActivityCalendar({
     return map;
   }, [atividades, atividadesGerais, lookups.tipoAtividade, lookups.tipoAtividadeGeral]);
 
+  const filteredEntriesByDate = useMemo(() => {
+    if (!filterEmpresaId && !filterKind) return entriesByDate;
+    const map = new Map<string, CalendarEntry[]>();
+    for (const [key, list] of entriesByDate) {
+      const filtered = list.filter(
+        (entry) =>
+          (!filterEmpresaId || entry.empresaId === filterEmpresaId) &&
+          (!filterKind || entry.kind === filterKind)
+      );
+      if (filtered.length > 0) map.set(key, filtered);
+    }
+    return map;
+  }, [entriesByDate, filterEmpresaId, filterKind]);
+
   const selectedKey = selectedDate ? toKey(selectedDate) : null;
-  const entries = selectedKey ? entriesByDate.get(selectedKey) ?? [] : [];
+  const entries = selectedKey ? filteredEntriesByDate.get(selectedKey) ?? [] : [];
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border bg-[var(--chart-1)] p-4 text-[var(--primary)] sm:flex-row sm:gap-6">
+    <div className="flex flex-col gap-4 rounded-lg border bg-[var(--chart-1)] p-4 text-[var(--primary)]">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <Select
+          items={{
+            [ALL]: "Todas as empresas",
+            ...Object.fromEntries(
+              lookups.empresa.filter((e) => e.active).map((e) => [e.id, e.name])
+            ),
+          }}
+          value={filterEmpresaId ?? ALL}
+          onValueChange={(v) => setFilterEmpresaId(v === ALL ? null : v)}
+        >
+          <SelectTrigger className="w-full bg-[var(--background)]">
+            <SelectValue placeholder="Empresa" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Todas as empresas</SelectItem>
+            {lookups.empresa
+              .filter((e) => e.active)
+              .map((e) => (
+                <SelectItem key={e.id} value={e.id}>
+                  {e.name}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+        <Select
+          items={{
+            [ALL]: "Todos os tipos de prazo",
+            ...KIND_LABELS,
+          }}
+          value={filterKind ?? ALL}
+          onValueChange={(v) => setFilterKind(v === ALL ? null : (v as EntryKind))}
+        >
+          <SelectTrigger className="w-full bg-[var(--background)]">
+            <SelectValue placeholder="Tipo de prazo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Todos os tipos de prazo</SelectItem>
+            {(Object.keys(KIND_LABELS) as EntryKind[]).map((kind) => (
+              <SelectItem key={kind} value={kind}>
+                {KIND_LABELS[kind]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
       <Calendar
         mode="single"
         locale={{ code: "pt-BR" } as never}
@@ -123,7 +204,7 @@ export function ActivityCalendar({
             prev && date && toKey(prev) === toKey(date) ? undefined : date
           )
         }
-        modifiers={{ hasItems: (date) => entriesByDate.has(toKey(date)) }}
+        modifiers={{ hasItems: (date) => filteredEntriesByDate.has(toKey(date)) }}
         modifiersClassNames={{
           hasItems:
             "relative after:absolute after:bottom-0.5 after:left-1/2 after:size-1 after:-translate-x-1/2 after:rounded-full after:bg-primary",
@@ -225,6 +306,7 @@ export function ActivityCalendar({
             )}
           </>
         )}
+      </div>
       </div>
     </div>
   );

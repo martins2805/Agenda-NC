@@ -149,12 +149,14 @@ model AtividadeGeral {
   id          String           @id @default(cuid())
   userId      String
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  empresaId   String?
+  unidadeId   String?
   tipoIds     String[]
   assunto     String           @default("")
   vinculos    String           @default("")
   prazo       DateTime?
   descricao   String           @default("")
-  status      StatusConclusao  @default(Pendente)
+  status      String           @default("Pendente")
   prioridade  Prioridade       @default(Medio)
   setorIds    String[]
   createdAt   DateTime         @default(now())
@@ -175,6 +177,8 @@ model ChecklistGeralItem {
   prioridade        Prioridade       @default(Medio)
   prazo             DateTime?
   ordem             Int              @default(0)
+  empresaId         String?
+  unidadeId         String?
 
   @@index([atividadeGeralId])
 }

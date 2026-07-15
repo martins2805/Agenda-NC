@@ -78,7 +78,7 @@ export function PlanilhaCard({
           <Link
             href={`/atividades?open=${planilha.atividadeId}`}
             onClick={(e) => e.stopPropagation()}
-            className="flex w-fit items-center gap-1 rounded-full bg-[var(--base-3)] px-2.5 py-0.5 text-xs font-medium text-[var(--base-1)] hover:opacity-80"
+            className="flex w-fit items-center gap-1 rounded-full bg-[var(--base-3)] px-2.5 py-0.5 text-xs font-medium text-white hover:opacity-80"
           >
             <Link2 className="size-3" />
             {atividadeLabel}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, GripVertical, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,21 +13,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ManagedSelect } from "@/components/managed-select";
 import { ManagedMultiSelect } from "@/components/managed-multi-select";
+import { ChecklistTemplateManager } from "@/components/checklist-template-manager";
 import { ViewToggle, type ViewMode } from "@/components/view-toggle";
 import {
   makeAtividadeGeralId,
   makeChecklistGeralItemId,
   useAppData,
 } from "@/lib/app-data-context";
-import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
+import { applyChecklistTemplate } from "@/lib/checklist-templates";
+import { PRIORIDADE_OPTIONS } from "@/lib/types";
 import type { AtividadeGeral, ChecklistGeralItem } from "@/lib/types";
 import { parseLocalDate } from "@/lib/calculations";
-
-const CHECKLIST_MODELOS = {
-  Implantacao: ["Kickoff", "Coletar dados", "Validar escopo", "Concluir entrega"],
-  Reuniao: ["Preparar pauta", "Realizar reuniao", "Registrar encaminhamentos"],
-};
+import { cn } from "@/lib/utils";
+import { PRIORIDADE_STYLES, STATUS_GERAL_STYLES } from "@/lib/status-colors";
 
 const CHECKLIST_GERAL_STATUS = ["Pendente", "Em andamento", "Concluído"] as const;
 
@@ -39,12 +39,16 @@ function emptyChecklistItem(parentId: string | null = null): ChecklistGeralItem 
     status: "Pendente",
     prioridade: "Médio",
     prazo: null,
+    empresaId: null,
+    unidadeId: null,
   };
 }
 
 function emptyAtividadeGeral(): AtividadeGeral {
   return {
     id: makeAtividadeGeralId(),
+    empresaId: null,
+    unidadeId: null,
     tipoIds: [],
     assunto: "",
     vinculos: "",
@@ -65,6 +69,10 @@ function completion(checklist: ChecklistGeralItem[]) {
   );
 }
 
+function childrenOf(items: ChecklistGeralItem[], parentId: string | null) {
+  return items.filter((i) => (i.parentId ?? null) === parentId);
+}
+
 function ChecklistGeralEditor({
   items,
   onChange,
@@ -72,116 +80,201 @@ function ChecklistGeralEditor({
   items: ChecklistGeralItem[];
   onChange: (items: ChecklistGeralItem[]) => void;
 }) {
+  const { lookups, addLookupItem, renameLookupItem, deactivateLookupItem } = useAppData();
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
   function update(id: string, patch: Partial<ChecklistGeralItem>) {
     onChange(items.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   }
 
-  function add(parentId: string | null = null) {
-    onChange([...items, emptyChecklistItem(parentId)]);
+  function addItem(parentId: string | null = null, empresaId: string | null = null) {
+    onChange([...items, { ...emptyChecklistItem(parentId), empresaId }]);
   }
 
-  function applyTemplate(name: keyof typeof CHECKLIST_MODELOS) {
-    const next = CHECKLIST_MODELOS[name].map((texto) => ({
-      ...emptyChecklistItem(),
-      texto,
-    }));
-    onChange([...items, ...next]);
+  function removeItem(id: string) {
+    const toRemove = new Set([id]);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const item of items) {
+        if (item.parentId && toRemove.has(item.parentId) && !toRemove.has(item.id)) {
+          toRemove.add(item.id);
+          grew = true;
+        }
+      }
+    }
+    onChange(items.filter((i) => !toRemove.has(i.id)));
   }
+
+  function moveDragged(overId: string) {
+    if (!draggingId || draggingId === overId) return;
+    const dragged = items.find((i) => i.id === draggingId);
+    const over = items.find((i) => i.id === overId);
+    if (!dragged || !over) return;
+    if ((dragged.parentId ?? null) !== (over.parentId ?? null)) return;
+    const from = items.findIndex((i) => i.id === draggingId);
+    const to = items.findIndex((i) => i.id === overId);
+    if (from < 0 || to < 0) return;
+    const next = [...items];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onChange(next);
+  }
+
+  function renderItem(item: ChecklistGeralItem, depth: number) {
+    const kids = childrenOf(items, item.id);
+    return (
+      <div key={item.id} className="flex flex-col gap-2">
+        <div
+          draggable
+          onDragStart={() => setDraggingId(item.id)}
+          onDragOver={(e) => {
+            e.preventDefault();
+            moveDragged(item.id);
+          }}
+          onDragEnd={() => setDraggingId(null)}
+          className={cn(
+            "grid grid-cols-1 gap-2 rounded-md border bg-card p-2",
+            draggingId === item.id && "shadow-md"
+          )}
+          style={{ marginLeft: depth * 24 }}
+        >
+          <div className="flex items-center gap-2">
+            <span className="cursor-grab text-muted-foreground active:cursor-grabbing" title="Arrastar para reorganizar">
+              <GripVertical className="size-4" />
+            </span>
+            <Input
+              value={item.texto}
+              onChange={(e) => update(item.id, { texto: e.target.value })}
+              placeholder={item.parentId ? "Subitem" : "Item"}
+              className="field-sizing-content"
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <ManagedSelect
+              label=""
+              items={lookups.empresa}
+              value={item.empresaId}
+              onChange={(id) => update(item.id, { empresaId: id, unidadeId: null })}
+              onCreate={(name) => addLookupItem("empresa", name)}
+              onRename={(id, name) => renameLookupItem("empresa", id, name)}
+              onDeactivate={(id) => deactivateLookupItem("empresa", id)}
+              placeholder="Empresa"
+            />
+            <ManagedSelect
+              label=""
+              items={lookups.unidade.filter((u) => !u.empresaId || u.empresaId === item.empresaId)}
+              value={item.unidadeId}
+              onChange={(id) => update(item.id, { unidadeId: id })}
+              onCreate={(name) => addLookupItem("unidade", name, item.empresaId)}
+              onRename={(id, name) => renameLookupItem("unidade", id, name)}
+              onDeactivate={(id) => deactivateLookupItem("unidade", id)}
+              placeholder="Unidade"
+            />
+            <Select
+              value={item.status}
+              onValueChange={(v) => update(item.id, { status: v as ChecklistGeralItem["status"] })}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {CHECKLIST_GERAL_STATUS.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={item.prioridade}
+              onValueChange={(v) =>
+                update(item.id, { prioridade: v as ChecklistGeralItem["prioridade"] })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Prioridade" />
+              </SelectTrigger>
+              <SelectContent>
+                {PRIORIDADE_OPTIONS.map((prioridade) => (
+                  <SelectItem key={prioridade} value={prioridade}>
+                    {prioridade}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              value={item.prazo ?? ""}
+              onChange={(e) => update(item.id, { prazo: e.target.value || null })}
+              className="w-fit"
+            />
+            <Button type="button" variant="outline" size="sm" onClick={() => addItem(item.id, item.empresaId)}>
+              <Plus className="size-3.5" />
+              Subitem
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="ml-auto text-destructive"
+              onClick={() => removeItem(item.id)}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
+        </div>
+        {kids.map((child) => renderItem(child, depth + 1))}
+      </div>
+    );
+  }
+
+  const roots = childrenOf(items, null);
+  const groups = useMemo(() => {
+    const map = new Map<string | null, ChecklistGeralItem[]>();
+    for (const item of roots) {
+      const key = item.empresaId ?? null;
+      map.set(key, [...(map.get(key) ?? []), item]);
+    }
+    return map;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Label>Checklist geral</Label>
         <div className="flex flex-wrap gap-2">
-          {Object.keys(CHECKLIST_MODELOS).map((name) => (
-            <Button
-              key={name}
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => applyTemplate(name as keyof typeof CHECKLIST_MODELOS)}
-            >
-              Modelo {name}
-            </Button>
-          ))}
-          <Button type="button" variant="secondary" size="sm" onClick={() => add()}>
+          <ChecklistTemplateManager
+            currentItems={items}
+            onApply={(template) =>
+              onChange([
+                ...items,
+                ...applyChecklistTemplate(template, (texto, parentId) => ({
+                  ...emptyChecklistItem(parentId),
+                  texto,
+                })),
+              ])
+            }
+          />
+          <Button type="button" variant="secondary" size="sm" onClick={() => addItem(null)}>
             <Plus className="size-4" />
             Item
           </Button>
         </div>
       </div>
-      <div className="flex flex-col gap-2">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className={`grid grid-cols-1 gap-2 rounded-md border bg-card p-2 ${
-              item.parentId ? "ml-6 border-l-4 border-l-[var(--chart-1)]" : ""
-            }`}
-          >
-            <Input
-              value={item.texto}
-              onChange={(e) => update(item.id, { texto: e.target.value })}
-              placeholder={item.parentId ? "Subitem" : "Item"}
-            />
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
-              <Select
-                value={item.status}
-                onValueChange={(v) => update(item.id, { status: v as ChecklistGeralItem["status"] })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CHECKLIST_GERAL_STATUS.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={item.prioridade}
-                onValueChange={(v) =>
-                  update(item.id, { prioridade: v as ChecklistGeralItem["prioridade"] })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Prioridade" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRIORIDADE_OPTIONS.map((prioridade) => (
-                    <SelectItem key={prioridade} value={prioridade}>
-                      {prioridade}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                type="date"
-                value={item.prazo ?? ""}
-                onChange={(e) => update(item.id, { prazo: e.target.value || null })}
-              />
-              <div className="flex gap-1">
-                {!item.parentId && (
-                  <Button type="button" variant="outline" className="flex-1" onClick={() => add(item.id)}>
-                    Subitem
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-destructive"
-                  onClick={() =>
-                    onChange(items.filter((i) => i.id !== item.id && i.parentId !== item.id))
-                  }
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
+      <div className="flex flex-col gap-4">
+        {Array.from(groups.entries()).map(([empresaId, groupItems]) => {
+          const empresa = lookups.empresa.find((e) => e.id === empresaId);
+          return (
+            <div key={empresaId ?? "sem-empresa"} className="flex flex-col gap-2">
+              <span className="ledger-label">{empresa?.name ?? "Sem empresa"}</span>
+              {groupItems.map((item) => renderItem(item, 0))}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -267,6 +360,26 @@ export default function AtividadesGeraisPage() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <ManagedSelect
+            label="Empresa"
+            items={lookups.empresa}
+            value={editing.empresaId}
+            onChange={(id) =>
+              patch(id === editing.empresaId ? { empresaId: id } : { empresaId: id, unidadeId: null })
+            }
+            onCreate={(name) => addLookupItem("empresa", name)}
+            onRename={(id, name) => renameLookupItem("empresa", id, name)}
+            onDeactivate={(id) => deactivateLookupItem("empresa", id)}
+          />
+          <ManagedSelect
+            label="Unidade"
+            items={lookups.unidade.filter((u) => !u.empresaId || u.empresaId === editing.empresaId)}
+            value={editing.unidadeId}
+            onChange={(id) => patch({ unidadeId: id })}
+            onCreate={(name) => addLookupItem("unidade", name, editing.empresaId)}
+            onRename={(id, name) => renameLookupItem("unidade", id, name)}
+            onDeactivate={(id) => deactivateLookupItem("unidade", id)}
+          />
           <ManagedMultiSelect
             label="Tipo"
             items={lookups.tipoAtividadeGeral}
@@ -300,7 +413,7 @@ export default function AtividadesGeraisPage() {
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                {STATUS_OPTIONS.map((status) => (
+                {CHECKLIST_GERAL_STATUS.map((status) => (
                   <SelectItem key={status} value={status}>
                     {status}
                   </SelectItem>
@@ -347,7 +460,7 @@ export default function AtividadesGeraisPage() {
           </p>
         </div>
         <Button
-          className="gap-2 bg-[var(--chart-2)] text-white hover:bg-[var(--chart-2)]/90 sm:w-fit"
+          className="gap-2 bg-[var(--base-2)] text-white hover:bg-[var(--base-2)]/90 sm:w-fit"
           onClick={() => {
             const atividade = emptyAtividadeGeral();
             setDraftNew(atividade);
@@ -371,6 +484,8 @@ export default function AtividadesGeraisPage() {
           {filtered.map((a) => {
             const tipos = lookups.tipoAtividadeGeral.filter((t) => a.tipoIds.includes(t.id));
             const setores = lookups.setorInterno.filter((s) => a.setorIds.includes(s.id));
+            const empresa = lookups.empresa.find((e) => e.id === a.empresaId);
+            const unidade = lookups.unidade.find((u) => u.id === a.unidadeId);
             return (
               <button
                 key={a.id}
@@ -383,10 +498,16 @@ export default function AtividadesGeraisPage() {
                   <p className="text-sm text-muted-foreground">
                     {tipos.map((t) => t.name).join(", ") || "Sem tipo"}
                   </p>
+                  {empresa && (
+                    <p className="text-sm text-muted-foreground">
+                      {empresa.name}
+                      {unidade && ` · ${unidade.name}`}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-1.5 text-xs">
-                  <span className="rounded-full bg-[var(--chart-1)] px-2 py-0.5 text-[var(--primary)]">{a.status}</span>
-                  <span className="rounded-full bg-[var(--chart-5)] px-2 py-0.5 text-[var(--primary)]">{a.prioridade}</span>
+                  <span className={cn("rounded-full px-2 py-0.5 font-medium", STATUS_GERAL_STYLES[a.status])}>{a.status}</span>
+                  <span className={cn("rounded-full px-2 py-0.5 font-medium", PRIORIDADE_STYLES[a.prioridade])}>{a.prioridade}</span>
                   {setores.map((s) => (
                     <span key={s.id} className="rounded-full border px-2 py-0.5">{s.name}</span>
                   ))}
@@ -404,6 +525,7 @@ export default function AtividadesGeraisPage() {
             <thead className="bg-muted/60 text-left text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-3 py-2">Assunto</th>
+                <th className="px-3 py-2">Empresa</th>
                 <th className="px-3 py-2">Tipo</th>
                 <th className="px-3 py-2">Prazo</th>
                 <th className="px-3 py-2">Status</th>
@@ -422,13 +544,22 @@ export default function AtividadesGeraisPage() {
                   .filter((s) => a.setorIds.includes(s.id))
                   .map((s) => s.name)
                   .join(", ") || "-";
+                const empresa = lookups.empresa.find((e) => e.id === a.empresaId);
+                const unidade = lookups.unidade.find((u) => u.id === a.unidadeId);
                 return (
                   <tr key={a.id} className="cursor-pointer border-t hover:bg-muted/30" onClick={() => setEditingId(a.id)}>
                     <td className="px-3 py-2 font-medium">{a.assunto || "Sem assunto"}</td>
+                    <td className="px-3 py-2">
+                      {empresa ? `${empresa.name}${unidade ? ` · ${unidade.name}` : ""}` : "-"}
+                    </td>
                     <td className="px-3 py-2">{tipos}</td>
                     <td className="px-3 py-2">{a.prazo ? parseLocalDate(a.prazo).toLocaleDateString("pt-BR") : "-"}</td>
-                    <td className="px-3 py-2">{a.status}</td>
-                    <td className="px-3 py-2">{a.prioridade}</td>
+                    <td className="px-3 py-2">
+                      <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", STATUS_GERAL_STYLES[a.status])}>{a.status}</span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", PRIORIDADE_STYLES[a.prioridade])}>{a.prioridade}</span>
+                    </td>
                     <td className="px-3 py-2">{setores}</td>
                     <td className="px-3 py-2">{completion(a.checklist)}%</td>
                   </tr>

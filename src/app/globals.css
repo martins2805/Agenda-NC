@@ -68,11 +68,14 @@
   --border: #d8d8d8;
   --input: #d8d8d8;
   --ring: #8baaad;
+  /* Gráficos genéricos/decorativos usam a paleta base. Gráficos de status,
+     prioridade e prazo têm variáveis dedicadas (--status-*, --prioridade-*,
+     --prazo-*) e não passam por aqui. */
   --chart-1: #8baaad;
-  --chart-2: #2e5749;
-  --chart-3: #780001;
-  --chart-4: #bf512c;
-  --chart-5: #da9b2b;
+  --chart-2: #1f2c43;
+  --chart-3: #3e4c59;
+  --chart-4: #d8d8d8;
+  --chart-5: #8baaad;
   --radius: 1rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #1f2c43;
@@ -82,40 +85,74 @@
   --sidebar-accent-foreground: #1f2c43;
   --sidebar-border: #d8d8d8;
   --sidebar-ring: #8baaad;
+
+  /* Paleta base (neutros de marca) */
+  --base-1: #1f2c43;
+  --base-2: #3e4c59;
+  --base-3: #8baaad;
+  --base-4: #d8d8d8;
+
+  /* Status de conclusão (Atividade e Atividade Geral) */
+  --status-concluido: #2e5749;
+  --status-pendente: #da9b2b;
+  --status-em-andamento: #8baaad;
+  --status-outro: #3e4c59;
+
+  /* Prioridade */
+  --prioridade-urgente: #780001;
+  --prioridade-importante: #bf512c;
+  --prioridade-medio: #da9b2b;
+  --prioridade-baixo: #2e5749;
+
+  /* Prazo (indicador de vencimento) */
+  --prazo-em-dia: #2e5749;
+  --prazo-proximo: #da9b2b;
+  --prazo-vencido: #780001;
+
+  /* Status de negociação da proposta */
+  --negociacao-em-andamento: #da9b2b;
+  --negociacao-fup: #bf512c;
+  --negociacao-aceite: #2e5749;
+  --negociacao-na: #d8d8d8;
 }
 
 .dark {
-  --background: #1f140d;
-  --foreground: #f1e0d0;
-  --card: #2a1c12;
-  --card-foreground: #f1e0d0;
-  --popover: #2a1c12;
-  --popover-foreground: #f1e0d0;
-  --primary: #e8935a;
-  --primary-foreground: #241207;
-  --secondary: #3a2718;
-  --secondary-foreground: #f1e0d0;
-  --muted: #33241a;
-  --muted-foreground: #b8977f;
-  --accent: #e8792e;
-  --accent-foreground: #1f140d;
-  --destructive: #e2574a;
-  --border: #3d2b1e;
-  --input: #3d2b1e;
-  --ring: #e8792e;
-  --chart-1: #e8792e;
-  --chart-2: #d9a066;
-  --chart-3: #d9b23a;
-  --chart-4: #e2574a;
-  --chart-5: #d9a066;
-  --sidebar: #241a12;
-  --sidebar-foreground: #f1e0d0;
-  --sidebar-primary: #e8792e;
-  --sidebar-primary-foreground: #1f140d;
-  --sidebar-accent: #34241a;
-  --sidebar-accent-foreground: #f1e0d0;
-  --sidebar-border: #3d2b1e;
-  --sidebar-ring: #e8792e;
+  --background: #18202f;
+  --foreground: #f0f0f0;
+  --card: #1f2c43;
+  --card-foreground: #f0f0f0;
+  --popover: #1f2c43;
+  --popover-foreground: #f0f0f0;
+  --primary: #8baaad;
+  --primary-foreground: #1f2c43;
+  --secondary: #3e4c59;
+  --secondary-foreground: #f0f0f0;
+  --muted: #3e4c59;
+  --muted-foreground: #d8d8d8;
+  --accent: #8baaad;
+  --accent-foreground: #1f2c43;
+  --destructive: #780001;
+  --border: #3e4c59;
+  --input: #3e4c59;
+  --ring: #8baaad;
+  --chart-1: #8baaad;
+  --chart-2: #d8d8d8;
+  --chart-3: #526d82;
+  --chart-4: #3e4c59;
+  --chart-5: #8baaad;
+  --sidebar: #1f2c43;
+  --sidebar-foreground: #f0f0f0;
+  --sidebar-primary: #8baaad;
+  --sidebar-primary-foreground: #1f2c43;
+  --sidebar-accent: #3e4c59;
+  --sidebar-accent-foreground: #f0f0f0;
+  --sidebar-border: #3e4c59;
+  --sidebar-ring: #8baaad;
+
+  --base-1: #8baaad;
+  --base-2: #d8d8d8;
+  --base-3: #3e4c59;
+  --base-4: #526d82;
 }
 
 @layer base {
@@ -213,6 +250,14 @@
 .tiptap-content mark {
   background: color-mix(in oklch, var(--accent-foreground), transparent 55%);
   border-radius: 0.15em;
+}
+.tiptap-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5em;
+}
+.tiptap-content img.ProseMirror-selectednode {
+  outline: 2px solid var(--ring);
 }
 .tiptap-content table {
   border-collapse: collapse;

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import { Mark, mergeAttributes } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
@@ -7,6 +8,7 @@ import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
 import Highlight from "@tiptap/extension-highlight";
+import Image from "@tiptap/extension-image";
 import { Table, TableRow, TableCell, TableHeader } from "@tiptap/extension-table";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -272,7 +274,36 @@ function Toolbar({ editor }: { editor: Editor }) {
   );
 }
 
+// Lê um arquivo de imagem (do clipboard ou de um drop) como data URI base64,
+// para que o print colado fique embutido no próprio HTML — sem depender de
+// upload/hospedagem externa.
+function fileToDataUri(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function imageFilesFrom(list: DataTransferItemList | FileList | null): File[] {
+  if (!list) return [];
+  const files: File[] = [];
+  for (const entry of Array.from(list as ArrayLike<DataTransferItem | File>)) {
+    if (entry instanceof File) {
+      if (entry.type.startsWith("image/")) files.push(entry);
+    } else if (entry.kind === "file" && entry.type.startsWith("image/")) {
+      const file = entry.getAsFile();
+      if (file) files.push(file);
+    }
+  }
+  return files;
+}
+
 export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
+  // Ref sincronizada ao editor (via effect) para os handlers de paste/drop,
+  // que são criados antes de o editor existir.
+  const editorRef = useRef<Editor | null>(null);
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -282,6 +313,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
       Link.configure({ openOnClick: false, autolink: true }),
       Highlight,
       TextColor,
+      Image.configure({ inline: false, allowBase64: true }),
       Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
@@ -294,8 +326,37 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         class:
           "tiptap-content min-h-48 rounded-b-lg border p-3 text-sm outline-none focus:ring-2 focus:ring-ring/50",
       },
+      // Colar um print (Ctrl/Cmd+V com imagem no clipboard) insere a imagem
+      // direto no texto, sem precisar de botão ou campo dedicado.
+      handlePaste: (view, event) => {
+        const images = imageFilesFrom(event.clipboardData?.items ?? null);
+        if (images.length === 0) return false;
+        event.preventDefault();
+        void Promise.all(images.map(fileToDataUri)).then((uris) => {
+          for (const src of uris) {
+            editorRef.current?.chain().focus().setImage({ src }).run();
+          }
+        });
+        return true;
+      },
+      // Arrastar e soltar uma imagem também funciona.
+      handleDrop: (view, event) => {
+        const images = imageFilesFrom(event.dataTransfer?.files ?? null);
+        if (images.length === 0) return false;
+        event.preventDefault();
+        void Promise.all(images.map(fileToDataUri)).then((uris) => {
+          for (const src of uris) {
+            editorRef.current?.chain().focus().setImage({ src }).run();
+          }
+        });
+        return true;
+      },
     },
   });
+
+  useEffect(() => {
+    editorRef.current = editor;
+  }, [editor]);
 
   if (!editor) return null;
 

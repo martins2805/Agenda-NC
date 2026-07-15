@@ -12,6 +12,7 @@ import {
 import type {
   Atividade,
   AtividadeGeral,
+  ChecklistTemplate,
   LookupItem,
   LookupKind,
   Planilha,
@@ -77,6 +78,7 @@ interface AppDataContextValue {
   atividadesGerais: AtividadeGeral[];
   registros: Registro[];
   planilhas: Planilha[];
+  checklistTemplates: ChecklistTemplate[];
   loading: boolean;
   dataError: string | null;
   dismissDataError: () => void;
@@ -95,6 +97,9 @@ interface AppDataContextValue {
   addPlanilha: (planilha: Planilha) => void;
   updatePlanilha: (id: string, patch: Partial<Planilha>) => void;
   deletePlanilha: (id: string) => void;
+  addChecklistTemplate: (template: ChecklistTemplate) => void;
+  updateChecklistTemplate: (id: string, template: ChecklistTemplate) => void;
+  deleteChecklistTemplate: (id: string) => void;
   refetch: () => Promise<void>;
 }
 
@@ -121,6 +126,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [atividadesGerais, setAtividadesGerais] = useState<AtividadeGeral[]>([]);
   const [registros, setRegistros] = useState<Registro[]>([]);
   const [planilhas, setPlanilhas] = useState<Planilha[]>([]);
+  const [checklistTemplates, setChecklistTemplates] = useState<ChecklistTemplate[]>([]);
   const [dataError, setDataError] = useState<string | null>(null);
   const planilhaSaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map()
@@ -140,14 +146,21 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const load = useCallback(async () => {
     const seq = ++loadSeq.current;
     try {
-      const [lookupsRes, atividadesRes, atividadesGeraisRes, registrosRes, planilhasRes] =
-        await Promise.all([
-          fetch("/api/lookups"),
-          fetch("/api/atividades"),
-          fetch("/api/atividades-gerais"),
-          fetch("/api/registros"),
-          fetch("/api/planilhas"),
-        ]);
+      const [
+        lookupsRes,
+        atividadesRes,
+        atividadesGeraisRes,
+        registrosRes,
+        planilhasRes,
+        checklistTemplatesRes,
+      ] = await Promise.all([
+        fetch("/api/lookups"),
+        fetch("/api/atividades"),
+        fetch("/api/atividades-gerais"),
+        fetch("/api/registros"),
+        fetch("/api/planilhas"),
+        fetch("/api/checklist-templates"),
+      ]);
 
       if (loadSeq.current !== seq) return;
 
@@ -175,6 +188,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         const data = await planilhasRes.json();
         if (loadSeq.current !== seq) return;
         setPlanilhas(applyPending(data, pendingPlanilhas.current));
+      }
+      if (checklistTemplatesRes.ok) {
+        const data = await checklistTemplatesRes.json();
+        if (loadSeq.current !== seq) return;
+        setChecklistTemplates(data);
       }
     } catch (error) {
       if (loadSeq.current !== seq) return;
@@ -531,6 +549,53 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const addChecklistTemplate = useCallback((template: ChecklistTemplate) => {
+    setChecklistTemplates((prev) => [...prev, template]);
+    fetch("/api/checklist-templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(template),
+    }).catch((error) => {
+      console.error("Falha ao criar modelo de checklist", error);
+      setChecklistTemplates((prev) => prev.filter((t) => t.id !== template.id));
+      setDataError("Não foi possível criar o modelo de checklist. Tente novamente.");
+    });
+  }, []);
+
+  const updateChecklistTemplate = useCallback((id: string, template: ChecklistTemplate) => {
+    setChecklistTemplates((prev) => {
+      const previous = prev.find((t) => t.id === id);
+      fetch(`/api/checklist-templates/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(template),
+      }).catch((error) => {
+        console.error("Falha ao atualizar modelo de checklist", error);
+        if (previous) {
+          setChecklistTemplates((cur) => cur.map((t) => (t.id === id ? previous : t)));
+        }
+        setDataError("Não foi possível salvar o modelo de checklist. A edição foi desfeita.");
+      });
+      return prev.map((t) => (t.id === id ? template : t));
+    });
+  }, []);
+
+  const deleteChecklistTemplate = useCallback((id: string) => {
+    setChecklistTemplates((prev) => {
+      const removed = prev.find((t) => t.id === id);
+      fetch(`/api/checklist-templates/${id}`, { method: "DELETE" }).catch((error) => {
+        console.error("Falha ao excluir modelo de checklist", error);
+        if (removed) {
+          setChecklistTemplates((cur) =>
+            cur.some((t) => t.id === id) ? cur : [...cur, removed]
+          );
+        }
+        setDataError("Não foi possível excluir o modelo de checklist. Ele foi restaurado.");
+      });
+      return prev.filter((t) => t.id !== id);
+    });
+  }, []);
+
   const value = useMemo(
     () => ({
       lookups,
@@ -538,6 +603,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       atividadesGerais,
       registros,
       planilhas,
+      checklistTemplates,
       loading,
       dataError,
       dismissDataError,
@@ -556,6 +622,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addPlanilha,
       updatePlanilha,
       deletePlanilha,
+      addChecklistTemplate,
+      updateChecklistTemplate,
+      deleteChecklistTemplate,
       refetch: load,
     }),
     [
@@ -564,6 +633,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       atividadesGerais,
       registros,
       planilhas,
+      checklistTemplates,
       loading,
       dataError,
       dismissDataError,
@@ -582,6 +652,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addPlanilha,
       updatePlanilha,
       deletePlanilha,
+      addChecklistTemplate,
+      updateChecklistTemplate,
+      deleteChecklistTemplate,
       load,
     ]
   );
@@ -653,5 +726,13 @@ export function makeRegistroTabId() {
 }
 
 export function makePlanilhaId() {
+  return makeId();
+}
+
+export function makeChecklistTemplateId() {
+  return makeId();
+}
+
+export function makeChecklistTemplateItemId() {
   return makeId();
 }

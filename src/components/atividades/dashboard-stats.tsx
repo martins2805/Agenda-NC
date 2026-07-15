@@ -10,17 +10,17 @@ import type { AtividadeGeral } from "@/lib/types";
 import { parseLocalDate } from "@/lib/calculations";
 
 const STATUS_COLORS: Record<string, string> = {
-  Pendente: "#BF512C",
-  "Aguardando retorno interno": "#DA9B2B",
+  Pendente: "#DA9B2B",
+  "Aguardando retorno interno": "#3E4C59",
   "Aguardando retorno cliente": "#3E4C59",
-  "Concluído": "#8BAAAD",
+  "Concluído": "#2E5749",
 };
 
 const PRIORIDADE_COLORS: Record<string, string> = {
   Urgente: "#780001",
   Importante: "#BF512C",
   "Médio": "#DA9B2B",
-  Baixo: "#8BAAAD",
+  Baixo: "#2E5749",
 };
 
 function isOverdue(atividade: Atividade) {
@@ -125,12 +125,13 @@ export function DashboardStats({
     count: atividades.filter((a) => a.prioridade === prioridade).length,
     color: PRIORIDADE_COLORS[prioridade] ?? "#3E4C59",
   }));
+  // Gráfico por empresa não representa status/prioridade/prazo → paleta base.
   const empresaData = lookups.empresa
     .filter((empresa) => empresa.active)
     .map((empresa, index) => ({
       label: empresa.name,
       count: atividades.filter((a) => a.empresaId === empresa.id).length,
-      color: ["#8BAAAD", "#2E5749", "#BF512C", "#DA9B2B", "#780001"][index % 5],
+      color: ["#1F2C43", "#3E4C59", "#8BAAAD", "#D8D8D8"][index % 4],
     }))
     .filter((item) => item.count > 0)
     .slice(0, 8);
@@ -151,10 +152,10 @@ export function DashboardStats({
         <StatCard label="Tipo propostas" value={propostas.length} color="#8BAAAD" icon={CheckCircle2} />
         <StatCard label="Propostas pendentes" value={propostasPendentes.length} color="#BF512C" icon={FileClock} />
         <Link href="/atividades-gerais">
-          <StatCard label="Atividades gerais" value={atividadesGerais.length} color="#2E5749" icon={ClipboardList} />
+          <StatCard label="Atividades gerais" value={atividadesGerais.length} color="#3E4C59" icon={ClipboardList} />
         </Link>
       </div>
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-4">
         <VerticalBars title="Status das propostas" data={propostaStatusData} />
         <VerticalBars title="Status das atividades" data={statusData} />
         <VerticalBars title="Atividades por prioridade" data={prioridadeData} />

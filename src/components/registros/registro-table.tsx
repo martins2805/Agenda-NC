@@ -55,7 +55,7 @@ export function RegistroTable({
                     <Link
                       href={`/atividades?open=${vinculada.id}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="flex w-fit items-center gap-1 rounded-full bg-[var(--base-3)] px-2 py-0.5 text-[11px] font-medium text-[var(--base-1)] hover:opacity-80"
+                      className="flex w-fit items-center gap-1 rounded-full bg-[var(--base-3)] px-2 py-0.5 text-[11px] font-medium text-white hover:opacity-80"
                     >
                       <Link2 className="size-3" />
                       Atividade

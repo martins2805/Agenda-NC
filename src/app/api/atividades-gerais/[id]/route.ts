@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  atividadeGeralFromDb,
-  prioridadeToDb,
-  statusToDb,
-} from "@/lib/atividade-mapper";
+import { atividadeGeralFromDb, prioridadeToDb } from "@/lib/atividade-mapper";
 import type { AtividadeGeral } from "@/lib/types";
 
 const include = { checklist: true };
@@ -29,12 +25,14 @@ export async function PATCH(
     return tx.atividadeGeral.update({
       where: { id },
       data: {
+        empresaId: body.empresaId,
+        unidadeId: body.unidadeId,
         tipoIds: body.tipoIds,
         assunto: body.assunto,
         vinculos: body.vinculos,
         prazo: body.prazo ? new Date(body.prazo) : null,
         descricao: body.descricao,
-        status: statusToDb(body.status),
+        status: body.status,
         prioridade: prioridadeToDb(body.prioridade),
         setorIds: body.setorIds,
         checklist: {
@@ -46,6 +44,8 @@ export async function PATCH(
             prioridade: prioridadeToDb(item.prioridade),
             prazo: item.prazo ? new Date(item.prazo) : null,
             ordem: index,
+            empresaId: item.empresaId,
+            unidadeId: item.unidadeId,
           })),
         },
       },

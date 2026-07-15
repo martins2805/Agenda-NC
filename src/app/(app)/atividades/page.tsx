@@ -12,6 +12,7 @@ import {
   FilterBar,
   DEFAULT_FILTERS,
   type ActivityFilters,
+  type PrazoRange,
 } from "@/components/atividades/filter-bar";
 import { ActivityCard } from "@/components/atividades/activity-card";
 import { ActivityForm } from "@/components/atividades/activity-form";
@@ -19,8 +20,7 @@ import { ViewToggle, type ViewMode } from "@/components/view-toggle";
 import type { Atividade } from "@/lib/types";
 import { parseLocalDate } from "@/lib/calculations";
 
-function matchesPrazo(prazo: string | null, mode: ActivityFilters["prazo"]) {
-  if (mode === "todos") return true;
+function matchesPrazoRange(prazo: string | null, mode: PrazoRange) {
   if (!prazo) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -31,6 +31,12 @@ function matchesPrazo(prazo: string | null, mode: ActivityFilters["prazo"]) {
   if (mode === "7dias") return diffDays >= 0 && diffDays <= 7;
   if (mode === "30dias") return diffDays >= 0 && diffDays <= 30;
   return true;
+}
+
+// Um dos intervalos selecionados basta (OR). Sem seleção, não filtra por prazo.
+function matchesPrazos(prazo: string | null, ranges: PrazoRange[]) {
+  if (ranges.length === 0) return true;
+  return ranges.some((range) => matchesPrazoRange(prazo, range));
 }
 
 export default function AtividadesPage() {
@@ -49,15 +55,20 @@ export default function AtividadesPage() {
     const keyword = filters.keyword.trim().toLowerCase();
 
     return atividades.filter((a) => {
-      if (filters.empresaId && a.empresaId !== filters.empresaId) return false;
       if (
-        filters.tipoAtividadeId &&
-        !a.tipoAtividadeIds.includes(filters.tipoAtividadeId)
+        filters.empresaIds.length > 0 &&
+        !(a.empresaId && filters.empresaIds.includes(a.empresaId))
       )
         return false;
-      if (filters.status && a.status !== filters.status) return false;
-      if (filters.prioridade && a.prioridade !== filters.prioridade) return false;
-      if (!matchesPrazo(a.prazo, filters.prazo)) return false;
+      if (
+        filters.tipoAtividadeIds.length > 0 &&
+        !filters.tipoAtividadeIds.some((id) => a.tipoAtividadeIds.includes(id))
+      )
+        return false;
+      if (filters.status.length > 0 && !filters.status.includes(a.status)) return false;
+      if (filters.prioridades.length > 0 && !filters.prioridades.includes(a.prioridade))
+        return false;
+      if (!matchesPrazos(a.prazo, filters.prazos)) return false;
 
       if (keyword) {
         const empresa = lookups.empresa.find((e) => e.id === a.empresaId)?.name ?? "";
@@ -112,7 +123,7 @@ export default function AtividadesPage() {
           </Button>
           <Link
             href="/atividades-gerais"
-            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-[var(--chart-2)] px-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--chart-2)]/90 sm:w-fit"
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-[var(--base-2)] px-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--base-2)]/90 sm:w-fit"
           >
             <Plus className="size-4" />
             Nova atividade geral
