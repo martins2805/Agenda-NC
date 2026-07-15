@@ -350,7 +350,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       .catch((error) => {
         console.error("Falha ao criar atividade geral", error);
         setAtividadesGerais((prev) => prev.filter((a) => a.id !== atividade.id));
-        setDataError("Nao foi possivel criar a atividade geral. Tente novamente.");
+        setDataError("Nao foi possivel criar a execução. Tente novamente.");
       })
       .finally(() => pendingAtividadesGerais.current.delete(atividade.id));
   }, []);
@@ -374,7 +374,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         .catch((error) => {
           console.error("Falha ao atualizar atividade geral", error);
           setAtividadesGerais((cur) => cur.map((a) => (a.id === id ? previous : a)));
-          setDataError("Nao foi possivel salvar a atividade geral. A edicao foi desfeita.");
+          setDataError("Nao foi possivel salvar a execução. A edicao foi desfeita.");
         })
         .finally(() => pendingAtividadesGerais.current.delete(id));
 
@@ -397,7 +397,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
               cur.some((a) => a.id === id) ? cur : [removed, ...cur]
             );
           }
-          setDataError("Nao foi possivel excluir a atividade geral. Ela foi restaurada.");
+          setDataError("Nao foi possivel excluir a execução. Ela foi restaurada.");
         })
         .finally(() => pendingAtividadesGerais.current.delete(id));
 

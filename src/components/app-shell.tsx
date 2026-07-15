@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ClipboardCheck, LayoutDashboard, FileText, Table2, Users, LogOut } from "lucide-react";
+import { ClipboardCheck, LayoutDashboard, ListChecks, FileText, Table2, Users, LogOut } from "lucide-react";
 import { logout } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 
 const BASE_NAV_ITEMS = [
-  { href: "/atividades", label: "Atividades", icon: LayoutDashboard },
-  { href: "/atividades-gerais", label: "Ativ. gerais", icon: ClipboardCheck },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/atividades", label: "Atividades", icon: ListChecks },
+  { href: "/atividades-gerais", label: "Execuções", icon: ClipboardCheck },
   { href: "/registros", label: "Registros", icon: FileText },
   { href: "/planilhas", label: "Planilhas", icon: Table2 },
 ];
@@ -28,13 +29,15 @@ export function AppShell({
 
   return (
     <div className="flex min-h-full">
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-6 p-4 sm:flex">
-        <div className="flex flex-col gap-6 rounded-2xl border border-sidebar-border bg-sidebar p-4 h-full">
+      {/* Sidebar sólida na cor da paleta base #1F2C43 com texto branco,
+          disponível em todas as telas grandes. */}
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-6 p-3 sm:flex">
+        <div className="flex h-full flex-col gap-6 rounded-3xl bg-[#1F2C43] p-4 text-white shadow-[0_18px_40px_-24px_rgba(31,44,67,0.6)]">
           <div className="flex items-center gap-3 px-1">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent font-mono text-xs font-bold text-accent-foreground">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 font-mono text-xs font-bold text-white">
               NC
             </div>
-            <span className="font-display text-lg tracking-tight italic text-sidebar-foreground">
+            <span className="font-display text-lg tracking-tight italic text-white">
               Agenda NC
             </span>
           </div>
@@ -47,10 +50,10 @@ export function AppShell({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                     active
-                      ? "border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "border-transparent text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      ? "bg-white/15 text-white"
+                      : "text-white/70 hover:bg-white/10 hover:text-white"
                   )}
                 >
                   <item.icon className="size-4" />
@@ -61,7 +64,11 @@ export function AppShell({
           </nav>
 
           <form action={logout} className="mt-auto">
-            <Button variant="ghost" className="w-full justify-start gap-3 px-3" type="submit">
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 px-3 text-white/80 hover:bg-white/10 hover:text-white"
+              type="submit"
+            >
               <LogOut className="size-4" />
               Sair
             </Button>
@@ -70,10 +77,10 @@ export function AppShell({
       </aside>
 
       <main className="w-full flex-1 px-4 pb-24 pt-6 sm:px-6 sm:pb-10">
-        <div className="mx-auto w-full max-w-5xl">{children}</div>
+        <div className="mx-auto w-full max-w-6xl">{children}</div>
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background sm:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 bg-[#1F2C43] text-white sm:hidden">
         <div className="flex">
           {NAV_ITEMS.map((item) => {
             const active = pathname?.startsWith(item.href);
@@ -82,8 +89,8 @@ export function AppShell({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-1 flex-col items-center gap-1 py-2.5 font-mono text-[10px] tracking-wide uppercase",
-                  active ? "text-primary" : "text-muted-foreground"
+                  "flex flex-1 flex-col items-center gap-1 py-2.5 font-mono text-[10px] tracking-wide uppercase transition-colors",
+                  active ? "text-white" : "text-white/60"
                 )}
               >
                 <item.icon className="size-5" />

@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       oportunidadeTexto: body.oportunidadeTexto,
       contato: body.contato,
       prazo: body.prazo ? new Date(body.prazo) : null,
+      prazoFim: body.prazoFim ? new Date(body.prazoFim) : null,
       descricao: body.descricao,
       alinhamentos: body.alinhamentos,
       status: statusToDb(body.status),

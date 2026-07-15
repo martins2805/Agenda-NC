@@ -82,6 +82,7 @@ export function atividadeFromDb(a: FullDbAtividade): Atividade {
     oportunidadeTexto: a.oportunidadeTexto,
     contato: a.contato,
     prazo: a.prazo ? toLocalDateTimeString(a.prazo) : null,
+    prazoFim: a.prazoFim ? toLocalDateTimeString(a.prazoFim) : null,
     descricao: a.descricao,
     alinhamentos: a.alinhamentos,
     status: STATUS_FROM_DB[a.status],

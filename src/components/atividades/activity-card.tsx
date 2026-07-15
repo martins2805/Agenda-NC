@@ -1,12 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarClock, Trash2, CheckSquare, Phone, Check, Building2 } from "lucide-react";
+import {
+  CalendarClock,
+  Trash2,
+  CheckSquare,
+  Phone,
+  Check,
+  Building2,
+  FileText,
+  Table2,
+  Package,
+} from "lucide-react";
 import { useAppData } from "@/lib/app-data-context";
 import {
   diasEmPendencia,
@@ -190,7 +201,7 @@ function QuickContato({ atividade }: { atividade: Atividade }) {
         e.stopPropagation();
         setEditing(true);
       }}
-      className="flex items-center gap-1 text-sm text-muted-foreground hover:underline"
+      className="flex items-center gap-1 text-xs text-muted-foreground hover:underline"
     >
       <Phone className="size-3" />
       {atividade.contato || "+ contato"}
@@ -204,13 +215,14 @@ interface ActivityCardProps {
 }
 
 export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
-  const { lookups, deleteAtividade } = useAppData();
+  const { lookups, registros, planilhas, deleteAtividade, updateAtividade } = useAppData();
 
   const empresa = lookups.empresa.find((e) => e.id === atividade.empresaId);
   const unidade = lookups.unidade.find((u) => u.id === atividade.unidadeId);
   const tipos = lookups.tipoAtividade.filter((t) =>
     atividade.tipoAtividadeIds.includes(t.id)
   );
+  const isProposta = tipos.some((t) => t.name.toLowerCase() === "proposta");
   const dias = diasEmPendencia(atividade);
   const atraso = diasEmAtraso(atividade);
   const checkTotal = atividade.checklist.length;
@@ -221,11 +233,12 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
     (sum, p) => sum + (p.valorTotal ?? 0),
     0
   );
-  const propostasComDetalhe = atividade.propostas.filter(
-    (p) => p.detalhe.trim() || p.statusNegociacao
-  );
 
   const prazoStatus = atividadePrazoStatus(atividade);
+  const concluida = atividade.status === "Concluído";
+
+  const linkedRegistros = registros.filter((r) => r.atividadeId === atividade.id && !r.deletedAt);
+  const linkedPlanilhas = planilhas.filter((p) => p.atividadeId === atividade.id && !p.deletedAt);
 
   return (
     <Card
@@ -234,30 +247,56 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
     >
       <CardContent className="flex flex-col gap-3">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-col gap-0.5">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            {/* 1. Empresa + Unidade */}
             <p className="flex items-center gap-1.5 font-semibold leading-tight">
               <Building2 className="size-3.5 shrink-0 text-[var(--base-1)]" />
               {empresa?.name ?? "Sem empresa"}
               {unidade && <span className="text-muted-foreground"> · {unidade.name}</span>}
             </p>
-            {atividade.assunto && (
-              <p className="text-sm text-muted-foreground">{atividade.assunto}</p>
+            {/* 2. Assunto (ou Serviço/Produto quando proposta) */}
+            {isProposta ? (
+              <ServicoProdutoDestaque atividade={atividade} />
+            ) : (
+              atividade.assunto && (
+                <p className="text-sm text-muted-foreground">{atividade.assunto}</p>
+              )
             )}
+            {/* 3. Contato (menor destaque) */}
             <QuickContato atividade={atividade} />
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 shrink-0 text-destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              deleteAtividade(atividade.id);
-            }}
-          >
-            <Trash2 className="size-3.5" />
-          </Button>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              title={concluida ? "Reabrir atividade" : "Concluir atividade"}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateAtividade(atividade.id, { status: concluida ? "Pendente" : "Concluído" });
+              }}
+              className={cn(
+                "flex size-7 items-center justify-center rounded-md border transition-colors",
+                concluida
+                  ? "border-transparent bg-[var(--status-concluido)] text-white"
+                  : "border-muted-foreground/40 text-transparent hover:border-[var(--status-concluido)] hover:text-[var(--status-concluido)]"
+              )}
+            >
+              <Check className="size-4" />
+            </button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteAtividade(atividade.id);
+              }}
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </div>
         </div>
 
+        {/* 4. Tipo de atividade (etiqueta) */}
         {tipos.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {tipos.map((t) => (
@@ -268,6 +307,7 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
           </div>
         )}
 
+        {/* 5-6. Status + Prioridade + prazo */}
         <div
           className="flex flex-wrap items-center gap-2 font-mono text-[11px]"
           onClick={(e) => e.stopPropagation()}
@@ -290,47 +330,28 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
               {atraso}d em atraso
             </span>
           )}
-          {checkTotal > 0 && (
-            <span className="flex items-center gap-1 text-muted-foreground">
-              <CheckSquare className="size-3.5" />
-              {checkDone}/{checkTotal}
-            </span>
-          )}
           <QuickPrazo atividade={atividade} />
-          {propostaTotal > 0 && (
-            <span className="rounded-full bg-[var(--base-3)] px-2.5 py-0.5 font-medium text-[var(--base-1)]">
-              {formatCurrency(propostaTotal)}
-            </span>
-          )}
         </div>
 
-        {propostasComDetalhe.length > 0 && (
-          <div className="flex flex-col gap-1">
-            {propostasComDetalhe.map((p) => (
-              <div key={p.id} className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                {p.statusNegociacao && (
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 font-mono font-medium tracking-wide uppercase",
-                      STATUS_NEGOCIACAO_STYLES[p.statusNegociacao]
-                    )}
-                  >
-                    {STATUS_NEGOCIACAO_LABELS[p.statusNegociacao]}
-                  </span>
-                )}
-                {p.detalhe.trim() && (
-                  <span className="text-muted-foreground">{p.detalhe.trim()}</span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        {/* 7. Informações específicas por tipo */}
+        {isProposta && <PropostaDetalhes atividade={atividade} propostaTotal={propostaTotal} />}
+
+        {!isProposta && atividade.emailConteudo?.trim() &&
+          tipos.some((t) => t.name.toLowerCase() === "email") && (
+            <p className="line-clamp-2 text-xs text-muted-foreground">
+              {atividade.emailConteudo.trim()}
+            </p>
+          )}
+
+        {!isProposta && atividade.oportunidadeTexto?.trim() &&
+          tipos.some((t) => t.name.toLowerCase() === "oportunidade") && (
+            <p className="line-clamp-2 text-xs text-muted-foreground">
+              {atividade.oportunidadeTexto.trim()}
+            </p>
+          )}
 
         {checklistComPrazo.length > 0 && (
-          <div
-            className="flex flex-wrap gap-1.5"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
             {checklistComPrazo.map((c) => {
               const status = prazoStatusFor(c.prazo);
               return (
@@ -344,23 +365,144 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
                 >
                   <CheckSquare className="size-3 shrink-0" />
                   <span className="truncate">{c.texto || "Item"}</span>
-                  <span className="shrink-0 opacity-80">
-                    {formatLocalDateTime(c.prazo!)}
-                  </span>
+                  <span className="shrink-0 opacity-80">{formatLocalDateTime(c.prazo!)}</span>
                 </span>
               );
             })}
           </div>
         )}
 
+        {/* 8. Índice de conclusão do checklist: barra + quantidade */}
         {checkTotal > 0 && (
-          <div className="progress-track">
-            <span
-              style={{ width: `${checkPct}%`, background: "var(--base-1)" }}
-            />
+          <div className="flex items-center gap-2">
+            <div className="progress-track flex-1">
+              <span style={{ width: `${checkPct}%`, background: "var(--base-1)" }} />
+            </div>
+            <span className="flex shrink-0 items-center gap-1 font-mono text-[11px] text-muted-foreground">
+              <CheckSquare className="size-3.5" />
+              {checkDone}/{checkTotal}
+            </span>
+          </div>
+        )}
+
+        {/* 9. Vínculos (registro/planilha) com direcionamento */}
+        {(linkedRegistros.length > 0 || linkedPlanilhas.length > 0) && (
+          <div className="flex flex-wrap gap-2 text-[11px]" onClick={(e) => e.stopPropagation()}>
+            {linkedRegistros.map((r) => (
+              <Link
+                key={r.id}
+                href={`/registros?open=${r.id}`}
+                className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-muted-foreground hover:underline"
+              >
+                <FileText className="size-3" />
+                {r.nome || r.tabs[0]?.titulo || "Registro"}
+              </Link>
+            ))}
+            {linkedPlanilhas.map((p) => (
+              <Link
+                key={p.id}
+                href={`/planilhas?open=${p.id}`}
+                className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-muted-foreground hover:underline"
+              >
+                <Table2 className="size-3" />
+                {p.nome || "Planilha"}
+              </Link>
+            ))}
           </div>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function ServicoProdutoDestaque({ atividade }: { atividade: Atividade }) {
+  const { lookups } = useAppData();
+  const nomes = new Set<string>();
+  const detalhes = new Set<string>();
+  for (const p of atividade.propostas) {
+    for (const id of p.servicoProdutoIds) {
+      const nome = lookups.servicoProduto.find((s) => s.id === id)?.name;
+      if (nome) nomes.add(nome);
+    }
+    if (p.detalhe.trim()) detalhes.add(p.detalhe.trim());
+  }
+  if (nomes.size === 0 && detalhes.size === 0) {
+    return atividade.assunto ? (
+      <p className="text-sm font-medium">{atividade.assunto}</p>
+    ) : null;
+  }
+  return (
+    <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
+      <Package className="size-3.5 shrink-0 text-[var(--base-1)]" />
+      {Array.from(nomes).join(", ")}
+      {detalhes.size > 0 && (
+        <span className="font-normal text-muted-foreground">
+          — {Array.from(detalhes).join(" · ")}
+        </span>
+      )}
+    </p>
+  );
+}
+
+function PropostaDetalhes({
+  atividade,
+  propostaTotal,
+}: {
+  atividade: Atividade;
+  propostaTotal: number;
+}) {
+  const { lookups } = useAppData();
+  const escopos = new Set<string>();
+  const amostragens = new Set<string>();
+  const tiposProduto = new Set<string>();
+  for (const p of atividade.propostas) {
+    for (const id of p.escopoIds) {
+      const n = lookups.escopo.find((e) => e.id === id)?.name;
+      if (n) escopos.add(n);
+    }
+    for (const id of p.amostragemIds) {
+      const n = lookups.amostragem.find((a) => a.id === id)?.name;
+      if (n) amostragens.add(n);
+    }
+    if (p.tipo) tiposProduto.add(p.tipo);
+  }
+  const propostasComNeg = atividade.propostas.filter((p) => p.statusNegociacao);
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      {(escopos.size > 0 || amostragens.size > 0) && (
+        <p className="text-[11px] text-muted-foreground">
+          {escopos.size > 0 && <span>Escopo: {Array.from(escopos).join(", ")}</span>}
+          {escopos.size > 0 && amostragens.size > 0 && " · "}
+          {amostragens.size > 0 && <span>Amostragem: {Array.from(amostragens).join(", ")}</span>}
+        </p>
+      )}
+      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+        {Array.from(tiposProduto).map((t) => (
+          <span
+            key={t}
+            className="rounded-full bg-[var(--base-4)] px-2 py-0.5 font-medium text-[var(--base-1)]"
+          >
+            {t}
+          </span>
+        ))}
+        {propostasComNeg.map((p) => (
+          <span
+            key={p.id}
+            className={cn(
+              "rounded-full px-2 py-0.5 font-mono font-medium tracking-wide uppercase",
+              STATUS_NEGOCIACAO_STYLES[p.statusNegociacao!]
+            )}
+          >
+            {STATUS_NEGOCIACAO_LABELS[p.statusNegociacao!]}
+          </span>
+        ))}
+        {propostaTotal > 0 && (
+          <span className="rounded-full bg-[var(--base-3)] px-2.5 py-0.5 font-medium text-[var(--base-1)]">
+            {formatCurrency(propostaTotal)}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }

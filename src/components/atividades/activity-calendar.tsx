@@ -32,8 +32,8 @@ const ALL = "__all__";
 const KIND_LABELS: Record<EntryKind, string> = {
   atividade: "Atividade",
   checklist: "Item de checklist",
-  geral: "Atividade Geral",
-  execucao: "Execução",
+  geral: "Execução",
+  execucao: "Proposta",
 };
 
 function toKey(date: Date) {
@@ -147,7 +147,7 @@ export function ActivityCalendar({
   const entries = selectedKey ? filteredEntriesByDate.get(selectedKey) ?? [] : [];
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border bg-[var(--chart-1)] p-4 text-[var(--primary)]">
+    <div className="flex flex-col gap-4 rounded-3xl bg-[#3E4C59] p-4 text-white shadow-[0_18px_40px_-24px_rgba(31,44,67,0.6)]">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Select
           items={{
@@ -249,7 +249,7 @@ export function ActivityCalendar({
                           {entry.kind === "atividade"
                             ? (empresa?.name ?? "Sem empresa")
                             : entry.kind === "geral"
-                              ? `${entry.tipos.join(", ") || "Atividade Geral"} · ${
+                              ? `${entry.tipos.join(", ") || "Execução"} · ${
                                   entry.atividadeGeral?.assunto || entry.texto || "Sem assunto"
                                 }`
                             : entry.texto}
@@ -267,13 +267,7 @@ export function ActivityCalendar({
                           ) : (
                             <CalendarDays className="size-3" />
                           )}
-                          {entry.kind === "atividade"
-                            ? "Atividade"
-                            : entry.kind === "checklist"
-                              ? "Item de checklist"
-                              : entry.kind === "execucao"
-                                ? "Execucao"
-                                : "Atividade Geral"}
+                          {KIND_LABELS[entry.kind]}
                         </Badge>
                       </div>
                       {entry.kind !== "atividade" && (

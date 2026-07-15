@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppData } from "@/lib/app-data-context";
 import { formatLocalDateTime } from "@/lib/calculations";
@@ -15,13 +15,14 @@ export function ActivityTable({
   atividades: Atividade[];
   onEdit: (a: Atividade) => void;
 }) {
-  const { lookups, deleteAtividade } = useAppData();
+  const { lookups, deleteAtividade, updateAtividade } = useAppData();
 
   return (
     <div className="panel-card overflow-x-auto">
       <table className="w-full min-w-max text-sm">
         <thead>
           <tr className="border-b text-left text-xs text-muted-foreground">
+            <th className="px-3 py-2 font-medium" title="Concluir" />
             <th className="px-3 py-2 font-medium">Empresa</th>
             <th className="px-3 py-2 font-medium">Unidade</th>
             <th className="px-3 py-2 font-medium">Tipo</th>
@@ -42,12 +43,31 @@ export function ActivityTable({
             );
             const checkTotal = a.checklist.length;
             const checkDone = a.checklist.filter((c) => c.concluido).length;
+            const concluida = a.status === "Concluído";
             return (
               <tr
                 key={a.id}
                 className="cursor-pointer border-b last:border-0 hover:bg-muted/40"
                 onClick={() => onEdit(a)}
               >
+                <td className="px-3 py-2">
+                  <button
+                    type="button"
+                    title={concluida ? "Reabrir atividade" : "Concluir atividade"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateAtividade(a.id, { status: concluida ? "Pendente" : "Concluído" });
+                    }}
+                    className={cn(
+                      "flex size-5 items-center justify-center rounded-md border transition-colors",
+                      concluida
+                        ? "border-transparent bg-[var(--status-concluido)] text-white"
+                        : "border-muted-foreground/40 text-transparent hover:border-[var(--status-concluido)]"
+                    )}
+                  >
+                    <Check className="size-3.5" />
+                  </button>
+                </td>
                 <td className="px-3 py-2 font-medium">{empresa?.name ?? "—"}</td>
                 <td className="px-3 py-2 text-muted-foreground">{unidade?.name ?? "—"}</td>
                 <td className="px-3 py-2 text-muted-foreground">

@@ -110,7 +110,8 @@ export interface Atividade {
   oportunidadeTexto: string;
   propostas: Proposta[];
   contato: string;
-  prazo: string | null; // ISO date
+  prazo: string | null; // ISO date (prazo inicial para Agendamento)
+  prazoFim: string | null; // prazo final, usado quando o tipo é "Agendamento"
   descricao: string;
   alinhamentos: string;
   status: StatusConclusao;

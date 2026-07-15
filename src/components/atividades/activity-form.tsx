@@ -58,6 +58,7 @@ function emptyAtividade(): Atividade {
     propostas: [],
     contato: "",
     prazo: null,
+    prazoFim: null,
     descricao: "",
     alinhamentos: "",
     status: "Pendente",
@@ -104,11 +105,14 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
   const tipoEmail = findTipoByName(lookups.tipoAtividade, "Email");
   const tipoOportunidade = findTipoByName(lookups.tipoAtividade, "Oportunidade");
   const tipoProposta = findTipoByName(lookups.tipoAtividade, "Proposta");
+  const tipoAgendamento = findTipoByName(lookups.tipoAtividade, "Agendamento");
 
   const showEmail = !!tipoEmail && draft.tipoAtividadeIds.includes(tipoEmail.id);
   const showOportunidade =
     !!tipoOportunidade && draft.tipoAtividadeIds.includes(tipoOportunidade.id);
   const showProposta = !!tipoProposta && draft.tipoAtividadeIds.includes(tipoProposta.id);
+  const showAgendamento =
+    !!tipoAgendamento && draft.tipoAtividadeIds.includes(tipoAgendamento.id);
 
   const linkedRegistros = registros.filter((r) => r.atividadeId === draft.id);
   const linkedPlanilhas = planilhas.filter((p) => p.atividadeId === draft.id);
@@ -377,14 +381,42 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label>Prazo</Label>
-            <Input
-              type="datetime-local"
-              value={draft.prazo ?? ""}
-              onChange={(e) => patch({ prazo: e.target.value || null })}
-            />
-          </div>
+          {showAgendamento ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <Label>Prazo inicial</Label>
+                <Input
+                  type="datetime-local"
+                  value={draft.prazo ?? ""}
+                  onChange={(e) =>
+                    patch({
+                      prazo: e.target.value || null,
+                      prazoFim: e.target.value ? draft.prazoFim : null,
+                    })
+                  }
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>Prazo final</Label>
+                <Input
+                  type="datetime-local"
+                  min={draft.prazo ?? undefined}
+                  value={draft.prazoFim ?? ""}
+                  disabled={!draft.prazo}
+                  onChange={(e) => patch({ prazoFim: e.target.value || null })}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <Label>Prazo</Label>
+              <Input
+                type="datetime-local"
+                value={draft.prazo ?? ""}
+                onChange={(e) => patch({ prazo: e.target.value || null })}
+              />
+            </div>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <Label>Descrição da atividade</Label>

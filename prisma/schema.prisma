@@ -67,6 +67,7 @@ model Atividade {
   oportunidadeTexto String           @default("")
   contato           String           @default("")
   prazo             DateTime?
+  prazoFim          DateTime?
   descricao         String           @default("")
   alinhamentos      String           @default("")
   status            StatusConclusao  @default(Pendente)
