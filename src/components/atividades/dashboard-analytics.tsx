@@ -103,7 +103,7 @@ function VerticalBars({
 }) {
   const max = Math.max(1, ...data.map((d) => d.count));
   return (
-    <div className="flex min-h-56 flex-col gap-4 rounded-2xl bg-card p-4 shadow-[0_16px_36px_-24px_rgba(31,44,67,0.4)]">
+    <div className="panel-card flex min-h-56 flex-col gap-4 p-4">
       <span className="ledger-label">{title}</span>
       <div className="flex flex-1 items-end gap-3">
         {data.map((item) => (

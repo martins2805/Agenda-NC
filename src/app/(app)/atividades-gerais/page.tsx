@@ -582,7 +582,7 @@ function ExecucaoCard({ atividade: a, onOpen }: { atividade: AtividadeGeral; onO
 
   return (
     <div
-      className="flex cursor-pointer flex-col gap-3 rounded-2xl border-l-4 border-l-[var(--base-2)] bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
+      className="panel-card flex cursor-pointer flex-col gap-3 border-l-4 border-l-[var(--base-2)] p-4 transition-shadow hover:shadow-md"
       onClick={onOpen}
     >
       <div className="flex items-start justify-between gap-2">

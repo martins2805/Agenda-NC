@@ -50,24 +50,30 @@
 }
 
 :root {
-  --background: #fbf9e4;
-  --foreground: #1f2c43;
-  --card: #ffffff;
-  --card-foreground: #1f2c43;
-  --popover: #ffffff;
-  --popover-foreground: #1f2c43;
+  --background: #1f2c43;
+  --foreground: #f2f4f7;
+  --card: #29385a;
+  --card-foreground: #f2f4f7;
+  --popover: #29385a;
+  --popover-foreground: #f2f4f7;
   --primary: #1f2c43;
   --primary-foreground: #fbf9e4;
   --secondary: #8baaad;
   --secondary-foreground: #1f2c43;
   --muted: #d8d8d8;
-  --muted-foreground: #3e4c59;
+  --muted-foreground: #9aa7be;
   --accent: #bf512c;
   --accent-foreground: #ffffff;
   --destructive: #780001;
   --border: #d8d8d8;
   --input: #d8d8d8;
   --ring: #8baaad;
+
+  /* Vidro fosco (glass) — usado no .panel-card e componentes de apoio.
+     Nunca aplicado a etiquetas/tags semânticas (status/prioridade/prazo/negociação). */
+  --glass-bg: rgba(255, 255, 255, 0.09);
+  --glass-border: rgba(255, 255, 255, 0.34);
+  --glass-blur: 52px;
   /* Gráficos genéricos/decorativos usam a paleta base. Gráficos de status,
      prioridade e prazo têm variáveis dedicadas (--status-*, --prioridade-*,
      --prazo-*) e não passam por aqui. */
@@ -161,6 +167,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    background: var(--background);
   }
   html {
     @apply font-sans;
@@ -192,12 +199,37 @@
    difusa (profundidade em vez de bordas marcadas) e borda muito discreta.
    Usado em painéis de filtro, tabelas e blocos de conteúdo. */
 .panel-card {
-  background: var(--card);
+  position: relative;
+  background: var(--glass-bg);
   border-radius: var(--radius-2xl);
-  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  /* indireção via custom property: evita que o build (Lightning CSS)
+     funda o par prefixado/padrão e descarte a versão sem prefixo. */
+  --glass-fx: blur(var(--glass-blur)) saturate(220%) contrast(105%) brightness(1.16);
+  -webkit-backdrop-filter: var(--glass-fx);
+  backdrop-filter: var(--glass-fx);
+  overflow: hidden;
+  isolation: isolate;
+  /* o contorno do vidro vira um anel via box-shadow (inset), não a
+     propriedade `border` — assim nunca disputa com utilitários
+     Tailwind de border-left colorido (ex.: indicador de status nos
+     cards de atividade), que continuam funcionando normalmente. */
   box-shadow:
-    0 1px 2px color-mix(in srgb, var(--base-1) 6%, transparent),
-    0 18px 40px -24px color-mix(in srgb, var(--base-1) 30%, transparent);
+    inset 0 0 0 1px var(--glass-border),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 -14px 30px -20px rgba(0, 0, 0, 0.35),
+    0 28px 50px -22px rgba(0, 0, 0, 0.65),
+    0 2px 12px rgba(0, 0, 0, 0.3);
+}
+.panel-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0.06) 28%, transparent 52%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.10) 0%, transparent 22%);
+  pointer-events: none;
 }
 
 /* Barra de progresso arredondada (índice de conclusão de checklist). */

@@ -147,7 +147,7 @@ export function ActivityCalendar({
   const entries = selectedKey ? filteredEntriesByDate.get(selectedKey) ?? [] : [];
 
   return (
-    <div className="flex flex-col gap-4 rounded-3xl bg-[#3E4C59] p-4 text-white shadow-[0_18px_40px_-24px_rgba(31,44,67,0.6)]">
+    <div className="panel-card flex flex-col gap-4 p-4">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Select
           items={{
@@ -159,7 +159,7 @@ export function ActivityCalendar({
           value={filterEmpresaId ?? ALL}
           onValueChange={(v) => setFilterEmpresaId(v === ALL ? null : v)}
         >
-          <SelectTrigger className="w-full bg-[var(--background)]">
+          <SelectTrigger className="w-full bg-card">
             <SelectValue placeholder="Empresa" />
           </SelectTrigger>
           <SelectContent>
@@ -181,7 +181,7 @@ export function ActivityCalendar({
           value={filterKind ?? ALL}
           onValueChange={(v) => setFilterKind(v === ALL ? null : (v as EntryKind))}
         >
-          <SelectTrigger className="w-full bg-[var(--background)]">
+          <SelectTrigger className="w-full bg-card">
             <SelectValue placeholder="Tipo de prazo" />
           </SelectTrigger>
           <SelectContent>
@@ -209,10 +209,10 @@ export function ActivityCalendar({
           hasItems:
             "relative after:absolute after:bottom-0.5 after:left-1/2 after:size-1 after:-translate-x-1/2 after:rounded-full after:bg-primary",
         }}
-        className="shrink-0 rounded-md bg-[var(--background)]"
+        className="shrink-0 rounded-md bg-card"
       />
 
-      <div className="flex min-w-0 flex-1 flex-col gap-2 rounded-md bg-[var(--background)] p-3">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 rounded-md bg-card p-3">
         {!selectedDate ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 py-8 text-center text-muted-foreground">
             <CalendarDays className="size-8" />

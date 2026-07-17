@@ -219,7 +219,7 @@ export function ChatWidget() {
       style={{ right: position.right, bottom: position.bottom }}
     >
       {open && (
-        <div className="flex h-[60vh] max-h-[520px] w-[calc(100vw-2rem)] flex-col rounded-2xl border border-border bg-card shadow-2xl sm:w-96">
+        <div className="panel-card flex h-[60vh] max-h-[520px] w-[calc(100vw-2rem)] flex-col sm:w-96">
           <div
             onPointerDown={beginDrag}
             onPointerMove={onDragMove}

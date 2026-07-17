@@ -138,7 +138,7 @@ export default function RegistrosPage() {
           ))}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border bg-card">
+        <div className="panel-card overflow-x-auto">
           <table className="w-full min-w-[840px] text-sm">
             <thead className="bg-muted/60 text-left text-xs uppercase text-muted-foreground">
               <tr>

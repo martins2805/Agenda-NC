@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agenda NC — Mockup UI/UX</title>
+<style>
+  :root {
+    /* fundo sólido, exatamente a cor da paleta base indicada no briefing */
+    --bg: #1f2c43;
+    --panel-solid: #29385a; /* tom opaco: base para ícones/mixes, nunca vazado atrás do vidro */
+    --panel-soft: rgba(255,255,255,0.045);
+    --divider: rgba(255,255,255,0.09);
+    --foreground: #f2f4f7;
+    --muted-foreground: #9aa7be;
+
+    /* vidro fosco: transparência + blur em componentes de apoio (nunca em
+       etiquetas). Preenchimento mais transparente — deixa mais do fundo
+       "vazar" através do card, mantendo blur e borda para ainda ler como
+       vidro (não sumir por completo). */
+    --glass-bg: rgba(255, 255, 255, 0.09);
+    --glass-border: rgba(255, 255, 255, 0.34);
+    --glass-blur: 52px;
+
+    /* paleta base do sistema */
+    --base-1: #8baaad;
+    --base-2: #d8d8d8;
+    --base-3: #3e4c59;
+    --base-4: #1f2c43;
+
+    /* paleta secundária (semântica): status, prioridade, prazo, etiquetas —
+       cor fixa e sólida, nunca transparência */
+    --sec-vinho: #780001;
+    --sec-terracota: #bf512c;
+    --sec-ocre: #da9b2b;
+    --sec-verde: #2e5749;
+
+    --radius-card: 20px;
+    --radius-pill: 999px;
+  }
+
+  * { box-sizing: border-box; }
+  svg { display: block; }
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    /* fundo continua sólido (#1F2C43) — os dois brilhos abaixo são apenas
+       para o vidro fosco dos painéis ter algo sutil para captar; não é
+       imagem, textura nem ilustração, só um wash de cor bem discreto. */
+    background:
+      radial-gradient(900px circle at 8% -5%, rgba(139,170,173,0.34), transparent 55%),
+      radial-gradient(820px circle at 102% 20%, rgba(191,81,44,0.24), transparent 55%),
+      radial-gradient(760px circle at 50% 115%, rgba(218,155,43,0.16), transparent 55%),
+      var(--bg);
+    background-attachment: fixed;
+    color: var(--foreground);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+      "Segoe UI", Inter, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell { display: flex; min-height: 100vh; }
+
+  /* ---------- sidebar: mínima, sem vidro, apenas navegação ---------- */
+  .rail {
+    width: 64px; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 26px;
+    padding: 20px 0;
+  }
+  .rail .logo {
+    width: 34px; height: 34px; border-radius: 11px;
+    background: var(--base-1); color: #0f1c1c;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 11px; letter-spacing: -0.02em;
+  }
+  .rail nav { display: flex; flex-direction: column; gap: 10px; flex: 1; margin-top: 6px; }
+  .rail-item {
+    width: 40px; height: 40px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted-foreground); position: relative;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .rail-item svg { width: 18px; height: 18px; }
+  .rail-item.active { background: var(--base-1); color: #0f1c1c; }
+  .rail-item.logout { color: var(--sec-vinho); }
+
+  /* ---------- main ---------- */
+  main { flex: 1; min-width: 0; padding: 24px 28px 40px; display: flex; flex-direction: column; gap: 18px; }
+  .container { width: 100%; display: flex; flex-direction: column; gap: 18px; }
+
+  /* ---------- topbar: nav em pílula (referência enviada) ---------- */
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+  .segmented { display: flex; gap: 2px; padding: 4px; border-radius: var(--radius-pill); }
+  .segmented button {
+    display: flex; align-items: center; gap: 6px;
+    border: none; background: transparent; color: var(--muted-foreground);
+    font-size: 12.5px; font-weight: 600; padding: 8px 16px;
+    border-radius: var(--radius-pill); cursor: pointer; white-space: nowrap;
+  }
+  .segmented button.active { background: #ffffff; color: var(--base-4); border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 2px 6px -2px rgba(0,0,0,0.35); }
+
+  .profile { display: flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--foreground); position: relative;
+  }
+  .icon-btn svg { width: 15px; height: 15px; }
+  .icon-btn .dot {
+    position: absolute; top: 6px; right: 7px;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--sec-terracota); box-shadow: 0 0 0 2px var(--bg);
+  }
+  .profile .pill { display: flex; align-items: center; gap: 8px; padding: 5px 14px 5px 5px; border-radius: var(--radius-pill); font-size: 12.5px; font-weight: 600; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--base-1); display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700; color: #0f1c1c; }
+
+  /* ---------- vidro fosco: usado em toda superfície de apoio (.panel) —
+     transparência + blur + brilho diagonal, nunca em etiquetas ---------- */
+  .panel, .segmented, .icon-btn, .profile .pill {
+    position: relative;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--glass-blur)) saturate(220%) contrast(105%) brightness(1.16);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(220%) contrast(105%) brightness(1.16);
+    isolation: isolate;
+  }
+  .panel {
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.45),
+      inset 0 0 0 1px rgba(255,255,255,0.05),
+      inset 0 -14px 30px -20px rgba(0,0,0,0.35),
+      0 28px 50px -22px rgba(0,0,0,0.65),
+      0 2px 12px rgba(0,0,0,0.3);
+  }
+  /* brilho diagonal no canto superior + leve sombreado na base —
+     a assinatura visual do vidro, mais pronunciada */
+  .panel::before {
+    content: "";
+    position: absolute; inset: 0; z-index: -1;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.06) 28%, transparent 52%),
+      linear-gradient(0deg, rgba(0,0,0,0.10) 0%, transparent 22%);
+    pointer-events: none;
+  }
+  .segmented, .profile .pill { box-shadow: inset 0 1px 0 rgba(255,255,255,0.4); }
+  .icon-btn { box-shadow: inset 0 1px 0 rgba(255,255,255,0.4); }
+
+  /* ---------- filtros: no topo, botão de ação à direita ---------- */
+  .filter-bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px; flex-wrap: wrap; }
+  .filter-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; }
+  .chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: var(--radius-pill);
+    font-size: 11.5px; font-weight: 600;
+    background: var(--panel-soft);
+    color: var(--muted-foreground);
+    border: 1px solid rgba(255,255,255,0.14);
+  }
+  .chip svg { width: 13px; height: 13px; }
+  .chip.active-teal { background: var(--base-1); color: #0f1c1c; border-color: rgba(15,28,28,0.18); }
+  .chip.active-amber { background: var(--sec-ocre); color: #241a05; border-color: rgba(36,26,5,0.18); }
+  .chip.active-red { background: var(--sec-vinho); color: #fff; border-color: rgba(0,0,0,0.25); }
+
+  /* botão de ação: sempre à direita dos filtros, mesma estética em toda a app */
+  .btn-primary {
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    padding: 9px 16px; border-radius: var(--radius-pill);
+    background: var(--base-1); color: #0f1c1c;
+    font-size: 12.5px; font-weight: 700;
+    border: 1px solid rgba(15,28,28,0.2);
+    box-shadow: 0 8px 18px -10px rgba(139,170,173,0.6), inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  .btn-primary svg { width: 15px; height: 15px; }
+
+  /* ---------- dashboard como painel único (não conjunto de widgets) ---------- */
+  .dash-panel { padding: 20px 22px; display: flex; flex-wrap: wrap; align-items: stretch; gap: 22px; }
+
+  .kpi-row { display: flex; flex: 1 1 320px; gap: 22px; }
+  .kpi { display: flex; flex-direction: column; gap: 4px; padding-right: 22px; border-right: 1px solid var(--divider); }
+  .kpi:last-child { border-right: none; padding-right: 0; }
+  .kpi .label { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-foreground); }
+  .kpi .value { font-size: 25px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .kpi.c-teal .value { color: var(--base-1); }
+  .kpi.c-amber .value { color: var(--sec-ocre); }
+  .kpi.c-red .value { color: #e35a5a; }
+
+  .status-block { display: flex; flex-direction: column; gap: 10px; flex: 1 1 280px; border-left: 1px solid var(--divider); padding-left: 22px; }
+  .status-block .label { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-foreground); }
+  .status-bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--panel-soft); }
+  .status-bar span { display: block; height: 100%; }
+  .status-legend { display: flex; gap: 14px; flex-wrap: wrap; }
+  .status-legend .item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted-foreground); }
+  .status-legend .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  @media (max-width: 900px) {
+    .rail { display: none; }
+    .kpi-row { flex-wrap: wrap; }
+    .kpi { border-right: none; padding-right: 0; flex: 1 1 45%; }
+    .status-block { border-left: none; padding-left: 0; }
+  }
+
+  /* ---------- calendário (à esquerda) + expansão do dia (à direita) ---------- */
+  .grid-main { display: grid; grid-template-columns: minmax(240px, 300px) 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .grid-main { grid-template-columns: 1fr; } }
+
+  .calendar-card { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .calendar-head { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 700; }
+  .calendar-head .nav { display: flex; gap: 6px; }
+  .calendar-head .nav button {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.16); background: var(--panel-soft);
+    color: var(--muted-foreground); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .calendar-head .nav button svg { width: 12px; height: 12px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+  .cal-grid .dow { font-size: 9.5px; font-weight: 700; color: var(--muted-foreground); padding-bottom: 2px; }
+  .cal-grid .day { font-size: 11.5px; padding: 7px 0; border-radius: 9px; color: var(--foreground); cursor: pointer; position: relative; }
+  .cal-grid .day.muted { color: rgba(242,244,247,0.25); }
+  .cal-grid .day.today { background: var(--base-1); color: #0f1c1c; font-weight: 700; }
+  .cal-grid .day.selected { outline: 2px solid var(--sec-terracota); outline-offset: -2px; font-weight: 700; }
+  .cal-grid .day.dot::after {
+    content: ""; position: absolute; bottom: 3px; left: 50%;
+    width: 3px; height: 3px; border-radius: 50%; background: var(--sec-ocre);
+    transform: translateX(-50%);
+  }
+  .cal-grid .day.dot.late::after { background: var(--sec-vinho); }
+
+  .mini-cta {
+    margin-top: 2px; display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 14px; border-radius: 14px; background: var(--panel-soft);
+    border: 1px solid rgba(255,255,255,0.14);
+    font-size: 12px; font-weight: 600;
+  }
+  .mini-cta svg { width: 14px; height: 14px; color: var(--muted-foreground); }
+
+  /* expansão: o que existe no dia clicado no calendário, à direita */
+  .expand-card { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .expand-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .expand-head h3 { margin: 0; font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; }
+  .expand-head span { font-size: 11.5px; color: var(--muted-foreground); }
+
+  .expand-list { display: flex; flex-direction: column; }
+  .expand-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--divider);
+  }
+  .expand-item:last-child { border-bottom: none; }
+  .expand-item .icon-round { width: 30px; height: 30px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .expand-item .icon-round svg { width: 14px; height: 14px; }
+  .expand-item .body { flex: 1; min-width: 0; }
+  .expand-item .title { font-size: 12.5px; font-weight: 600; }
+  .expand-item .sub { font-size: 10.5px; color: var(--muted-foreground); margin-top: 1px; }
+  .expand-item .tags { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+
+  /* ---------- etiquetas (tags/chips semânticos): cor fixa, sólida, sem vidro ---------- */
+  .tag {
+    display: inline-flex; align-items: center;
+    font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 3px 8px; border-radius: var(--radius-pill);
+    white-space: nowrap;
+  }
+  .tag-andamento { background: var(--base-1); color: #0f1c1c; }
+  .tag-pendente  { background: var(--sec-ocre); color: #241a05; }
+  .tag-concluido { background: var(--sec-verde); color: #fff; }
+  .tag-vencido   { background: var(--sec-vinho); color: #fff; }
+  .tag-urgente   { background: var(--sec-vinho); color: #fff; }
+  .tag-importante{ background: var(--sec-terracota); color: #fff; }
+  .tag-execucao  { background: var(--base-3); color: #fff; }
+  .tag-checklist { background: var(--base-2); color: #1f2c43; }
+
+  /* ---------- segunda faixa: execuções do mês + arquivos recentes ---------- */
+  .secondary-row { display: grid; grid-template-columns: minmax(240px, 340px) 1fr; gap: 16px; }
+  @media (max-width: 900px) { .secondary-row { grid-template-columns: 1fr; } }
+
+  /* degradê discreto: permitido apenas em painéis de destaque, como este */
+  .plan-card {
+    padding: 18px;
+    background: linear-gradient(160deg, var(--base-1), #6f9195);
+    border-radius: var(--radius-card);
+    color: #0d1a1a;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .plan-card .top-row { display: flex; align-items: center; justify-content: space-between; }
+  .plan-card .badge { background: rgba(13,26,26,0.14); border: 1px solid rgba(13,26,26,0.16); padding: 5px 10px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 700; }
+  .plan-card .arrow-btn { width: 28px; height: 28px; border-radius: 50%; background: rgba(13,26,26,0.16); border: 1px solid rgba(13,26,26,0.2); display: flex; align-items: center; justify-content: center; }
+  .plan-card .arrow-btn svg { width: 13px; height: 13px; }
+  .plan-card h4 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .plan-bar { height: 6px; border-radius: 999px; background: rgba(13,26,26,0.16); overflow: hidden; }
+  .plan-bar span { display: block; height: 100%; background: #0d1a1a; border-radius: 999px; }
+  .plan-foot { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; opacity: 0.85; }
+
+  .list-card { padding: 8px; display: flex; flex-direction: column; }
+  .list-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; }
+  .list-row .icon { width: 34px; height: 34px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .list-row .icon svg { width: 15px; height: 15px; }
+  .list-row .icon.amber { background: color-mix(in srgb, var(--sec-ocre) 24%, var(--panel-solid)); color: var(--sec-ocre); }
+  .list-row .icon.teal { background: color-mix(in srgb, var(--sec-verde) 32%, var(--panel-solid)); color: #56b795; }
+  .list-row .icon.red { background: color-mix(in srgb, var(--sec-vinho) 32%, var(--panel-solid)); color: #e35a5a; }
+  .list-row .body { flex: 1; min-width: 0; }
+  .list-row .title { font-size: 12.5px; font-weight: 600; }
+  .list-row .sub { font-size: 10.5px; color: var(--muted-foreground); margin-top: 1px; }
+
+  /* ---------- atividades recentes: menos bordas, mais respiro ---------- */
+  .section-head { display: flex; align-items: center; justify-content: space-between; padding: 2px 2px 0; }
+  .section-head h3 { margin: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-foreground); }
+  .section-head a { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--base-1); text-decoration: none; }
+  .section-head a svg { width: 13px; height: 13px; }
+
+  .activities { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 900px) { .activities { grid-template-columns: 1fr; } }
+
+  .activity-card { position: relative; padding: 16px 16px 16px 19px; display: flex; flex-direction: column; gap: 12px; }
+  .activity-card::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 3px; background: var(--bar-color, var(--base-1)); }
+  .activity-card.andamento { --bar-color: var(--base-1); }
+  .activity-card.pendente { --bar-color: var(--sec-ocre); }
+  .activity-card.concluido { --bar-color: var(--sec-verde); }
+
+  .activity-card .row1 { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .activity-card .icon-round {
+    width: 30px; height: 30px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    background: color-mix(in srgb, var(--bar-color, var(--base-1)) 32%, var(--panel-solid));
+    color: var(--bar-color, var(--base-1));
+  }
+  .activity-card .icon-round svg { width: 14px; height: 14px; }
+  .activity-card h4 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: -0.01em; }
+  .activity-card p { margin: 0; font-size: 11.5px; color: var(--muted-foreground); line-height: 1.4; }
+  .activity-card .row2 { display: flex; align-items: center; justify-content: space-between; font-size: 10.5px; color: var(--muted-foreground); }
+  .activity-card .prazo { display: flex; align-items: center; gap: 5px; font-weight: 600; }
+  .activity-card .prazo svg { width: 11px; height: 11px; }
+  .activity-card .prazo.ok { color: #56b795; }
+  .activity-card .prazo.late { color: #e35a5a; }
+
+  /* ---------- visão geral: gráfico full-width ao final da página ---------- */
+  .overview-card { padding: 20px 22px; display: flex; flex-direction: column; gap: 16px; }
+  .overview-head { display: flex; align-items: center; justify-content: space-between; }
+  .overview-head h3 { margin: 0; font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; }
+  .overview-head .period { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: var(--muted-foreground); background: var(--panel-soft); border: 1px solid rgba(255,255,255,0.14); padding: 6px 12px; border-radius: var(--radius-pill); }
+  .overview-bars { display: flex; align-items: flex-end; gap: 18px; height: 160px; padding: 0 4px; }
+  .overview-bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
+  .overview-bar .value { font-size: 11px; font-weight: 700; color: var(--muted-foreground); }
+  .overview-bar .bar { width: 100%; max-width: 34px; border-radius: 10px 10px 4px 4px; background: var(--base-1); }
+  .overview-bar.highlight .bar { background: var(--sec-terracota); }
+  .overview-bar.highlight .value { color: var(--foreground); }
+  .overview-bar .month { font-size: 10.5px; color: var(--muted-foreground); font-weight: 600; }
+
+  footer.note { text-align: center; font-size: 11px; color: var(--muted-foreground); padding: 10px 0 2px; }
+</style>
+</head>
+<body>
+
+  <div class="shell">
+
+    <!-- sidebar mínima -->
+    <aside class="rail">
+      <div class="logo">NC</div>
+      <nav>
+        <div class="rail-item active" title="Painel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        </div>
+        <div class="rail-item" title="Atividades">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2"/><path d="m3 12 1 1 2-2"/><path d="m3 18 1 1 2-2"/></svg>
+        </div>
+        <div class="rail-item" title="Execuções">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <div class="rail-item" title="Registros">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        </div>
+        <div class="rail-item" title="Planilhas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        </div>
+      </nav>
+      <div class="rail-item logout" title="Sair">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      </div>
+    </aside>
+
+    <main>
+      <div class="container">
+
+        <!-- topbar: nav em pílula, igual à referência enviada -->
+        <div class="topbar">
+          <div class="segmented panel">
+            <button class="active">Painel</button>
+            <button>Atividades</button>
+            <button>Execuções</button>
+            <button>Registros</button>
+            <button>Planilhas</button>
+          </div>
+          <div class="profile">
+            <div class="icon-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/></svg>
+            </div>
+            <div class="icon-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              <span class="dot"></span>
+            </div>
+            <div class="pill">
+              <div class="avatar">MM</div>
+              Matheus
+            </div>
+          </div>
+        </div>
+
+        <!-- filtros no topo + botão de ação à direita dos filtros -->
+        <div class="filter-bar panel">
+          <div class="filter-chips">
+            <span class="chip active-teal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg>
+              Todas
+            </span>
+            <span class="chip active-amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              Pendentes
+            </span>
+            <span class="chip active-red">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+              Vencidas
+            </span>
+            <span class="chip">Empresa</span>
+            <span class="chip">Prioridade</span>
+          </div>
+          <button class="btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Nova atividade
+          </button>
+        </div>
+
+        <!-- dashboard: painel único (dados gerais + status ao centro/lado) -->
+        <div class="dash-panel panel">
+          <div class="kpi-row">
+            <div class="kpi c-teal">
+              <span class="label">Atividades</span>
+              <span class="value">128</span>
+            </div>
+            <div class="kpi c-amber">
+              <span class="label">Pendentes</span>
+              <span class="value">14</span>
+            </div>
+            <div class="kpi c-red">
+              <span class="label">Vencidas</span>
+              <span class="value">3</span>
+            </div>
+            <div class="kpi">
+              <span class="label">Execuções</span>
+              <span class="value">42</span>
+            </div>
+          </div>
+
+          <div class="status-block">
+            <span class="label">Status das atividades</span>
+            <div class="status-bar">
+              <span style="width: 46%; background: var(--base-1);"></span>
+              <span style="width: 24%; background: var(--sec-ocre);"></span>
+              <span style="width: 25%; background: var(--sec-verde);"></span>
+              <span style="width: 5%; background: var(--sec-vinho);"></span>
+            </div>
+            <div class="status-legend">
+              <span class="item"><span class="dot" style="background: var(--base-1);"></span>Em andamento · 59</span>
+              <span class="item"><span class="dot" style="background: var(--sec-ocre);"></span>Pendente · 31</span>
+              <span class="item"><span class="dot" style="background: var(--sec-verde);"></span>Concluído · 32</span>
+              <span class="item"><span class="dot" style="background: var(--sec-vinho);"></span>Vencido · 6</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- calendário à esquerda + expansão do dia à direita -->
+        <div class="grid-main">
+          <div class="calendar-card panel">
+            <div class="calendar-head">
+              <span>Julho 2026</span>
+              <div class="nav">
+                <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+                <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+              </div>
+            </div>
+            <div class="cal-grid">
+              <span class="dow">D</span><span class="dow">S</span><span class="dow">T</span>
+              <span class="dow">Q</span><span class="dow">Q</span><span class="dow">S</span><span class="dow">S</span>
+              <span class="day muted">28</span><span class="day muted">29</span><span class="day muted">30</span>
+              <span class="day">1</span><span class="day">2</span><span class="day dot">3</span><span class="day">4</span>
+              <span class="day">5</span><span class="day">6</span><span class="day dot">7</span><span class="day">8</span>
+              <span class="day">9</span><span class="day">10</span><span class="day">11</span>
+              <span class="day">12</span><span class="day dot late">13</span><span class="day">14</span><span class="day">15</span>
+              <span class="day today selected">16</span><span class="day">17</span><span class="day">18</span>
+              <span class="day dot">19</span><span class="day">20</span><span class="day">21</span>
+              <span class="day">22</span><span class="day">23</span><span class="day">24</span><span class="day">25</span>
+            </div>
+            <div class="mini-cta">
+              Ver agenda completa
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </div>
+          </div>
+
+          <!-- expansão: o que existe no dia clicado no calendário -->
+          <div class="expand-card panel">
+            <div class="expand-head">
+              <h3>Quinta-feira, 16 de julho</h3>
+              <span>3 itens neste dia</span>
+            </div>
+            <div class="expand-list">
+              <div class="expand-item">
+                <div class="icon-round" style="background: color-mix(in srgb, var(--base-1) 32%, var(--panel-solid)); color: var(--base-1);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2"/></svg>
+                </div>
+                <div class="body">
+                  <div class="title">Revisão contratual — Aurora Ltda.</div>
+                  <div class="sub">Empresa: Aurora Ltda. · Contato: Marina Reis</div>
+                </div>
+                <div class="tags">
+                  <span class="tag tag-andamento">Atividade</span>
+                  <span class="tag tag-importante">Importante</span>
+                </div>
+              </div>
+              <div class="expand-item">
+                <div class="icon-round" style="background: color-mix(in srgb, var(--sec-ocre) 28%, var(--panel-solid)); color: var(--sec-ocre);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="16" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
+                </div>
+                <div class="body">
+                  <div class="title">Execução mensal — Checklist SSO</div>
+                  <div class="sub">Item de checklist · Auditoria Q3</div>
+                </div>
+                <div class="tags">
+                  <span class="tag tag-execucao">Execução</span>
+                  <span class="tag tag-pendente">Médio</span>
+                </div>
+              </div>
+              <div class="expand-item">
+                <div class="icon-round" style="background: color-mix(in srgb, var(--sec-vinho) 32%, var(--panel-solid)); color: #e35a5a;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
+                </div>
+                <div class="body">
+                  <div class="title">Enviar documento pendente — Lote 12</div>
+                  <div class="sub">Checklist da proposta comercial</div>
+                </div>
+                <div class="tags">
+                  <span class="tag tag-checklist">Checklist</span>
+                  <span class="tag tag-urgente">Urgente</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- segunda faixa: execuções do mês + arquivos recentes -->
+        <div class="secondary-row">
+          <div class="plan-card">
+            <div class="top-row">
+              <span class="badge">Julho</span>
+              <div class="arrow-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+              </div>
+            </div>
+            <h4>Execuções do mês</h4>
+            <div class="plan-bar"><span style="width: 68%"></span></div>
+            <div class="plan-foot">
+              <span>Concluídas · 68%</span>
+              <span>29 / 42</span>
+            </div>
+          </div>
+
+          <div class="list-card panel">
+            <div class="list-row">
+              <div class="icon teal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="body">
+                <div class="title">Relatório mensal — Cliente Aurora</div>
+                <div class="sub">Concluído hoje</div>
+              </div>
+              <span class="tag tag-concluido">Concluído</span>
+            </div>
+            <div class="list-row">
+              <div class="icon amber">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              </div>
+              <div class="body">
+                <div class="title">Proposta comercial — Lote 12</div>
+                <div class="sub">Aguardando aprovação</div>
+              </div>
+              <span class="tag tag-pendente">Pendente</span>
+            </div>
+            <div class="list-row">
+              <div class="icon red">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
+              </div>
+              <div class="body">
+                <div class="title">Checklist vencido — Auditoria Q3</div>
+                <div class="sub">Venceu há 2 dias</div>
+              </div>
+              <span class="tag tag-vencido">Vencido</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- atividades recentes: menos bordas, mais respiro -->
+        <div class="section-head">
+          <h3>Atividades recentes</h3>
+          <a href="#">Ver todas
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </div>
+        <div class="activities">
+          <div class="activity-card panel andamento">
+            <div class="row1">
+              <div class="icon-round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+              </div>
+              <span class="tag tag-andamento">Em andamento</span>
+            </div>
+            <h4>Revisão contratual — Aurora Ltda.</h4>
+            <p>Ajuste de cláusulas comerciais solicitado pelo jurídico externo.</p>
+            <div class="row2">
+              <span class="prazo ok">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                Em dia
+              </span>
+              <span>Venc. 22/07</span>
+            </div>
+          </div>
+          <div class="activity-card panel pendente">
+            <div class="row1">
+              <div class="icon-round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              </div>
+              <span class="tag tag-pendente">Pendente</span>
+            </div>
+            <h4>Follow-up — Proposta Lote 12</h4>
+            <p>Aguardando retorno do cliente sobre condições de pagamento.</p>
+            <div class="row2">
+              <span class="prazo late">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
+                Vencido
+              </span>
+              <span>Venc. 14/07</span>
+            </div>
+          </div>
+          <div class="activity-card panel concluido">
+            <div class="row1">
+              <div class="icon-round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="16" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
+              </div>
+              <span class="tag tag-concluido">Concluído</span>
+            </div>
+            <h4>Checklist de auditoria Q3</h4>
+            <p>Todos os documentos foram conferidos e arquivados no sistema.</p>
+            <div class="row2">
+              <span class="prazo ok">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                Em dia
+              </span>
+              <span>Concluído 15/07</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- visão geral: ao final da página, ocupando a largura toda -->
+        <div class="overview-card panel">
+          <div class="overview-head">
+            <h3>Visão geral — Execuções por mês</h3>
+            <span class="period">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              Últimos 6 meses
+            </span>
+          </div>
+          <div class="overview-bars">
+            <div class="overview-bar"><span class="value">31</span><span class="bar" style="height: 55%;"></span><span class="month">Fev</span></div>
+            <div class="overview-bar"><span class="value">24</span><span class="bar" style="height: 40%;"></span><span class="month">Mar</span></div>
+            <div class="overview-bar"><span class="value">38</span><span class="bar" style="height: 68%;"></span><span class="month">Abr</span></div>
+            <div class="overview-bar"><span class="value">19</span><span class="bar" style="height: 32%;"></span><span class="month">Mai</span></div>
+            <div class="overview-bar"><span class="value">27</span><span class="bar" style="height: 48%;"></span><span class="month">Jun</span></div>
+            <div class="overview-bar highlight"><span class="value">42</span><span class="bar" style="height: 88%;"></span><span class="month">Jul</span></div>
+          </div>
+        </div>
+
+        <footer class="note">Mockup de validação — fundo sólido #1F2C43, painel único de dashboard, etiquetas em cor fixa da paleta secundária</footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

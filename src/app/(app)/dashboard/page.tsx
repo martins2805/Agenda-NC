@@ -95,7 +95,7 @@ export default function DashboardPage() {
         onChange={setFilters}
         showProduto
         dark
-        className="rounded-3xl bg-[#1F2C43] p-4 shadow-[0_18px_40px_-24px_rgba(31,44,67,0.6)]"
+        className="panel-card p-4"
       />
 
       {/* Calendário (independente dos filtros) à esquerda + análise à direita */}

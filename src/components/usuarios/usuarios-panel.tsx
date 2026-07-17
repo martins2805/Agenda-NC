@@ -214,7 +214,7 @@ export function UsuariosPanel({ isAdmin }: { isAdmin: boolean }) {
                 </div>
                 {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
                 {passwordSuccess && (
-                  <p className="text-sm text-primary">Senha alterada com sucesso.</p>
+                  <p className="text-sm text-secondary">Senha alterada com sucesso.</p>
                 )}
                 <Button type="submit" disabled={passwordSubmitting} className="w-full">
                   {passwordSubmitting ? "Salvando..." : "Trocar senha"}

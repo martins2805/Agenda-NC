@@ -31,7 +31,7 @@ export default async function LoginPage({
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-xl shadow-primary/5">
+      <div className="panel-card w-full max-w-sm p-8">
         <div className="mb-8 flex items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-full border border-primary/60 bg-accent font-mono text-xs font-bold text-primary">
             NC
