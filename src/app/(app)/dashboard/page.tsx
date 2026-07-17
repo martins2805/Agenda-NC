@@ -46,13 +46,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {/* Hero Section — saudação, atalhos e resumo rápido */}
-      <section className="hero-surface flex flex-col gap-6 p-6 sm:p-8">
+      <section className="hero-surface flex flex-col gap-4 p-4 sm:p-5">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
           <div>
             <p className="font-mono text-xs uppercase tracking-wide text-white/70">Agenda NC</p>
-            <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+            <h2 className="mt-1 text-lg font-bold tracking-tight sm:text-xl">
               Painel de controle
             </h2>
             <p className="mt-1 text-sm text-white/80">
@@ -81,9 +81,9 @@ export default function DashboardPage() {
             { label: "Vencidas", value: vencidas },
             { label: "Execuções", value: atividadesGerais.length },
           ].map((item) => (
-            <div key={item.label} className="rounded-2xl bg-white/10 p-4 backdrop-blur-sm">
+            <div key={item.label} className="rounded-2xl bg-white/10 p-3 backdrop-blur-sm">
               <p className="text-xs font-medium uppercase tracking-wide text-white/70">{item.label}</p>
-              <p className="mt-1 font-mono text-2xl font-bold text-white">{item.value}</p>
+              <p className="mt-1 font-mono text-xl font-bold text-white">{item.value}</p>
             </div>
           ))}
         </div>
@@ -99,7 +99,7 @@ export default function DashboardPage() {
       />
 
       {/* Calendário (independente dos filtros) à esquerda + análise à direita */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(320px,380px)_1fr]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,380px)_1fr]">
         <div className="flex flex-col gap-3">
           <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Calendário</h3>
           <ActivityCalendar atividades={atividades} atividadesGerais={atividadesGerais} />

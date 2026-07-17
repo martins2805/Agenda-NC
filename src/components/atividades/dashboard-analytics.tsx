@@ -60,7 +60,7 @@ function KpiCard({
       style={{ backgroundColor: color }}
     >
       <span className="text-xs font-bold uppercase tracking-wide text-white/80">{label}</span>
-      <span className="font-mono text-3xl font-bold">{value}</span>
+      <span className="font-mono text-xl font-bold">{value}</span>
     </Link>
   );
 }
@@ -85,7 +85,7 @@ function DualKpi({
       <div className="flex items-end justify-between gap-3">
         {[left, right].map((side) => (
           <Link key={side.label} href={side.href} className="flex flex-col hover:opacity-90">
-            <span className="font-mono text-3xl font-bold">{side.value}</span>
+            <span className="font-mono text-xl font-bold">{side.value}</span>
             <span className="text-xs font-medium text-white/80">{side.label}</span>
           </Link>
         ))}
@@ -105,25 +105,45 @@ function VerticalBars({
   return (
     <div className="panel-card flex min-h-56 flex-col gap-4 p-4">
       <span className="ledger-label">{title}</span>
-      <div className="flex flex-1 items-end gap-3">
-        {data.map((item) => (
-          <div key={item.label} className="flex min-w-0 flex-1 flex-col items-center gap-2">
-            <div className="flex h-32 w-full items-end rounded-lg bg-muted/50 p-1">
+      <div className="flex flex-1 flex-col justify-end gap-2">
+        {/* área do gráfico: altura fixa como referência de escala, com
+            linhas-guia discretas em vez de uma caixa cinza por barra */}
+        <div className="relative flex h-32 items-end gap-2.5">
+          <div className="pointer-events-none absolute inset-0 flex flex-col justify-between">
+            <div className="h-px bg-foreground/[0.06]" />
+            <div className="h-px bg-foreground/[0.06]" />
+            <div className="h-px bg-foreground/[0.06]" />
+            <div className="h-px bg-foreground/15" />
+          </div>
+          {data.map((item) => (
+            <div
+              key={item.label}
+              className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5"
+            >
+              <span className="font-mono text-[11px] font-semibold tabular-nums text-foreground/85">
+                {item.count}
+              </span>
               <div
-                className="w-full rounded-md transition-all"
+                className="w-full max-w-9 rounded-t-md shadow-[0_2px_6px_-2px_rgba(0,0,0,0.35)] transition-[height] duration-500 ease-out"
                 style={{
-                  height: `${Math.max(5, (item.count / max) * 100)}%`,
+                  height: `${Math.max(4, (item.count / max) * 100)}%`,
                   backgroundColor: item.color,
                 }}
                 title={`${item.label}: ${item.count}`}
               />
             </div>
-            <span className="font-mono text-sm font-semibold">{item.count}</span>
-            <span className="line-clamp-2 text-center text-[11px] text-muted-foreground">
+          ))}
+        </div>
+        <div className="flex gap-2.5">
+          {data.map((item) => (
+            <span
+              key={item.label}
+              className="line-clamp-2 min-w-0 flex-1 text-center text-[11px] text-muted-foreground"
+            >
               {item.label}
             </span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -264,7 +284,7 @@ export function DashboardAnalytics({
   }));
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
       {/* Lacuna 1 — Dados gerais */}
       <Lacuna title="Dados gerais">
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">

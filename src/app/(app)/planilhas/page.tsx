@@ -98,10 +98,10 @@ export default function PlanilhasPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Planilhas</h2>
+          <h2 className="text-lg font-bold tracking-tight">Planilhas</h2>
           <p className="mt-1 text-muted-foreground">
             Organizadas por categoria: vendas, comissão, faturamento, dados e consultoria.
           </p>

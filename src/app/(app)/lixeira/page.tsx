@@ -61,9 +61,9 @@ export default function LixeiraPage() {
     trash.atividades.length === 0 && trash.registros.length === 0 && trash.planilhas.length === 0;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Lixeira</h2>
+        <h2 className="text-xl font-bold tracking-tight">Lixeira</h2>
         <p className="mt-1 text-muted-foreground">
           Itens excluídos ficam aqui até serem restaurados ou removidos definitivamente.
         </p>

@@ -31,10 +31,10 @@ export function AppShell({
     <div className="flex min-h-full">
       {/* Sidebar sólida na cor da paleta base #1F2C43 com texto branco,
           disponível em todas as telas grandes. */}
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col gap-6 p-3 sm:flex">
-        <div className="flex h-full flex-col gap-6 rounded-3xl bg-[#26314c] p-4 text-white shadow-[0_18px_40px_-24px_rgba(0,0,0,0.6)] ring-1 ring-white/10">
+      <aside className="sticky top-0 hidden h-screen w-52 shrink-0 flex-col gap-4 p-3 sm:flex">
+        <div className="flex h-full flex-col gap-4 rounded-3xl bg-[#26314c] p-4 text-white shadow-[0_18px_40px_-24px_rgba(0,0,0,0.6)] ring-1 ring-white/10">
           <div className="flex items-center gap-3 px-1">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 font-mono text-xs font-bold text-white">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 font-mono text-xs font-bold text-white">
               NC
             </div>
             <span className="font-display text-lg tracking-tight italic text-white">
@@ -50,7 +50,7 @@ export function AppShell({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                     active
                       ? "bg-white/15 text-white"
                       : "text-white/70 hover:bg-white/10 hover:text-white"

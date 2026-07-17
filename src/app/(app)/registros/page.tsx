@@ -99,10 +99,10 @@ export default function RegistrosPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Registros</h2>
+          <h2 className="text-lg font-bold tracking-tight">Registros</h2>
           <p className="mt-1 text-muted-foreground">
             Organizados por categoria, como uma biblioteca operacional.
           </p>
