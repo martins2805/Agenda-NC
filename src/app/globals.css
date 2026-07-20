@@ -74,6 +74,7 @@
   --glass-bg: rgba(255, 255, 255, 0.09);
   --glass-border: rgba(255, 255, 255, 0.34);
   --glass-blur: 52px;
+  --sidebar-solid: #26314c;
   /* Gráficos genéricos/decorativos usam a paleta base. Gráficos de status,
      prioridade e prazo têm variáveis dedicadas (--status-*, --prioridade-*,
      --prazo-*) e não passam por aqui. */
@@ -120,6 +121,35 @@
   --negociacao-fup: #bf512c;
   --negociacao-aceite: #2e5749;
   --negociacao-na: #d8d8d8;
+}
+
+/* --- Preview do layout anterior -------------------------------------------
+   Temporário: alternado pelo botão "Ver layout anterior" (ThemePreviewToggle)
+   enquanto o layout final não é decidido. Remover este bloco, o componente
+   theme-preview-toggle.tsx e a referência em app-shell.tsx quando decidido. */
+[data-theme="legacy"] {
+  --background: #fbf9e4;
+  --foreground: #1f2c43;
+  --card: #ffffff;
+  --card-foreground: #1f2c43;
+  --popover: #ffffff;
+  --popover-foreground: #1f2c43;
+  --muted-foreground: #3e4c59;
+  --border: #d8d8d8;
+  --input: #d8d8d8;
+  --radius: 1rem;
+  --sidebar-solid: #1f2c43;
+}
+[data-theme="legacy"] .panel-card {
+  background: var(--card);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--base-1) 6%, transparent),
+    0 18px 40px -24px color-mix(in srgb, var(--base-1) 30%, transparent);
+}
+[data-theme="legacy"] .panel-card::before {
+  content: none;
 }
 
 .dark {

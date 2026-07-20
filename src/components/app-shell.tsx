@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { ClipboardCheck, LayoutDashboard, ListChecks, FileText, Table2, Users, LogOut } from "lucide-react";
 import { logout } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
+import { ThemePreviewToggle } from "@/components/theme-preview-toggle";
 
 const BASE_NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -32,7 +33,7 @@ export function AppShell({
       {/* Sidebar sólida na cor da paleta base #1F2C43 com texto branco,
           disponível em todas as telas grandes. */}
       <aside className="sticky top-0 hidden h-screen w-52 shrink-0 flex-col gap-4 p-3 sm:flex">
-        <div className="flex h-full flex-col gap-4 rounded-3xl bg-[#26314c] p-4 text-white shadow-[0_18px_40px_-24px_rgba(0,0,0,0.6)] ring-1 ring-white/10">
+        <div className="flex h-full flex-col gap-4 rounded-3xl bg-[var(--sidebar-solid)] p-4 text-white shadow-[0_18px_40px_-24px_rgba(0,0,0,0.6)] ring-1 ring-white/10">
           <div className="flex items-center gap-3 px-1">
             <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 font-mono text-xs font-bold text-white">
               NC
@@ -77,10 +78,13 @@ export function AppShell({
       </aside>
 
       <main className="w-full flex-1 px-4 pb-24 pt-6 sm:px-6 sm:pb-10">
-        <div className="mx-auto w-full max-w-6xl">{children}</div>
+        <div className="mx-auto w-full max-w-6xl">
+          <ThemePreviewToggle />
+          {children}
+        </div>
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 bg-[#26314c] text-white ring-1 ring-white/10 sm:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 bg-[var(--sidebar-solid)] text-white ring-1 ring-white/10 sm:hidden">
         <div className="flex">
           {NAV_ITEMS.map((item) => {
             const active = pathname?.startsWith(item.href);
