@@ -112,7 +112,7 @@ UNION ALL
   SELECT
     g."userId", 'atividadeGeral', g."id",
     'checklist', ci."texto", ci."empresaId", ci."unidadeId",
-    ci."prazo", ci."prioridade"::text, ci."status",
+    ci."prazo", ci."prioridade"::text, ci."status"::text,
     'checklist'
   FROM "ChecklistGeralItem" ci
   JOIN "AtividadeGeral" g ON g."id" = ci."atividadeGeralId"
