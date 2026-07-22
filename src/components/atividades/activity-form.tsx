@@ -114,10 +114,10 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
   const showAgendamento =
     !!tipoAgendamento && draft.tipoAtividadeIds.includes(tipoAgendamento.id);
 
-  const linkedRegistros = registros.filter((r) => r.atividadeId === draft.id);
-  const linkedPlanilhas = planilhas.filter((p) => p.atividadeId === draft.id);
-  const unlinkedRegistros = registros.filter((r) => !r.atividadeId && !r.deletedAt);
-  const unlinkedPlanilhas = planilhas.filter((p) => !p.atividadeId && !p.deletedAt);
+  const linkedRegistros = registros.filter((r) => r.atividadeIds.includes(draft.id));
+  const linkedPlanilhas = planilhas.filter((p) => p.atividadeIds.includes(draft.id));
+  const linkableRegistros = registros.filter((r) => !r.atividadeIds.includes(draft.id) && !r.deletedAt);
+  const linkablePlanilhas = planilhas.filter((p) => !p.atividadeIds.includes(draft.id) && !p.deletedAt);
 
   function patch(p: Partial<Atividade>) {
     setDraft((prev) => ({ ...prev, ...p }));
@@ -133,7 +133,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
       assunto: draft.assunto,
       categoriaIds: [],
       tabs: [{ id: makeRegistroTabId(), titulo: "Principal", conteudo: "" }],
-      atividadeId: draft.id,
+      atividadeIds: [draft.id],
       createdAt: new Date().toISOString(),
     });
   }
@@ -146,7 +146,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
       unidadeId: draft.unidadeId,
       assunto: draft.assunto,
       categoriaIds: [],
-      atividadeId: draft.id,
+      atividadeIds: [draft.id],
       conteudo: null,
       createdAt: new Date().toISOString(),
     });
@@ -249,7 +249,9 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
                       size="icon"
                       className="size-6 shrink-0 text-muted-foreground"
                       title="Desvincular"
-                      onClick={() => updateRegistro(r.id, { atividadeId: null })}
+                      onClick={() =>
+                        updateRegistro(r.id, { atividadeIds: r.atividadeIds.filter((id) => id !== draft.id) })
+                      }
                     >
                       <X className="size-3.5" />
                     </Button>
@@ -270,7 +272,9 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
                       size="icon"
                       className="size-6 shrink-0 text-muted-foreground"
                       title="Desvincular"
-                      onClick={() => updatePlanilha(p.id, { atividadeId: null })}
+                      onClick={() =>
+                        updatePlanilha(p.id, { atividadeIds: p.atividadeIds.filter((id) => id !== draft.id) })
+                      }
                     >
                       <X className="size-3.5" />
                     </Button>
@@ -283,13 +287,16 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
               <div className="flex gap-1.5">
                 <Select
                   value=""
-                  onValueChange={(id) => id && updateRegistro(id, { atividadeId: draft.id })}
+                  onValueChange={(id) => {
+                    const registro = registros.find((r) => r.id === id);
+                    if (id && registro) updateRegistro(id, { atividadeIds: [...registro.atividadeIds, draft.id] });
+                  }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Vincular registro existente" />
                   </SelectTrigger>
                   <SelectContent>
-                    {unlinkedRegistros.map((r) => (
+                    {linkableRegistros.map((r) => (
                       <SelectItem key={r.id} value={r.id}>
                         {r.nome || r.tabs[0]?.titulo || "Registro sem nome"}
                       </SelectItem>
@@ -303,13 +310,16 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
               <div className="flex gap-1.5">
                 <Select
                   value=""
-                  onValueChange={(id) => id && updatePlanilha(id, { atividadeId: draft.id })}
+                  onValueChange={(id) => {
+                    const planilha = planilhas.find((p) => p.id === id);
+                    if (id && planilha) updatePlanilha(id, { atividadeIds: [...planilha.atividadeIds, draft.id] });
+                  }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Vincular planilha existente" />
                   </SelectTrigger>
                   <SelectContent>
-                    {unlinkedPlanilhas.map((p) => (
+                    {linkablePlanilhas.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.nome || "Planilha sem nome"}
                       </SelectItem>

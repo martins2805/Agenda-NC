@@ -1,5 +1,6 @@
 import type { AtividadeGeral, Prioridade, StatusGeral } from "./types";
-import { matchesPrazos, type OrderBy, type PrazoRange } from "./activity-filters";
+import { matchesRecord, sortRecords, type FilterableRecord } from "./filters/engine";
+import type { OrderBy, PrazoRange } from "./filters/types";
 
 export interface ExecucaoFilters {
   keyword: string;
@@ -30,64 +31,50 @@ interface Lookups {
   setorInterno: { id: string; name: string }[];
 }
 
-export function matchesExecucao(
-  a: AtividadeGeral,
-  filters: ExecucaoFilters,
-  lookups: Lookups
-): boolean {
-  if (filters.empresaIds.length > 0 && !(a.empresaId && filters.empresaIds.includes(a.empresaId)))
-    return false;
-  if (filters.unidadeIds.length > 0 && !(a.unidadeId && filters.unidadeIds.includes(a.unidadeId)))
-    return false;
-  if (filters.tipoIds.length > 0 && !filters.tipoIds.some((id) => a.tipoIds.includes(id)))
-    return false;
-  if (filters.status.length > 0 && !filters.status.includes(a.status)) return false;
-  if (filters.prioridades.length > 0 && !filters.prioridades.includes(a.prioridade)) return false;
-  if (!matchesPrazos(a.prazo, filters.prazos)) return false;
+function toRecord(a: AtividadeGeral, lookups: Lookups): FilterableRecord {
+  const empresa = lookups.empresa.find((e) => e.id === a.empresaId)?.name ?? "";
+  const unidade = lookups.unidade.find((u) => u.id === a.unidadeId)?.name ?? "";
+  const tipos = lookups.tipoAtividadeGeral
+    .filter((t) => a.tipoIds.includes(t.id))
+    .map((t) => t.name)
+    .join(" ");
+  const setores = lookups.setorInterno
+    .filter((s) => a.setorIds.includes(s.id))
+    .map((s) => s.name)
+    .join(" ");
+  const checklist = a.checklist.map((c) => c.texto).join(" ");
+  const searchText = [empresa, unidade, a.assunto, a.descricao, a.vinculos, tipos, setores, checklist].join(" ");
 
-  const kw = filters.keyword.trim().toLowerCase();
-  if (kw) {
-    const empresa = lookups.empresa.find((e) => e.id === a.empresaId)?.name ?? "";
-    const unidade = lookups.unidade.find((u) => u.id === a.unidadeId)?.name ?? "";
-    const tipos = lookups.tipoAtividadeGeral
-      .filter((t) => a.tipoIds.includes(t.id))
-      .map((t) => t.name)
-      .join(" ");
-    const setores = lookups.setorInterno
-      .filter((s) => a.setorIds.includes(s.id))
-      .map((s) => s.name)
-      .join(" ");
-    const checklist = a.checklist.map((c) => c.texto).join(" ");
-    const haystack = [empresa, unidade, a.assunto, a.descricao, a.vinculos, tipos, setores, checklist]
-      .join(" ")
-      .toLowerCase();
-    if (!haystack.includes(kw)) return false;
-  }
-  return true;
+  return {
+    empresaId: a.empresaId,
+    unidadeId: a.unidadeId,
+    tipoIds: a.tipoIds,
+    status: a.status,
+    prioridade: a.prioridade,
+    prazo: a.prazo,
+    createdAt: a.createdAt,
+    searchText,
+  };
 }
 
-const PRIORIDADE_RANK: Record<Prioridade, number> = {
-  Urgente: 0,
-  Importante: 1,
-  Médio: 2,
-  Baixo: 3,
-};
+export function matchesExecucao(a: AtividadeGeral, filters: ExecucaoFilters, lookups: Lookups): boolean {
+  return matchesRecord(toRecord(a, lookups), {
+    keyword: filters.keyword,
+    empresaIds: filters.empresaIds,
+    unidadeIds: filters.unidadeIds,
+    tipoIds: filters.tipoIds,
+    status: filters.status,
+    prioridades: filters.prioridades,
+    prazos: filters.prazos,
+  });
+}
 
 export function sortExecucoes(list: AtividadeGeral[], ordenar: OrderBy): AtividadeGeral[] {
-  const copy = [...list];
-  if (ordenar === "prazo") {
-    copy.sort((a, b) => {
-      if (!a.prazo && !b.prazo) return 0;
-      if (!a.prazo) return 1;
-      if (!b.prazo) return -1;
-      return a.prazo.localeCompare(b.prazo);
-    });
-  } else if (ordenar === "prioridade") {
-    copy.sort((a, b) => PRIORIDADE_RANK[a.prioridade] - PRIORIDADE_RANK[b.prioridade]);
-  } else {
-    copy.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }
-  return copy;
+  return sortRecords(list, ordenar, (a) => ({
+    prazo: a.prazo,
+    prioridade: a.prioridade,
+    createdAt: a.createdAt,
+  }));
 }
 
 export function hasActiveExecucaoFilters(f: ExecucaoFilters): boolean {

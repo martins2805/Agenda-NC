@@ -8,6 +8,7 @@ import {
   serializeAtividade,
 } from "@/lib/knowledge-sync";
 import type { Atividade } from "@/lib/types";
+import { deleteVinculosDe } from "@/lib/vinculos";
 
 const include = { propostas: true, checklist: true };
 
@@ -95,7 +96,11 @@ export async function DELETE(
   const userId = session.user.id;
 
   const { id } = await params;
-  const result = await prisma.atividade.deleteMany({ where: { id, userId } });
+  const result = await prisma.$transaction(async (tx) => {
+    const deleted = await tx.atividade.deleteMany({ where: { id, userId } });
+    if (deleted.count > 0) await deleteVinculosDe(tx, userId, "atividade", id);
+    return deleted;
+  });
   if (result.count === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

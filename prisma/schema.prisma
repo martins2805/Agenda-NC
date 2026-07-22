@@ -42,6 +42,13 @@ enum Role {
   USER
 }
 
+enum VinculoTipo {
+  atividade
+  atividadeGeral
+  registro
+  planilha
+}
+
 model LookupItem {
   id        String     @id @default(cuid())
   userId    String
@@ -75,12 +82,19 @@ model Atividade {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   deletedAt         DateTime?
+  /// coluna gerada (tsvector) criada via SQL raw na migration; Unsupported = Prisma não gerencia
+  busca             Unsupported("tsvector")?
 
   propostas Proposta[]
   checklist ChecklistItem[]
 
   @@index([userId])
   @@index([deletedAt])
+  @@index([userId, empresaId])
+  @@index([userId, unidadeId])
+  @@index([userId, status])
+  @@index([userId, prioridade])
+  @@index([userId, prazo])
 }
 
 model Proposta {
@@ -162,10 +176,15 @@ model AtividadeGeral {
   setorIds    String[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+  /// coluna gerada (tsvector) criada via SQL raw na migration; Unsupported = Prisma não gerencia
+  busca       Unsupported("tsvector")?
 
   checklist ChecklistGeralItem[]
 
   @@index([userId])
+  @@index([userId, empresaId])
+  @@index([userId, status])
+  @@index([userId, prazo])
 }
 
 model ChecklistGeralItem {
@@ -194,15 +213,19 @@ model Registro {
   contato      String        @default("")
   assunto      String        @default("")
   categoriaIds String[]
+  /// @deprecated legado pré-vínculo polimórfico (S1). Fonte de verdade agora é Vinculo. Não escrever mais aqui.
   atividadeId  String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   deletedAt    DateTime?
+  /// coluna gerada (tsvector) criada via SQL raw na migration; Unsupported = Prisma não gerencia
+  busca        Unsupported("tsvector")?
 
   tabs RegistroTab[]
 
   @@index([userId])
   @@index([deletedAt])
+  @@index([userId, empresaId])
 }
 
 model RegistroTab {
@@ -225,14 +248,18 @@ model Planilha {
   unidadeId    String?
   assunto      String   @default("")
   categoriaIds String[]
+  /// @deprecated legado pré-vínculo polimórfico (S1). Fonte de verdade agora é Vinculo. Não escrever mais aqui.
   atividadeId  String?
   conteudo     Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   deletedAt    DateTime?
+  /// coluna gerada (tsvector) criada via SQL raw na migration; Unsupported = Prisma não gerencia
+  busca        Unsupported("tsvector")?
 
   @@index([userId])
   @@index([deletedAt])
+  @@index([userId, empresaId])
 }
 
 model User {
@@ -251,6 +278,26 @@ model User {
   knowledgeChunks  KnowledgeChunk[]
   chatMessages     ChatMessage[]
   pendingDeletions PendingDeletion[]
+  vinculos         Vinculo[]
+}
+
+// Vínculo polimórfico único entre objetos do sistema. Substitui os FKs
+// diretos (ex.: Registro.atividadeId) — nunca crie tabela de vínculo por
+// par de tipos (regra 5 do CLAUDE.md). Toda escrita passa por
+// src/lib/vinculos.ts::normalizarPar para colapsar A→B e B→A na mesma linha.
+model Vinculo {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  origemTipo  VinculoTipo
+  origemId    String
+  destinoTipo VinculoTipo
+  destinoId   String
+  createdAt   DateTime    @default(now())
+
+  @@unique([userId, origemTipo, origemId, destinoTipo, destinoId], name: "vinculo_par_unico")
+  @@index([userId, origemTipo, origemId])
+  @@index([userId, destinoTipo, destinoId])
 }
 
 model KnowledgeChunk {

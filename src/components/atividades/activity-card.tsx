@@ -237,8 +237,8 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
   const prazoStatus = atividadePrazoStatus(atividade);
   const concluida = atividade.status === "Concluído";
 
-  const linkedRegistros = registros.filter((r) => r.atividadeId === atividade.id && !r.deletedAt);
-  const linkedPlanilhas = planilhas.filter((p) => p.atividadeId === atividade.id && !p.deletedAt);
+  const linkedRegistros = registros.filter((r) => r.atividadeIds.includes(atividade.id) && !r.deletedAt);
+  const linkedPlanilhas = planilhas.filter((p) => p.atividadeIds.includes(atividade.id) && !p.deletedAt);
 
   return (
     <Card

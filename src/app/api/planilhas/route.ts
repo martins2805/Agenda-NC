@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { syncKnowledgeChunk, serializePlanilha } from "@/lib/knowledge-sync";
 import type { Prisma } from "@/generated/prisma/client";
 import type { Planilha } from "@/lib/types";
+import { syncVinculos, listarVinculadosEmLote } from "@/lib/vinculos";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -16,9 +17,17 @@ export async function GET(request: Request) {
     where: { userId, deletedAt: trash ? { not: null } : null },
     orderBy: trash ? { deletedAt: "desc" } : { createdAt: "desc" },
   });
+  const vinculosPorId = await listarVinculadosEmLote(
+    prisma,
+    userId,
+    "planilha",
+    planilhas.map((p) => p.id),
+    "atividade"
+  );
   return NextResponse.json(
     planilhas.map((p) => ({
       ...p,
+      atividadeIds: vinculosPorId.get(p.id) ?? [],
       createdAt: p.createdAt.toISOString(),
       deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
     }))
@@ -32,23 +41,26 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as Planilha;
 
-  const created = await prisma.planilha.create({
-    data: {
-      id: body.id,
-      userId,
-      nome: body.nome,
-      empresaId: body.empresaId,
-      unidadeId: body.unidadeId,
-      assunto: body.assunto,
-      categoriaIds: body.categoriaIds,
-      atividadeId: body.atividadeId,
-      conteudo: (body.conteudo ?? undefined) as Prisma.InputJsonValue | undefined,
-    },
+  const created = await prisma.$transaction(async (tx) => {
+    const planilha = await tx.planilha.create({
+      data: {
+        id: body.id,
+        userId,
+        nome: body.nome,
+        empresaId: body.empresaId,
+        unidadeId: body.unidadeId,
+        assunto: body.assunto,
+        categoriaIds: body.categoriaIds,
+        conteudo: (body.conteudo ?? undefined) as Prisma.InputJsonValue | undefined,
+      },
+    });
+    await syncVinculos(tx, userId, { tipo: "planilha", id: planilha.id }, "atividade", body.atividadeIds ?? []);
+    return planilha;
   });
 
   serializePlanilha(created)
     .then((content) => syncKnowledgeChunk(userId, "planilha", created.id, content))
     .catch((error) => console.error("Falha ao indexar planilha", error));
 
-  return NextResponse.json(created, { status: 201 });
+  return NextResponse.json({ ...created, atividadeIds: body.atividadeIds ?? [] }, { status: 201 });
 }

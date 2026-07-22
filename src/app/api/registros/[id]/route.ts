@@ -6,6 +6,7 @@ import {
   deleteKnowledgeChunk,
   serializeRegistro,
 } from "@/lib/knowledge-sync";
+import { syncVinculos, deleteVinculosDe, listarVinculados } from "@/lib/vinculos";
 import type { Registro } from "@/lib/types";
 
 const include = { tabs: true };
@@ -28,7 +29,7 @@ export async function PATCH(
   const updated = await prisma.$transaction(async (tx) => {
     await tx.registroTab.deleteMany({ where: { registroId: id } });
 
-    return tx.registro.update({
+    const registro = await tx.registro.update({
       where: { id },
       data: {
         nome: body.nome,
@@ -37,7 +38,6 @@ export async function PATCH(
         contato: body.contato,
         assunto: body.assunto,
         categoriaIds: body.categoriaIds,
-        atividadeId: body.atividadeId,
         tabs: {
           create: body.tabs.map((t, i) => ({
             id: t.id,
@@ -49,7 +49,11 @@ export async function PATCH(
       },
       include,
     });
+    await syncVinculos(tx, userId, { tipo: "registro", id }, "atividade", body.atividadeIds ?? []);
+    return registro;
   });
+
+  const atividadeIds = await listarVinculados(prisma, userId, { tipo: "registro", id }, "atividade");
 
   serializeRegistro(updated)
     .then((content) => syncKnowledgeChunk(userId, "registro", updated.id, content))
@@ -58,6 +62,7 @@ export async function PATCH(
   return NextResponse.json({
     ...updated,
     tabs: updated.tabs.sort((a, b) => a.ordem - b.ordem),
+    atividadeIds,
   });
 }
 
@@ -73,7 +78,11 @@ export async function DELETE(
   const permanent = new URL(request.url).searchParams.get("permanent") === "1";
 
   if (permanent) {
-    const result = await prisma.registro.deleteMany({ where: { id, userId } });
+    const result = await prisma.$transaction(async (tx) => {
+      const deleted = await tx.registro.deleteMany({ where: { id, userId } });
+      if (deleted.count > 0) await deleteVinculosDe(tx, userId, "registro", id);
+      return deleted;
+    });
     if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
     deleteKnowledgeChunk(userId, "registro", id).catch((error) =>
       console.error("Falha ao remover indexação", error)

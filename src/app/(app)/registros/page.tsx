@@ -25,7 +25,7 @@ function emptyRegistro(): Registro {
     assunto: "",
     categoriaIds: [],
     tabs: [{ id: makeRegistroTabId(), titulo: "Aba 1", conteudo: "" }],
-    atividadeId: null,
+    atividadeIds: [],
     createdAt: new Date().toISOString(),
   };
 }
@@ -48,8 +48,8 @@ export default function RegistrosPage() {
       if (filters.empresaId && r.empresaId !== filters.empresaId) return false;
       if (filters.categoriaId && !r.categoriaIds.includes(filters.categoriaId))
         return false;
-      if (filters.vinculo === "vinculado" && !r.atividadeId) return false;
-      if (filters.vinculo === "sem_vinculo" && r.atividadeId) return false;
+      if (filters.vinculo === "vinculado" && r.atividadeIds.length === 0) return false;
+      if (filters.vinculo === "sem_vinculo" && r.atividadeIds.length > 0) return false;
 
       if (keyword) {
         const empresa = lookups.empresa.find((e) => e.id === r.empresaId)?.name ?? "";
@@ -159,10 +159,13 @@ export default function RegistrosPage() {
                   .filter((c) => r.categoriaIds.includes(c.id))
                   .map((c) => c.name)
                   .join(", ") || "-";
-                const atividade = atividades.find((a) => a.id === r.atividadeId);
-                const vinculo = atividade
-                  ? lookups.empresa.find((e) => e.id === atividade.empresaId)?.name ?? "Atividade vinculada"
-                  : "-";
+                const vinculadas = atividades.filter((a) => r.atividadeIds.includes(a.id));
+                const vinculo =
+                  vinculadas.length === 0
+                    ? "-"
+                    : vinculadas.length === 1
+                      ? lookups.empresa.find((e) => e.id === vinculadas[0].empresaId)?.name ?? "Atividade vinculada"
+                      : `${vinculadas.length} atividades`;
                 return (
                   <tr
                     key={r.id}

@@ -7,6 +7,7 @@ import {
   serializePlanilha,
 } from "@/lib/knowledge-sync";
 import type { Planilha } from "@/lib/types";
+import { syncVinculos, deleteVinculosDe, listarVinculados } from "@/lib/vinculos";
 
 export async function PATCH(
   request: Request,
@@ -29,10 +30,17 @@ export async function PATCH(
   if (body.unidadeId !== undefined) data.unidadeId = body.unidadeId;
   if (body.assunto !== undefined) data.assunto = body.assunto;
   if (body.categoriaIds !== undefined) data.categoriaIds = body.categoriaIds;
-  if (body.atividadeId !== undefined) data.atividadeId = body.atividadeId;
   if (body.conteudo !== undefined) data.conteudo = body.conteudo;
 
-  const updated = await prisma.planilha.update({ where: { id }, data });
+  const updated = await prisma.$transaction(async (tx) => {
+    const planilha = await tx.planilha.update({ where: { id }, data });
+    if (body.atividadeIds !== undefined) {
+      await syncVinculos(tx, userId, { tipo: "planilha", id }, "atividade", body.atividadeIds);
+    }
+    return planilha;
+  });
+
+  const atividadeIds = await listarVinculados(prisma, userId, { tipo: "planilha", id }, "atividade");
 
   const metadataChanged =
     body.nome !== undefined ||
@@ -47,7 +55,7 @@ export async function PATCH(
       .catch((error) => console.error("Falha ao indexar planilha", error));
   }
 
-  return NextResponse.json(updated);
+  return NextResponse.json({ ...updated, atividadeIds });
 }
 
 export async function DELETE(
@@ -62,7 +70,11 @@ export async function DELETE(
   const permanent = new URL(request.url).searchParams.get("permanent") === "1";
 
   if (permanent) {
-    const result = await prisma.planilha.deleteMany({ where: { id, userId } });
+    const result = await prisma.$transaction(async (tx) => {
+      const deleted = await tx.planilha.deleteMany({ where: { id, userId } });
+      if (deleted.count > 0) await deleteVinculosDe(tx, userId, "planilha", id);
+      return deleted;
+    });
     if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
     deleteKnowledgeChunk(userId, "planilha", id).catch((error) =>
       console.error("Falha ao remover indexação", error)

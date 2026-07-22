@@ -23,7 +23,7 @@ function emptyPlanilha(): Planilha {
     unidadeId: null,
     assunto: "",
     categoriaIds: [],
-    atividadeId: null,
+    atividadeIds: [],
     conteudo: null,
     createdAt: new Date().toISOString(),
   };
@@ -47,8 +47,8 @@ export default function PlanilhasPage() {
       if (filters.empresaId && p.empresaId !== filters.empresaId) return false;
       if (filters.categoriaId && !p.categoriaIds.includes(filters.categoriaId))
         return false;
-      if (filters.vinculo === "vinculado" && !p.atividadeId) return false;
-      if (filters.vinculo === "sem_vinculo" && p.atividadeId) return false;
+      if (filters.vinculo === "vinculado" && p.atividadeIds.length === 0) return false;
+      if (filters.vinculo === "sem_vinculo" && p.atividadeIds.length > 0) return false;
 
       if (keyword) {
         const empresa = lookups.empresa.find((e) => e.id === p.empresaId)?.name ?? "";
@@ -158,10 +158,13 @@ export default function PlanilhasPage() {
                   .filter((c) => p.categoriaIds.includes(c.id))
                   .map((c) => c.name)
                   .join(", ") || "-";
-                const atividade = atividades.find((a) => a.id === p.atividadeId);
-                const vinculo = atividade
-                  ? lookups.empresa.find((e) => e.id === atividade.empresaId)?.name ?? "Atividade vinculada"
-                  : "-";
+                const vinculadas = atividades.filter((a) => p.atividadeIds.includes(a.id));
+                const vinculo =
+                  vinculadas.length === 0
+                    ? "-"
+                    : vinculadas.length === 1
+                      ? lookups.empresa.find((e) => e.id === vinculadas[0].empresaId)?.name ?? "Atividade vinculada"
+                      : `${vinculadas.length} atividades`;
                 return (
                   <tr
                     key={p.id}

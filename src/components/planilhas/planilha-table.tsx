@@ -36,7 +36,7 @@ export function PlanilhaTable({
             const categorias = lookups.categoriaPlanilha.filter((c) =>
               p.categoriaIds.includes(c.id)
             );
-            const vinculada = atividades.find((a) => a.id === p.atividadeId);
+            const vinculadas = atividades.filter((a) => p.atividadeIds.includes(a.id));
             return (
               <tr
                 key={p.id}
@@ -53,15 +53,20 @@ export function PlanilhaTable({
                   {p.assunto || "—"}
                 </td>
                 <td className="px-3 py-2">
-                  {vinculada ? (
-                    <Link
-                      href={`/atividades?open=${vinculada.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex w-fit items-center gap-1 rounded-full bg-[var(--base-3)] px-2 py-0.5 text-[11px] font-medium text-white hover:opacity-80"
-                    >
-                      <Link2 className="size-3" />
-                      Atividade
-                    </Link>
+                  {vinculadas.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {vinculadas.map((v) => (
+                        <Link
+                          key={v.id}
+                          href={`/atividades?open=${v.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex w-fit items-center gap-1 rounded-full bg-[var(--base-3)] px-2 py-0.5 text-[11px] font-medium text-white hover:opacity-80"
+                        >
+                          <Link2 className="size-3" />
+                          Atividade
+                        </Link>
+                      ))}
+                    </div>
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}

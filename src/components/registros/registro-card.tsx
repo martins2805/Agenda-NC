@@ -22,15 +22,13 @@ export function RegistroCard({
   const categorias = lookups.categoriaRegistro.filter((c) =>
     registro.categoriaIds.includes(c.id)
   );
-  const atividadeVinculada = atividades.find((a) => a.id === registro.atividadeId);
-  const atividadeLabel = atividadeVinculada
-    ? [
-        lookups.empresa.find((e) => e.id === atividadeVinculada.empresaId)?.name,
-        atividadeVinculada.assunto,
-      ]
+  const atividadesVinculadas = atividades.filter((a) => registro.atividadeIds.includes(a.id));
+  const atividadeLabels = atividadesVinculadas.map(
+    (a) =>
+      [lookups.empresa.find((e) => e.id === a.empresaId)?.name, a.assunto]
         .filter(Boolean)
         .join(" · ") || "Atividade vinculada"
-    : null;
+  );
 
   return (
     <Card className="cursor-pointer transition-shadow hover:shadow-md" onClick={onOpen}>
@@ -59,15 +57,20 @@ export function RegistroCard({
             </span>
           ))}
         </div>
-        {atividadeLabel && (
-          <Link
-            href={`/atividades?open=${registro.atividadeId}`}
-            onClick={(e) => e.stopPropagation()}
-            className="flex w-fit items-center gap-1 rounded-full bg-[var(--base-3)] px-2.5 py-0.5 text-xs font-medium text-white hover:opacity-80"
-          >
-            <Link2 className="size-3" />
-            {atividadeLabel}
-          </Link>
+        {atividadesVinculadas.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {atividadesVinculadas.map((a, i) => (
+              <Link
+                key={a.id}
+                href={`/atividades?open=${a.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex w-fit items-center gap-1 rounded-full bg-[var(--base-3)] px-2.5 py-0.5 text-xs font-medium text-white hover:opacity-80"
+              >
+                <Link2 className="size-3" />
+                {atividadeLabels[i]}
+              </Link>
+            ))}
+          </div>
         )}
         <p className="text-xs text-muted-foreground">
           {registro.tabs.length} {registro.tabs.length === 1 ? "aba" : "abas"}

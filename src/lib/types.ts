@@ -136,7 +136,7 @@ export interface Registro {
   assunto: string;
   categoriaIds: string[];
   tabs: RegistroTab[];
-  atividadeId: string | null;
+  atividadeIds: string[];
   createdAt: string; // ISO datetime
   deletedAt?: string | null;
 }
@@ -148,7 +148,7 @@ export interface Planilha {
   unidadeId: string | null;
   assunto: string;
   categoriaIds: string[];
-  atividadeId: string | null;
+  atividadeIds: string[];
   conteudo: Record<string, unknown> | null;
   createdAt: string; // ISO datetime
   deletedAt?: string | null;

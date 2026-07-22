@@ -22,15 +22,13 @@ export function PlanilhaCard({
   const categorias = lookups.categoriaPlanilha.filter((c) =>
     planilha.categoriaIds.includes(c.id)
   );
-  const atividadeVinculada = atividades.find((a) => a.id === planilha.atividadeId);
-  const atividadeLabel = atividadeVinculada
-    ? [
-        lookups.empresa.find((e) => e.id === atividadeVinculada.empresaId)?.name,
-        atividadeVinculada.assunto,
-      ]
+  const atividadesVinculadas = atividades.filter((a) => planilha.atividadeIds.includes(a.id));
+  const atividadeLabels = atividadesVinculadas.map(
+    (a) =>
+      [lookups.empresa.find((e) => e.id === a.empresaId)?.name, a.assunto]
         .filter(Boolean)
         .join(" · ") || "Atividade vinculada"
-    : null;
+  );
 
   return (
     <Card
@@ -74,15 +72,20 @@ export function PlanilhaCard({
             </span>
           ))}
         </div>
-        {atividadeLabel && (
-          <Link
-            href={`/atividades?open=${planilha.atividadeId}`}
-            onClick={(e) => e.stopPropagation()}
-            className="flex w-fit items-center gap-1 rounded-full bg-[var(--base-3)] px-2.5 py-0.5 text-xs font-medium text-white hover:opacity-80"
-          >
-            <Link2 className="size-3" />
-            {atividadeLabel}
-          </Link>
+        {atividadesVinculadas.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {atividadesVinculadas.map((a, i) => (
+              <Link
+                key={a.id}
+                href={`/atividades?open=${a.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex w-fit items-center gap-1 rounded-full bg-[var(--base-3)] px-2.5 py-0.5 text-xs font-medium text-white hover:opacity-80"
+              >
+                <Link2 className="size-3" />
+                {atividadeLabels[i]}
+              </Link>
+            ))}
+          </div>
         )}
       </CardContent>
     </Card>
