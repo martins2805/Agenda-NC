@@ -50,31 +50,27 @@
 }
 
 :root {
-  --background: #1f2c43;
-  --foreground: #f2f4f7;
-  --card: #29385a;
-  --card-foreground: #f2f4f7;
-  --popover: #29385a;
-  --popover-foreground: #f2f4f7;
+  /* Fundo do app (D1/D16): claro e quente, reduz fadiga visual. #1F2C43
+     fica restrito à barra lateral e ao header (--sidebar-solid). */
+  --background: #eef4ed;
+  --foreground: #1f2c43;
+  --card: #ffffff;
+  --card-foreground: #1f2c43;
+  --popover: #ffffff;
+  --popover-foreground: #1f2c43;
   --primary: #1f2c43;
   --primary-foreground: #fbf9e4;
   --secondary: #8baaad;
   --secondary-foreground: #1f2c43;
   --muted: #d8d8d8;
-  --muted-foreground: #9aa7be;
+  --muted-foreground: #3e4c59;
   --accent: #bf512c;
   --accent-foreground: #ffffff;
   --destructive: #780001;
   --border: #d8d8d8;
   --input: #d8d8d8;
   --ring: #8baaad;
-
-  /* Vidro fosco (glass) — usado no .panel-card e componentes de apoio.
-     Nunca aplicado a etiquetas/tags semânticas (status/prioridade/prazo/negociação). */
-  --glass-bg: rgba(255, 255, 255, 0.09);
-  --glass-border: rgba(255, 255, 255, 0.34);
-  --glass-blur: 52px;
-  --sidebar-solid: #26314c;
+  --sidebar-solid: #1f2c43;
   /* Gráficos genéricos/decorativos usam a paleta base. Gráficos de status,
      prioridade e prazo têm variáveis dedicadas (--status-*, --prioridade-*,
      --prazo-*) e não passam por aqui. */
@@ -83,7 +79,7 @@
   --chart-3: #3e4c59;
   --chart-4: #d8d8d8;
   --chart-5: #8baaad;
-  --radius: 0.7rem;
+  --radius: 1rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #1f2c43;
   --sidebar-primary: #1f2c43;
@@ -121,35 +117,6 @@
   --negociacao-fup: #bf512c;
   --negociacao-aceite: #2e5749;
   --negociacao-na: #d8d8d8;
-}
-
-/* --- Preview do layout anterior -------------------------------------------
-   Temporário: alternado pelo botão "Ver layout anterior" (ThemePreviewToggle)
-   enquanto o layout final não é decidido. Remover este bloco, o componente
-   theme-preview-toggle.tsx e a referência em app-shell.tsx quando decidido. */
-[data-theme="legacy"] {
-  --background: #fbf9e4;
-  --foreground: #1f2c43;
-  --card: #ffffff;
-  --card-foreground: #1f2c43;
-  --popover: #ffffff;
-  --popover-foreground: #1f2c43;
-  --muted-foreground: #3e4c59;
-  --border: #d8d8d8;
-  --input: #d8d8d8;
-  --radius: 1rem;
-  --sidebar-solid: #1f2c43;
-}
-[data-theme="legacy"] .panel-card {
-  background: var(--card);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow:
-    0 1px 2px color-mix(in srgb, var(--base-1) 6%, transparent),
-    0 18px 40px -24px color-mix(in srgb, var(--base-1) 30%, transparent);
-}
-[data-theme="legacy"] .panel-card::before {
-  content: none;
 }
 
 .dark {
@@ -230,36 +197,12 @@
    Usado em painéis de filtro, tabelas e blocos de conteúdo. */
 .panel-card {
   position: relative;
-  background: var(--glass-bg);
+  background: var(--card);
   border-radius: var(--radius-2xl);
-  /* indireção via custom property: evita que o build (Lightning CSS)
-     funda o par prefixado/padrão e descarte a versão sem prefixo. */
-  --glass-fx: blur(var(--glass-blur)) saturate(220%) contrast(105%) brightness(1.16);
-  -webkit-backdrop-filter: var(--glass-fx);
-  backdrop-filter: var(--glass-fx);
   overflow: hidden;
-  isolation: isolate;
-  /* o contorno do vidro vira um anel via box-shadow (inset), não a
-     propriedade `border` — assim nunca disputa com utilitários
-     Tailwind de border-left colorido (ex.: indicador de status nos
-     cards de atividade), que continuam funcionando normalmente. */
   box-shadow:
-    inset 0 0 0 1px var(--glass-border),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 -14px 30px -20px rgba(0, 0, 0, 0.35),
-    0 28px 50px -22px rgba(0, 0, 0, 0.65),
-    0 2px 12px rgba(0, 0, 0, 0.3);
-}
-.panel-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0.06) 28%, transparent 52%),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.10) 0%, transparent 22%);
-  pointer-events: none;
+    0 1px 2px color-mix(in srgb, var(--base-1) 6%, transparent),
+    0 18px 40px -24px color-mix(in srgb, var(--base-1) 30%, transparent);
 }
 
 /* Barra de progresso arredondada (índice de conclusão de checklist). */
