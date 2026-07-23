@@ -89,11 +89,12 @@
   --sidebar-border: #d8d8d8;
   --sidebar-ring: #8baaad;
 
-  /* Paleta base (neutros de marca) */
+  /* Paleta base (neutros de marca) — 5 tons (D9), do mais escuro ao mais claro */
   --base-1: #1f2c43;
   --base-2: #3e4c59;
   --base-3: #8baaad;
   --base-4: #d8d8d8;
+  --base-5: #fbf9e4;
 
   /* Status de conclusão (Atividade e Atividade Geral) */
   --status-concluido: #2e5749;
@@ -156,6 +157,7 @@
   --base-2: #d8d8d8;
   --base-3: #3e4c59;
   --base-4: #526d82;
+  --base-5: #f0f0f0;
 }
 
 @layer base {

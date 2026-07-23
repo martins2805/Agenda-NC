@@ -9,7 +9,7 @@ import { FilterBar } from "@/components/atividades/filter-bar";
 import { ActivityCalendar } from "@/components/atividades/activity-calendar";
 import { ActivityCard } from "@/components/atividades/activity-card";
 import { ActivityForm } from "@/components/atividades/activity-form";
-import { DashboardAnalytics } from "@/components/atividades/dashboard-analytics";
+import { DashboardAnalytics, VisaoGeralWidget } from "@/components/atividades/dashboard-analytics";
 import { DashboardWidgets } from "@/components/dashboard/dashboard-widgets";
 import { WidgetConfigPanel } from "@/components/dashboard/widget-config-panel";
 import {
@@ -114,7 +114,7 @@ export default function DashboardPage() {
             registros={registros}
             planilhas={planilhas}
           />
-          {/* Campos 4-6 (S9) — ainda fora do motor de widgets */}
+          {/* Campos 4-5 (S9) — ainda fora do motor de widgets */}
           <DashboardAnalytics filters={filters} atividades={atividades} />
         </div>
         <div className="flex flex-col gap-3">
@@ -122,6 +122,9 @@ export default function DashboardPage() {
           <ActivityCalendar />
         </div>
       </div>
+
+      {/* Campo 6 — Visão geral, largura total, ao final da página (Cap. 4) */}
+      <VisaoGeralWidget filters={filters} atividades={atividades} />
 
       {/* Atividades recentes — largura total */}
       {recentes.length > 0 && (

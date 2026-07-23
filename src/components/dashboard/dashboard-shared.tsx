@@ -30,7 +30,31 @@ export const PRIORIDADE_COLORS = {
 
 // Paleta base para gráficos categóricos (empresa/produto), do mais escuro ao
 // mais claro — quem tem mais atividades aparece primeiro e mais escuro (D9).
-export const BASE_SCALE = ["var(--base-1)", "var(--base-2)", "var(--base-3)", "var(--base-4)"];
+export const BASE_SCALE = [
+  "var(--base-1)",
+  "var(--base-2)",
+  "var(--base-3)",
+  "var(--base-4)",
+  "var(--base-5)",
+];
+
+// D9: ordena por volume (desc), colore os `limite` primeiros pela escala de
+// ranking, e agrupa o restante (se houver mais que `limite` itens com volume)
+// num item "Outros" — nunca deixa a cauda simplesmente cair fora do gráfico.
+export function rankComOutros(
+  items: { label: string; count: number }[],
+  limite = 5
+): { label: string; count: number; color: string }[] {
+  const comVolume = items.filter((d) => d.count > 0).sort((a, b) => b.count - a.count);
+  const top = comVolume.slice(0, limite).map((d, i) => ({
+    ...d,
+    color: BASE_SCALE[Math.min(i, BASE_SCALE.length - 1)],
+  }));
+  const resto = comVolume.slice(limite);
+  if (resto.length === 0) return top;
+  const outrosCount = resto.reduce((sum, d) => sum + d.count, 0);
+  return [...top, { label: "Outros", count: outrosCount, color: BASE_SCALE[BASE_SCALE.length - 1] }];
+}
 
 // Adapta {label, count, color} (formato dos buckets abaixo, herdado do antigo
 // VerticalBars) para {label, value, color} (BarList).

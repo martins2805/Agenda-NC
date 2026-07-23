@@ -34,6 +34,17 @@ Atualizado ao final de cada sprint. Fonte da verdade sobre o que existe de fato.
 | S6 | Atividades — detalhe, vínculos e histórico | 2026-07-23 | — |
 | S7 | Calendário | 2026-07-23 | — |
 | S8 | Dashboard — motor de widgets, filtros globais e Campos 1-3 | 2026-07-23 | — |
+| S9 | Dashboard — Propostas, Empresas e Visão Geral | 2026-07-23 | — |
+
+**S9 — detalhe do aceite:**
+- [x] "Teste automatizado de consistência: soma dos gráficos = total do Campo 1" — `scripts/check-dashboard-consistency.ts` (roda com `npm run check:dashboard-consistency`), sem instalar test runner novo (usa `tsx`, já dependência do projeto, mais `assert` do Node). Verifica que `statusBuckets` e a distribuição por prioridade particionam 100% das atividades (soma == total), para qualquer combinação de status/prioridade — falha se um novo valor for adicionado sem atualizar os buckets. `vencimentoBuckets` fica de fora de propósito (não é partição total: atividade sem prazo não cai em nenhum bucket)
+- [x] "Cor por ranking funcionando" — já valia parcialmente antes (top-N coloridos do mais escuro ao mais claro); agora usa a escala de **5 tons** completa da D9 (faltava o 5º token, `--base-5: #FBF9E4`, adicionado em `globals.css`)
+- [x] "Mais de 5 empresas agrupa a cauda em 'Outros' (D9)" — não implementado antes (só um `slice(0,8)` sem bucket de cauda); nova função `rankComOutros` em `dashboard-shared.tsx`, aplicada em `empresaData`
+- [x] 6º indicador "Propostas Ganhas" (adendo do Cap. 4: status de negociação = Aceite) — não existia, adicionado usando o filtro `statusNegociacao` novo da S8
+- [x] "Visão Geral… largura total, ao final da página" — não estava assim (renderizava dentro da mesma coluna estreita dos outros campos, ao lado do calendário); extraído para `VisaoGeralWidget`, renderizado em `dashboard/page.tsx` fora do grid de 2 colunas, em largura total, antes de "Atividades recentes"
+- [x] `typecheck`, `lint` e `build` passam limpos
+- [ ] **Decisão de escopo, não threshold esquecido**: Campos 4-6 continuam fora do motor de widgets da S8. Motivo: "Visão Geral" tem posição fixa exigida pela spec ("será o último dado... da tela"), o que contradiz a natureza reordenável de um widget — formalizar isso exigiria decidir como um widget pode ser "não reordenável", que não é pedido pelo texto da S9. Registro como pergunta em aberto, não decido sozinho
+- [~] Verificação visual real (ranking de empresas com mais de 5, "Outros" aparecendo, Visão Geral em largura total) **não foi possível** — mesmo bloqueio de acesso ao banco de produção de todas as sprints anteriores
 
 **S8 — detalhe do aceite:**
 - [x] "Com Empresa=X aplicado, clicar em 'Atividades pendentes' abre Atividades com Empresa=X E Status=Pendente" — já valia antes desta sprint (`atividadesHref`/`mergeFilters` em `activity-filters.ts`, usados pelos KPIs dos Campos 1-3 desde antes da S8); nada mudou nesse mecanismo, só confirmado
@@ -173,7 +184,7 @@ Coisas notadas durante uma sprint que estavam fora do escopo dela. Não corrigir
 | 6 | D6 menciona Categoria/Área/Projeto/Processo como "catálogos opcionais recolhidos" no cadastro de Atividade — não existem em nenhum lugar do código hoje. Não construí isso na S4 sem saber o que cada catálogo representa de fato (chutar a estrutura seria pior que não ter) | `docs/DECISOES.md` D6, `activity-form.tsx` | Perguntar ao usuário antes de qualquer sprint futura que dependa disso |
 | 7 | Filtros "Tipo de produto/serviço" e "Produto/Serviço" do calendário (Cap. 4) não foram implementados na S7 — só se aplicam a linhas de origem "proposta" da `prazo_unificado`, que não carrega dados de `Proposta` hoje. Estender a view para isso é um corte de escopo consciente, não um esquecimento | `src/lib/prazo-filters.ts`, `prazo_unificado` | A decidir se vale a pena para um filtro de uso marginal no calendário |
 | 8 | Catálogo de `StatusNegociacao` (`em_andamento`/`fup`/`aceite`/`na`) não bate com o catálogo da **D10** (fechada): "Em negociação, Aguardando aceite, Aceite, Recusada, Sem retorno". Achado ao implementar o 10º filtro do dashboard na S8 — não corrigido, é escopo de proposta/cadastro (S1/S4), não de Dashboard | `docs/DECISOES.md` D10, `src/lib/types.ts` | A decidir — exigiria migrar dados de propostas já cadastradas |
-| 9 | Campos 4-6 do Dashboard (Propostas/Empresas/Visão Geral) continuam fora do motor de widgets criado na S8 — só Campos 1-3 entraram (escopo travado). `dashboard-analytics.tsx` hoje só renderiza os Campos 4-6, sem registry/ordem/visibilidade | `src/components/atividades/dashboard-analytics.tsx` | S9 |
+| 9 | Campos 4-6 do Dashboard (Propostas/Empresas/Visão Geral) continuam fora do motor de widgets criado na S8 — reavaliado na S9 e mantido assim de propósito (não é mais "pendência a resolver", é decisão registrada): "Visão Geral" tem posição fixa exigida pela spec, incompatível com um widget livremente reordenável sem inventar um conceito de "widget fixo" que a S9 não pediu | `src/components/atividades/dashboard-analytics.tsx` | Perguntar ao usuário se um "widget não reordenável" faz sentido, antes de tentar encaixar Campos 4-6 no motor |
 
 ## Dívidas assumidas
 

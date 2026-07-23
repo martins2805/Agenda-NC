@@ -9,15 +9,17 @@ import {
   isOverdue,
   statusBuckets,
   vencimentoBuckets,
+  rankComOutros,
   BASE_SCALE,
   PRIORIDADE_COLORS,
 } from "@/components/dashboard/dashboard-shared";
 
-// Campos 4-6 (Propostas, Empresas, Visão Geral) — ainda não migrados para o
-// motor de widgets da S8 (só Campos 1-3 entram nesta sprint); formalizá-los
-// como widget, com a fidelidade de dados que a spec pede (D9 etc.), é escopo
-// da S9. Conteúdo/lógica inalterados, só a extração de helpers compartilhados
-// (ver src/components/dashboard/dashboard-shared.tsx).
+// Campos 4-5 (Propostas, Empresas) — Campo 6 (Visão Geral) foi extraído para
+// VisaoGeralWidget nesta mesma arquivo (S9), renderizado em largura total por
+// page.tsx, fora da coluna estreita que os Campos 4-5 dividem com o
+// calendário. Ainda não migrados para o motor de widgets da S8 (ver pendência
+// registrada em STATUS.md — "Visão Geral" tem posição fixa exigida pela spec,
+// o que contradiz a natureza reordenável de um widget).
 
 function VerticalBars({
   title,
@@ -101,14 +103,13 @@ export function DashboardAnalytics({
     ? filtered.filter((a) => a.tipoAtividadeIds.includes(propostaTipo.id))
     : [];
 
-  // Lacuna 5 — empresas ordenadas por volume (mais escuro = mais atividades).
-  const empresaData = lookups.empresa
-    .filter((e) => e.active)
-    .map((e) => ({ label: e.name, count: filtered.filter((a) => a.empresaId === e.id).length }))
-    .filter((d) => d.count > 0)
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 8)
-    .map((d, i) => ({ ...d, color: BASE_SCALE[Math.min(i, BASE_SCALE.length - 1)] }));
+  // Lacuna 5 — empresas ordenadas por volume (mais escuro = mais atividades);
+  // da 6ª em diante, agrupadas em "Outros" (D9).
+  const empresaData = rankComOutros(
+    lookups.empresa
+      .filter((e) => e.active)
+      .map((e) => ({ label: e.name, count: filtered.filter((a) => a.empresaId === e.id).length }))
+  );
 
   // MRR x PS (propostas)
   const mrrCount = propostas.filter((a) => a.propostas.some((p) => p.tipo === "MRR")).length;
@@ -126,22 +127,22 @@ export function DashboardAnalytics({
     .slice(0, 8)
     .map((d, i) => ({ ...d, color: BASE_SCALE[Math.min(i, BASE_SCALE.length - 1)] }));
 
-  const prioridadeData = (["Urgente", "Importante", "Médio", "Baixo"] as const).map((p) => ({
-    label: p,
-    count: filtered.filter((a) => a.prioridade === p).length,
-    color: PRIORIDADE_COLORS[p],
-  }));
-
   return (
     <div className="flex flex-col gap-4">
       {/* Lacuna 4 — Propostas */}
       <Lacuna title="Propostas">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <KpiCard label="Total atividades de proposta" value={propostas.length} color="var(--base-2)" href={atividadesHref(filters, propostaExtra)} />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+          <KpiCard label="Total Propostas" value={propostas.length} color="var(--base-2)" href={atividadesHref(filters, propostaExtra)} />
           <KpiCard label="Propostas Urgentes" value={propostas.filter((a) => a.prioridade === "Urgente").length} color="var(--base-2)" href={atividadesHref(filters, { ...propostaExtra, prioridades: ["Urgente"] })} />
           <KpiCard label="Propostas Importantes" value={propostas.filter((a) => a.prioridade === "Importante").length} color="var(--base-2)" href={atividadesHref(filters, { ...propostaExtra, prioridades: ["Importante"] })} />
           <KpiCard label="Propostas Pendentes" value={propostas.filter((a) => a.status === "Pendente").length} color="var(--base-2)" href={atividadesHref(filters, { ...propostaExtra, status: ["Pendente"] })} />
           <KpiCard label="Propostas Vencidas" value={propostas.filter(isOverdue).length} color="var(--base-2)" href={atividadesHref(filters, { ...propostaExtra, prazos: ["atrasadas"] })} />
+          <KpiCard
+            label="Propostas Ganhas"
+            value={propostas.filter((a) => a.propostas.some((p) => p.statusNegociacao === "aceite")).length}
+            color="var(--negociacao-aceite)"
+            href={atividadesHref(filters, { ...propostaExtra, statusNegociacao: ["aceite"] })}
+          />
         </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <VerticalBars title="Propostas x Status" data={statusBuckets(propostas)} />
@@ -170,14 +171,35 @@ export function DashboardAnalytics({
           data={produtoData.length ? produtoData : [{ label: "Sem dados", count: 0, color: "var(--base-4)" }]}
         />
       </Lacuna>
-
-      {/* Lacuna 6 — Visão geral do filtro aplicado */}
-      <Lacuna title="Visão geral">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <VerticalBars title="Distribuição por status" data={statusBuckets(filtered)} />
-          <VerticalBars title="Distribuição por prioridade" data={prioridadeData} />
-        </div>
-      </Lacuna>
     </div>
+  );
+}
+
+// Campo 6 — Visão geral do filtro aplicado. Renderizada separada de
+// DashboardAnalytics porque a spec pede largura total, ao final da página
+// (fora da coluna que os Campos 4-5 dividem com o calendário) — ver
+// src/app/(app)/dashboard/page.tsx.
+export function VisaoGeralWidget({
+  filters,
+  atividades,
+}: {
+  filters: ActivityFilters;
+  atividades: Atividade[];
+}) {
+  const { lookups } = useAppData();
+  const filtered = atividades.filter((a) => matchesActivity(a, filters, lookups));
+  const prioridadeData = (["Urgente", "Importante", "Médio", "Baixo"] as const).map((p) => ({
+    label: p,
+    count: filtered.filter((a) => a.prioridade === p).length,
+    color: PRIORIDADE_COLORS[p],
+  }));
+
+  return (
+    <Lacuna title="Visão geral">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <VerticalBars title="Distribuição por status" data={statusBuckets(filtered)} />
+        <VerticalBars title="Distribuição por prioridade" data={prioridadeData} />
+      </div>
+    </Lacuna>
   );
 }

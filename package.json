@@ -8,7 +8,8 @@
     "start": "prisma migrate deploy && next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "check:dashboard-consistency": "tsx scripts/check-dashboard-consistency.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
