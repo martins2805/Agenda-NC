@@ -47,6 +47,17 @@ Correção: reordenadas as colunas (novas ao final) em `20260723120000_prazo_uni
 | S9 | Dashboard — Propostas, Empresas e Visão Geral | 2026-07-23 | — |
 | S10 | Execuções | 2026-07-23 | — |
 | S11 | Registros | 2026-07-23 | — |
+| S12 | Planilhas | 2026-07-23 | — |
+
+**S12 — mini-spec (D14) e detalhe do aceite:**
+- Mini-spec: Planilha é documento estruturado em formato de tabela (grid), existindo sozinha ou vinculada a atividades/registros. Biblioteca de grid já decidida em sessão anterior (Univer, `@univerjs/preset-sheets-core`) — decisão de infraestrutura já tomada, não revisitada.
+- [x] Grid, vínculos (multi-atividade), CRUD — já estavam completos (`univer-sheet.tsx`, `planilha-editor.tsx`)
+- [x] **Gap real fechado**: "importação e exportação de XLSX" (escopo explícito da S12, "resolve a maior parte do uso real" sem virar um clone de Excel) não existia. Adicionado:
+  - `UniverSheet` ganhou um handle imperativo (`forwardRef`/`useImperativeHandle`) expondo `exportGrid()`/`importGrid()` sobre a API pública do Univer (`getDataRange().getValues()` / `getRange(...).setValues(...)`, confirmadas contra os `.d.ts` reais instalados, não chutadas)
+  - `exceljs` (MIT, `^4.4.0`) para ler/escrever `.xlsx` — dependência nova justificada: é o que a própria S12 pede, sem alternativa mais simples já presente no projeto
+  - Botões "Importar XLSX"/"Exportar XLSX" em `planilha-editor.tsx`, com normalização de célula (`normalizeXlsxCell`) para o escopo mínimo (valores, não fórmulas/estilos) — evita a "armadilha" que o próprio plano avisa
+- [x] `typecheck`, `lint`, `build` passam limpos; zero hex fora dos tokens; sem migration nesta sprint
+- [~] Verificação visual real **não foi possível** — mesmo bloqueio de banco/login de todas as sprints anteriores. Import/export XLSX também não testado contra um arquivo real (sem browser autenticado disponível) — risco residual documentado, não escondido.
 
 **S11 — mini-spec (D14) e detalhe do aceite:**
 - Mini-spec: Registro é documento estruturado (editor de texto rico por aba), existindo sozinho ou vinculado a qualquer outro objeto (Atividade, Execução, Planilha).

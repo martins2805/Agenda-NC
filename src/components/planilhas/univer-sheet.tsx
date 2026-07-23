@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useImperativeHandle, useRef, forwardRef } from "react";
 import { createUniver, LocaleType, mergeLocales } from "@univerjs/presets";
 import { UniverSheetsCorePreset } from "@univerjs/preset-sheets-core";
 import UniverPresetSheetsCorePtBR from "@univerjs/preset-sheets-core/locales/pt-BR";
@@ -15,19 +15,58 @@ interface UniverSheetProps {
   className?: string;
 }
 
-export function UniverSheet({
-  workbookId,
-  workbookName,
-  initialData,
-  onChange,
-  className,
-}: UniverSheetProps) {
+// Univer's own CellValue não aceita null (só string|number|boolean) — aqui
+// permitimos null para representar célula vazia; convertido para "" na
+// escrita (ver importGrid).
+export type SheetCellValue = string | number | boolean | null;
+
+// Handle imperativo para import/export XLSX (S12) — mantém a API do Univer
+// encapsulada aqui; quem importa/exporta (planilha-editor.tsx) só troca
+// grades simples (linhas x colunas), sem conhecer o formato interno do
+// Univer (snapshot de workbook).
+export interface UniverSheetHandle {
+  exportGrid: () => SheetCellValue[][];
+  importGrid: (rows: SheetCellValue[][]) => void;
+}
+
+export const UniverSheet = forwardRef<UniverSheetHandle, UniverSheetProps>(function UniverSheet(
+  { workbookId, workbookName, initialData, onChange, className },
+  ref
+) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onChangeRef = useRef(onChange);
+  const apiRef = useRef<ReturnType<typeof createUniver>["univerAPI"] | null>(null);
 
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      exportGrid() {
+        const api = apiRef.current;
+        const sheet = api?.getActiveWorkbook()?.getActiveSheet();
+        if (!sheet) return [];
+        const range = sheet.getDataRange();
+        return (range.getValues() as SheetCellValue[][]) ?? [];
+      },
+      importGrid(rows: SheetCellValue[][]) {
+        const api = apiRef.current;
+        const sheet = api?.getActiveWorkbook()?.getActiveSheet();
+        if (!sheet || rows.length === 0) return;
+        const numCols = Math.max(1, ...rows.map((r) => r.length));
+        // Univer não aceita null em CellValue — célula vazia vira "".
+        const normalized = rows.map((r) => {
+          const row: (string | number | boolean)[] = [];
+          for (let i = 0; i < numCols; i++) row.push(r[i] ?? "");
+          return row;
+        });
+        sheet.getRange(0, 0, normalized.length, numCols).setValues(normalized);
+      },
+    }),
+    []
+  );
 
   useEffect(() => {
     const container = containerRef.current;
@@ -44,6 +83,7 @@ export function UniverSheet({
         }),
       ],
     });
+    apiRef.current = univerAPI;
 
     univerAPI.createWorkbook(
       (initialData as never) ?? { id: workbookId, name: workbookName }
@@ -63,6 +103,7 @@ export function UniverSheet({
       if (saveTimer) clearTimeout(saveTimer);
       disposable.dispose();
       univer.dispose();
+      apiRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workbookId]);
@@ -73,4 +114,4 @@ export function UniverSheet({
       className={cn("w-full overflow-hidden rounded-lg border", className ?? "h-[520px]")}
     />
   );
-}
+});
