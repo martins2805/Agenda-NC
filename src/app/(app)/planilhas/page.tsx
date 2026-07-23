@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Table2 } from "lucide-react";
 import { useAppData, makePlanilhaId } from "@/lib/app-data-context";
 import { useAutoOpenFromQuery } from "@/lib/use-auto-open";
+import { useViewMode } from "@/lib/use-view-mode";
 import { PlanilhaCard } from "@/components/planilhas/planilha-card";
 import { PlanilhaEditor } from "@/components/planilhas/planilha-editor";
 import {
@@ -12,8 +13,11 @@ import {
   DEFAULT_PLANILHA_FILTERS,
   type PlanilhaFilters,
 } from "@/components/planilhas/planilha-filter-bar";
-import { ViewToggle, type ViewMode } from "@/components/view-toggle";
+import { ViewToggle } from "@/components/view-toggle";
+import { Pagination } from "@/components/ui/pagination";
 import type { Planilha } from "@/lib/types";
+
+const PAGE_SIZE = 60;
 
 function emptyPlanilha(): Planilha {
   return {
@@ -37,7 +41,8 @@ export default function PlanilhasPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftNew, setDraftNew] = useState<Planilha | null>(null);
   const [filters, setFilters] = useState<PlanilhaFilters>(DEFAULT_PLANILHA_FILTERS);
-  const [view, setView] = useState<ViewMode>("cards");
+  const [view, setView] = useViewMode("planilhas-view");
+  const [page, setPage] = useState(1);
 
   const editing = draftNew ?? planilhas.find((p) => p.id === editingId) ?? null;
 
@@ -62,6 +67,14 @@ export default function PlanilhasPage() {
       return true;
     });
   }, [planilhas, filters, lookups]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  function handleFiltersChange(next: PlanilhaFilters) {
+    setFilters(next);
+    setPage(1);
+  }
 
   function openNew() {
     const planilha = emptyPlanilha();
@@ -114,7 +127,7 @@ export default function PlanilhasPage() {
         </Button>
       </div>
 
-      <PlanilhaFilterBar filters={filters} onChange={setFilters} />
+      <PlanilhaFilterBar filters={filters} onChange={handleFiltersChange} />
       <div className="flex justify-end">
         <ViewToggle value={view} onChange={setView} />
       </div>
@@ -130,7 +143,7 @@ export default function PlanilhasPage() {
         </div>
       ) : view === "cards" ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((p) => (
+          {paged.map((p) => (
             <PlanilhaCard
               key={p.id}
               planilha={p}
@@ -152,7 +165,7 @@ export default function PlanilhasPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => {
+              {paged.map((p) => {
                 const empresa = lookups.empresa.find((e) => e.id === p.empresaId)?.name ?? "Sem empresa";
                 const unidade = lookups.unidade.find((u) => u.id === p.unidadeId)?.name ?? "-";
                 const assunto = p.assunto || "-";
@@ -185,6 +198,10 @@ export default function PlanilhasPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {filtered.length > PAGE_SIZE && (
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       )}
     </div>
   );

@@ -120,46 +120,6 @@
   --negociacao-na: #d8d8d8;
 }
 
-.dark {
-  --background: #18202f;
-  --foreground: #f0f0f0;
-  --card: #1f2c43;
-  --card-foreground: #f0f0f0;
-  --popover: #1f2c43;
-  --popover-foreground: #f0f0f0;
-  --primary: #8baaad;
-  --primary-foreground: #1f2c43;
-  --secondary: #3e4c59;
-  --secondary-foreground: #f0f0f0;
-  --muted: #3e4c59;
-  --muted-foreground: #d8d8d8;
-  --accent: #8baaad;
-  --accent-foreground: #1f2c43;
-  --destructive: #780001;
-  --border: #3e4c59;
-  --input: #3e4c59;
-  --ring: #8baaad;
-  --chart-1: #8baaad;
-  --chart-2: #d8d8d8;
-  --chart-3: #526d82;
-  --chart-4: #3e4c59;
-  --chart-5: #8baaad;
-  --sidebar: #1f2c43;
-  --sidebar-foreground: #f0f0f0;
-  --sidebar-primary: #8baaad;
-  --sidebar-primary-foreground: #1f2c43;
-  --sidebar-accent: #3e4c59;
-  --sidebar-accent-foreground: #f0f0f0;
-  --sidebar-border: #3e4c59;
-  --sidebar-ring: #8baaad;
-
-  --base-1: #8baaad;
-  --base-2: #d8d8d8;
-  --base-3: #3e4c59;
-  --base-4: #526d82;
-  --base-5: #f0f0f0;
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, FileText } from "lucide-react";
 import { useAppData, makeRegistroId, makeRegistroTabId } from "@/lib/app-data-context";
 import { useAutoOpenFromQuery } from "@/lib/use-auto-open";
+import { useViewMode } from "@/lib/use-view-mode";
 import { RegistroCard } from "@/components/registros/registro-card";
 import { RegistroEditor } from "@/components/registros/registro-editor";
 import {
@@ -12,8 +13,11 @@ import {
   DEFAULT_REGISTRO_FILTERS,
   type RegistroFilters,
 } from "@/components/registros/registro-filter-bar";
-import { ViewToggle, type ViewMode } from "@/components/view-toggle";
+import { ViewToggle } from "@/components/view-toggle";
+import { Pagination } from "@/components/ui/pagination";
 import type { Registro } from "@/lib/types";
+
+const PAGE_SIZE = 60;
 
 function emptyRegistro(): Registro {
   return {
@@ -53,7 +57,8 @@ export default function RegistrosPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftNew, setDraftNew] = useState<Registro | null>(null);
   const [filters, setFilters] = useState<RegistroFilters>(DEFAULT_REGISTRO_FILTERS);
-  const [view, setView] = useState<ViewMode>("cards");
+  const [view, setView] = useViewMode("registros-view");
+  const [page, setPage] = useState(1);
 
   const editing = draftNew ?? registros.find((r) => r.id === editingId) ?? null;
 
@@ -80,6 +85,14 @@ export default function RegistrosPage() {
       return true;
     });
   }, [registros, filters, lookups]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  function handleFiltersChange(next: RegistroFilters) {
+    setFilters(next);
+    setPage(1);
+  }
 
   function openNew() {
     const registro = emptyRegistro();
@@ -132,7 +145,7 @@ export default function RegistrosPage() {
         </Button>
       </div>
 
-      <RegistroFilterBar filters={filters} onChange={setFilters} />
+      <RegistroFilterBar filters={filters} onChange={handleFiltersChange} />
       <div className="flex justify-end">
         <ViewToggle value={view} onChange={setView} />
       </div>
@@ -148,7 +161,7 @@ export default function RegistrosPage() {
         </div>
       ) : view === "cards" ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((r) => (
+          {paged.map((r) => (
             <RegistroCard
               key={r.id}
               registro={r}
@@ -170,7 +183,7 @@ export default function RegistrosPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((r) => {
+              {paged.map((r) => {
                 const empresa = lookups.empresa.find((e) => e.id === r.empresaId)?.name ?? "Sem empresa";
                 const unidade = lookups.unidade.find((u) => u.id === r.unidadeId)?.name ?? "-";
                 const assunto = r.assunto || "-";
@@ -203,6 +216,10 @@ export default function RegistrosPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {filtered.length > PAGE_SIZE && (
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       )}
     </div>
   );

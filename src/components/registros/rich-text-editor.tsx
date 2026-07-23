@@ -36,7 +36,15 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const TEXT_COLORS = ["#1F2C43", "#3E4C59", "#8BAAAD", "#2E5749", "#BF512C", "#DA9B2B", "#780001"];
+const TEXT_COLORS = [
+  { value: "var(--base-1)", label: "Azul-marinho" },
+  { value: "var(--base-2)", label: "Cinza-azulado" },
+  { value: "var(--base-3)", label: "Verde-acinzentado" },
+  { value: "var(--status-concluido)", label: "Verde" },
+  { value: "var(--prioridade-importante)", label: "Laranja" },
+  { value: "var(--prioridade-medio)", label: "Amarelo" },
+  { value: "var(--status-pendente)", label: "Vermelho" },
+];
 
 const TextColor = Mark.create({
   name: "textColor",
@@ -131,18 +139,18 @@ function Toolbar({ editor }: { editor: Editor }) {
       </ToolbarButton>
       <div className="flex items-center gap-0.5 px-1">
         <Palette className="size-4 text-muted-foreground" />
-        {TEXT_COLORS.map((color) => (
+        {TEXT_COLORS.map(({ value, label }) => (
           <button
-            key={color}
+            key={value}
             type="button"
-            aria-label={`Cor ${color}`}
+            aria-label={`Cor ${label}`}
             className="size-5 rounded-sm border border-border"
-            style={{ backgroundColor: color }}
+            style={{ backgroundColor: value }}
             onClick={() =>
               editor
                 .chain()
                 .focus()
-                .setMark("textColor", { color })
+                .setMark("textColor", { color: value })
                 .run()
             }
           />

@@ -1,6 +1,7 @@
 import type { AtividadeGeral, Prioridade, StatusGeral } from "./types";
 import { matchesRecord, sortRecords, type FilterableRecord } from "./filters/engine";
 import type { OrderBy, PrazoRange } from "./filters/types";
+import { filtersToParams as filtersToParamsGeneric, paramsToFilters as paramsToFiltersGeneric, type ListKeyDef } from "./filters/querystring";
 
 export interface ExecucaoFilters {
   keyword: string;
@@ -101,17 +102,23 @@ export function hasActiveExecucaoFilters(f: ExecucaoFilters): boolean {
   );
 }
 
-// Lê os parâmetros compartilhados vindos do dashboard (apenas dimensões
-// compatíveis com execuções).
+const LIST_KEYS: ListKeyDef<ExecucaoFilters>[] = [
+  { key: "empresaIds", param: "emp" },
+  { key: "unidadeIds", param: "uni" },
+  { key: "tipoIds", param: "tipo" },
+  { key: "status", param: "st" },
+  { key: "prioridades", param: "prio" },
+  { key: "prazos", param: "prazo" },
+  { key: "setorIds", param: "setor" },
+];
+
+// Leitura completa (usada tanto pelo dashboard quanto pela própria tela de
+// Execuções, que agora também escreve de volta na URL — mesma simetria de
+// activity-filters.ts, para "a URL reproduz exatamente o estado" (S13).
 export function execucaoFiltersFromParams(sp: URLSearchParams): ExecucaoFilters {
-  const filters: ExecucaoFilters = { ...DEFAULT_EXECUCAO_FILTERS, keyword: sp.get("kw") ?? "" };
-  const emp = sp.get("emp");
-  if (emp) filters.empresaIds = emp.split(",").filter(Boolean);
-  const uni = sp.get("uni");
-  if (uni) filters.unidadeIds = uni.split(",").filter(Boolean);
-  const prio = sp.get("prio");
-  if (prio) filters.prioridades = prio.split(",").filter(Boolean) as Prioridade[];
-  const prazo = sp.get("prazo");
-  if (prazo) filters.prazos = prazo.split(",").filter(Boolean) as PrazoRange[];
-  return filters;
+  return paramsToFiltersGeneric(sp, DEFAULT_EXECUCAO_FILTERS, LIST_KEYS);
+}
+
+export function execucaoFiltersToParams(filters: ExecucaoFilters): URLSearchParams {
+  return filtersToParamsGeneric(filters, LIST_KEYS);
 }

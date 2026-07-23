@@ -35,18 +35,18 @@ export function LinkEditor({ items, onChange }: LinkEditorProps) {
       <label className="text-sm font-medium">Links</label>
       <div className="flex flex-col gap-1.5">
         {items.map((link) => (
-          <div key={link.id} className="flex items-center gap-1.5 rounded-md border px-2 py-1.5">
+          <div key={link.id} className="flex flex-wrap items-center gap-1.5 rounded-md border px-2 py-1.5">
             <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
             <Input
               placeholder="Título (opcional)"
               value={link.titulo}
               onChange={(e) => updateItem(link.id, { titulo: e.target.value })}
-              className="h-auto min-h-8 w-32 shrink-0 border-none px-1 shadow-none focus-visible:ring-0"
+              className="h-auto min-h-8 w-full shrink-0 border-none px-1 shadow-none focus-visible:ring-0 sm:w-32"
             />
             <Input
               value={link.url}
               onChange={(e) => updateItem(link.id, { url: e.target.value })}
-              className="h-auto min-h-8 border-none px-1 shadow-none focus-visible:ring-0 field-sizing-content"
+              className="h-auto min-h-8 min-w-0 flex-1 border-none px-1 shadow-none focus-visible:ring-0 sm:field-sizing-content sm:flex-initial"
             />
             <Button
               type="button"

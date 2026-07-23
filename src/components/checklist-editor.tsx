@@ -90,7 +90,7 @@ export function ChecklistEditor({ items, onChange, headerActions }: ChecklistEdi
           }`}
           style={{ marginLeft: depth * 24 }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="cursor-grab text-muted-foreground active:cursor-grabbing" title="Arrastar para reorganizar">
               <GripVertical className="size-4" />
             </span>
@@ -103,7 +103,7 @@ export function ChecklistEditor({ items, onChange, headerActions }: ChecklistEdi
             <Input
               value={item.texto}
               onChange={(e) => updateItem(item.id, { texto: e.target.value })}
-              className={`h-auto min-h-8 border-none px-1 shadow-none focus-visible:ring-0 field-sizing-content ${
+              className={`h-auto min-h-8 min-w-0 flex-1 border-none px-1 shadow-none focus-visible:ring-0 sm:field-sizing-content sm:flex-initial ${
                 item.concluido ? "text-muted-foreground line-through" : ""
               }`}
             />

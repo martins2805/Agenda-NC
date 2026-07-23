@@ -16,6 +16,7 @@ import {
 import { useAppData } from "@/lib/app-data-context";
 import { LOOKUP_COR_OPTIONS, type LookupCor, type LookupItem, type LookupKind } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { BackupExport } from "@/components/backup-export";
 
 // Tela de catálogos (S3). CRUD com cor, ordem e arquivamento — a mesma
 // fonte que alimenta os selects/multi-selects em todo o resto do sistema
@@ -409,6 +410,8 @@ export default function ConfiguracoesPage() {
           seleção, mas preserva os registros que já o usam.
         </p>
       </div>
+
+      <BackupExport />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {KIND_ORDER.map((kind) =>

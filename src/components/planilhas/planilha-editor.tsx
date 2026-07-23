@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   ArrowLeft,
+  ClipboardList,
+  FileText,
   Link2,
   Plus,
   Trash2,
@@ -63,6 +65,8 @@ export function PlanilhaEditor({
   const {
     lookups,
     atividades,
+    atividadesGerais,
+    registros,
     addLookupItem,
     renameLookupItem,
     deactivateLookupItem,
@@ -127,6 +131,15 @@ export function PlanilhaEditor({
   function atividadeLabel(a: (typeof atividades)[number]) {
     const empresa = lookups.empresa.find((e) => e.id === a.empresaId);
     return [empresa?.name, a.assunto].filter(Boolean).join(" · ") || "Atividade sem empresa/assunto";
+  }
+
+  function execucaoLabel(g: (typeof atividadesGerais)[number]) {
+    const empresa = lookups.empresa.find((e) => e.id === g.empresaId);
+    return [empresa?.name, g.assunto].filter(Boolean).join(" · ") || "Execução sem empresa/assunto";
+  }
+
+  function registroLabel(r: (typeof registros)[number]) {
+    return r.nome || r.tabs[0]?.titulo || "Registro sem nome";
   }
 
   return (
@@ -241,10 +254,36 @@ export function PlanilhaEditor({
         )}
       </div>
 
+      <div className="flex flex-col gap-1.5 rounded-lg border bg-muted/30 p-3">
+        <Label className="flex items-center gap-1.5">
+          <ClipboardList className="size-3.5" />
+          Execução vinculada
+        </Label>
+        <FilterMultiSelect
+          placeholder="Nenhuma execução vinculada"
+          options={atividadesGerais.map((g) => ({ value: g.id, label: execucaoLabel(g) }))}
+          value={planilha.atividadeGeralIds}
+          onChange={(ids) => patch({ atividadeGeralIds: ids })}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5 rounded-lg border bg-muted/30 p-3">
+        <Label className="flex items-center gap-1.5">
+          <FileText className="size-3.5" />
+          Registro vinculado
+        </Label>
+        <FilterMultiSelect
+          placeholder="Nenhum registro vinculado"
+          options={registros.filter((r) => !r.deletedAt).map((r) => ({ value: r.id, label: registroLabel(r) }))}
+          value={planilha.registroIds}
+          onChange={(ids) => patch({ registroIds: ids })}
+        />
+      </div>
+
       <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Label>Planilha</Label>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             <input
               ref={fileInputRef}
               type="file"

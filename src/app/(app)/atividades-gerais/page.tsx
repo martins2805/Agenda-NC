@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -31,8 +31,10 @@ import {
 import { ManagedSelect } from "@/components/managed-select";
 import { ManagedMultiSelect } from "@/components/managed-multi-select";
 import { ChecklistTemplateManager } from "@/components/checklist-template-manager";
-import { ViewToggle, type ViewMode } from "@/components/view-toggle";
+import { ViewToggle } from "@/components/view-toggle";
+import { Pagination } from "@/components/ui/pagination";
 import { useAutoOpenFromQuery } from "@/lib/use-auto-open";
+import { useViewMode } from "@/lib/use-view-mode";
 import { ExecucaoFilterBar } from "@/components/atividades/execucao-filter-bar";
 import {
   makeAtividadeGeralId,
@@ -51,10 +53,13 @@ import { PRIORIDADE_STYLES, STATUS_GERAL_STYLES, prazoStatusFor, PRAZO_STYLES } 
 import {
   DEFAULT_EXECUCAO_FILTERS,
   execucaoFiltersFromParams,
+  execucaoFiltersToParams,
   matchesExecucao,
   sortExecucoes,
   type ExecucaoFilters,
 } from "@/lib/execucao-filters";
+
+const PAGE_SIZE = 60;
 
 function emptyChecklistItem(parentId: string | null = null): ChecklistGeralItem {
   return {
@@ -190,7 +195,7 @@ function ChecklistGeralEditor({
           style={{ marginLeft: depth * 20 }}
         >
           {/* Linha compacta */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="cursor-grab text-muted-foreground active:cursor-grabbing" title="Arrastar para reorganizar">
               <GripVertical className="size-4" />
             </span>
@@ -211,13 +216,13 @@ function ChecklistGeralEditor({
               value={item.texto}
               onChange={(e) => update(item.id, { texto: e.target.value })}
               placeholder={item.parentId ? "Subitem" : "Item"}
-              className={cn("h-8 flex-1", concluido && "text-muted-foreground line-through")}
+              className={cn("h-8 min-w-0 flex-1", concluido && "text-muted-foreground line-through")}
             />
-            <span className={cn("hidden rounded-full px-2 py-0.5 text-[10px] font-medium sm:inline-block", STATUS_GERAL_STYLES[item.status])}>
+            <span className={cn("inline-block rounded-full px-2 py-0.5 text-[10px] font-medium", STATUS_GERAL_STYLES[item.status])}>
               {item.status}
             </span>
             {prazoStatus && (
-              <span className={cn("hidden rounded-full px-2 py-0.5 text-[10px] font-medium md:inline-block", PRAZO_STYLES[prazoStatus])}>
+              <span className={cn("inline-block rounded-full px-2 py-0.5 text-[10px] font-medium", PRAZO_STYLES[prazoStatus])}>
                 {parseLocalDate(item.prazo!).toLocaleDateString("pt-BR")}
               </span>
             )}
@@ -372,8 +377,9 @@ export default function ExecucoesPage() {
   } = useAppData();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftNew, setDraftNew] = useState<AtividadeGeral | null>(null);
-  const [view, setView] = useState<ViewMode>("cards");
+  const [view, setView] = useViewMode("execucoes-view");
   const [filters, setFilters] = useState<ExecucaoFilters>(initialFilters);
+  const [page, setPage] = useState(1);
 
   useAutoOpenFromQuery(atividadesGerais, loading, (a) => setEditingId(a.id));
   const [infoOpen, setInfoOpen] = useState(true);
@@ -384,6 +390,23 @@ export default function ExecucoesPage() {
     const list = atividadesGerais.filter((a) => matchesExecucao(a, filters, lookups));
     return sortExecucoes(list, filters.ordenar);
   }, [atividadesGerais, filters, lookups]);
+
+  // URL reproduz exatamente o estado dos filtros (mesmo padrão de
+  // atividades/page.tsx) — permite voltar/compartilhar um link filtrado.
+  useEffect(() => {
+    const params = execucaoFiltersToParams(filters);
+    const query = params.toString();
+    const url = query ? `?${query}` : window.location.pathname;
+    window.history.replaceState(null, "", url);
+  }, [filters]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  function handleFiltersChange(next: ExecucaoFilters) {
+    setFilters(next);
+    setPage(1);
+  }
 
   function save(atividade: AtividadeGeral) {
     if (draftNew && draftNew.id === atividade.id) {
@@ -758,7 +781,7 @@ export default function ExecucoesPage() {
         </Button>
       </div>
 
-      <ExecucaoFilterBar filters={filters} onChange={setFilters} />
+      <ExecucaoFilterBar filters={filters} onChange={handleFiltersChange} />
       <div className="flex justify-end">
         <ViewToggle value={view} onChange={setView} />
       </div>
@@ -774,12 +797,16 @@ export default function ExecucoesPage() {
         </div>
       ) : view === "cards" ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((a) => (
+          {paged.map((a) => (
             <ExecucaoCard key={a.id} atividade={a} onOpen={() => setEditingId(a.id)} />
           ))}
         </div>
       ) : (
-        <ExecucaoTable atividades={filtered} onOpen={(id) => setEditingId(id)} />
+        <ExecucaoTable atividades={paged} onOpen={(id) => setEditingId(id)} />
+      )}
+
+      {filtered.length > PAGE_SIZE && (
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       )}
     </div>
   );
