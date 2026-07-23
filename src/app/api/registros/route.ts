@@ -33,12 +33,21 @@ export async function GET(request: Request) {
     registros.map((r) => r.id),
     "atividadeGeral"
   );
+  const vinculosPlanilhaPorId = await listarVinculadosEmLote(
+    prisma,
+    userId,
+    "registro",
+    registros.map((r) => r.id),
+    "planilha"
+  );
   return NextResponse.json(
     registros.map((r) => ({
       ...r,
       tabs: r.tabs.sort((a, b) => a.ordem - b.ordem),
       atividadeIds: vinculosPorId.get(r.id) ?? [],
       atividadeGeralIds: vinculosGeralPorId.get(r.id) ?? [],
+      planilhaIds: vinculosPlanilhaPorId.get(r.id) ?? [],
+      prazo: r.prazo ? r.prazo.toISOString().slice(0, 10) : null,
       createdAt: r.createdAt.toISOString(),
       deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
     }))
@@ -63,6 +72,7 @@ export async function POST(request: Request) {
         contato: body.contato,
         assunto: body.assunto,
         categoriaIds: body.categoriaIds,
+        prazo: body.prazo ? new Date(body.prazo) : null,
         tabs: {
           create: body.tabs.map((t, i) => ({
             id: t.id,
@@ -76,6 +86,7 @@ export async function POST(request: Request) {
     });
     await syncVinculos(tx, userId, { tipo: "registro", id: registro.id }, "atividade", body.atividadeIds ?? []);
     await syncVinculos(tx, userId, { tipo: "registro", id: registro.id }, "atividadeGeral", body.atividadeGeralIds ?? []);
+    await syncVinculos(tx, userId, { tipo: "registro", id: registro.id }, "planilha", body.planilhaIds ?? []);
     return registro;
   });
 
@@ -89,6 +100,8 @@ export async function POST(request: Request) {
       tabs: created.tabs.sort((a, b) => a.ordem - b.ordem),
       atividadeIds: body.atividadeIds ?? [],
       atividadeGeralIds: body.atividadeGeralIds ?? [],
+      planilhaIds: body.planilhaIds ?? [],
+      prazo: created.prazo ? created.prazo.toISOString().slice(0, 10) : null,
     },
     { status: 201 }
   );

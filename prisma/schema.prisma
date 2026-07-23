@@ -267,6 +267,7 @@ model Registro {
   contato      String        @default("")
   assunto      String        @default("")
   categoriaIds String[]
+  prazo        DateTime?
   /// @deprecated legado pré-vínculo polimórfico (S1). Fonte de verdade agora é Vinculo. Não escrever mais aqui.
   atividadeId  String?
   createdAt    DateTime      @default(now())

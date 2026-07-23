@@ -36,6 +36,20 @@ Atualizado ao final de cada sprint. Fonte da verdade sobre o que existe de fato.
 | S8 | Dashboard — motor de widgets, filtros globais e Campos 1-3 | 2026-07-23 | — |
 | S9 | Dashboard — Propostas, Empresas e Visão Geral | 2026-07-23 | — |
 | S10 | Execuções | 2026-07-23 | — |
+| S11 | Registros | 2026-07-23 | — |
+
+**S11 — mini-spec (D14) e detalhe do aceite:**
+- Mini-spec: Registro é documento estruturado (editor de texto rico por aba), existindo sozinho ou vinculado a qualquer outro objeto (Atividade, Execução, Planilha).
+- [x] Editor de texto rico — já estava completo e maduro (TipTap: formatação, cores, tabelas redimensionáveis, imagem colada como data URI), nenhuma mudança necessária
+- [x] **Gap real fechado**: `Registro` não tinha campo de prazo — adicionado `prazo DateTime?` opcional (migration aditiva); UI no editor (`registro-editor.tsx`)
+- [x] **Gap real fechado**: aparição no calendário — `prazo_unificado` ganhou um 6º bloco para `Registro`. Como Registro não tem prioridade/status de negócio, esses campos ficam `NULL` na view (em vez de inventar um valor) — `activity-calendar.tsx` e `src/lib/prazo-filters.ts` ajustados para tratar prioridade/status ausentes sem quebrar (badge de prioridade só aparece quando existe; filtro de status/prioridade exclui essas entradas quando o filtro está ativo, em vez de casar por acidente)
+- [x] **Gap real fechado**: vínculo Registro↔Execução existia no banco/API desde a S10, mas sem UI no editor — adicionado bloco "Execução vinculada"
+- [x] **Gap real fechado**: vínculo Registro↔Planilha não existia em lugar nenhum — `planilhaIds`/`registroIds` novos (mesmo padrão polimórfico via `Vinculo`), UI só do lado do Registro (bloco "Planilha vinculada"); do lado da Planilha fica para a S12
+- [x] **Busca "full-text"**: em vez de conectar a coluna `busca` (tsvector, órfã desde a S1) a uma rota nova — o que introduziria um round-trip assíncrono, inconsistente com o resto do app (tudo filtra em memória, decisão já fechada) — o `searchText` em memória passou a cobrir o conteúdo das abas (texto rico, sem tags), mesmo sentido de "busca em todas as palavras-chave" que `activity-filters.ts` já usa para Atividades. A coluna `busca` **continua sem uso** — não escondido, registrado como pendência
+- [x] **Bug pequeno corrigido**: o filtro "Vínculo" (vinculado/sem vínculo) só olhava `atividadeIds` — agora considera `atividadeIds`, `atividadeGeralIds` e `planilhaIds`
+- [x] Resumo Geral — já cumprido desde a S8 (KPI "Total de registros")
+- [x] `typecheck`, `lint` e `build` passam limpos; `scripts/check-dashboard-consistency.ts` confirma que os buckets de Atividade não foram afetados
+- [~] Verificação funcional real (prazo de Registro aparecendo no calendário, vínculo com Planilha nos dois lados) **não foi possível** — mesmo bloqueio de acesso ao banco de produção de todas as sprints anteriores
 
 **S10 — mini-spec (D14) e detalhe do aceite:**
 - Mini-spec: Execução é um processo com itens/subitens (árvore), cada um com status/prazo próprio, para substituir checklists longos demais para uma única Atividade. Confirmado com o usuário: é o mesmo conceito de `AtividadeGeral`/`ChecklistGeralItem` já em produção (rota `/atividades-gerais`) — **sem renomear para `Execucao`/`ExecucaoItem`** (ver `ERRATA-SPEC.md` #4, resolve a "Dívida assumida" #2)
@@ -195,6 +209,8 @@ Coisas notadas durante uma sprint que estavam fora do escopo dela. Não corrigir
 | 7 | Filtros "Tipo de produto/serviço" e "Produto/Serviço" do calendário (Cap. 4) não foram implementados na S7 — só se aplicam a linhas de origem "proposta" da `prazo_unificado`, que não carrega dados de `Proposta` hoje. Estender a view para isso é um corte de escopo consciente, não um esquecimento | `src/lib/prazo-filters.ts`, `prazo_unificado` | A decidir se vale a pena para um filtro de uso marginal no calendário |
 | 8 | Catálogo de `StatusNegociacao` (`em_andamento`/`fup`/`aceite`/`na`) não bate com o catálogo da **D10** (fechada): "Em negociação, Aguardando aceite, Aceite, Recusada, Sem retorno". Achado ao implementar o 10º filtro do dashboard na S8 — não corrigido, é escopo de proposta/cadastro (S1/S4), não de Dashboard | `docs/DECISOES.md` D10, `src/lib/types.ts` | A decidir — exigiria migrar dados de propostas já cadastradas |
 | 9 | Campos 4-6 do Dashboard (Propostas/Empresas/Visão Geral) continuam fora do motor de widgets criado na S8 — reavaliado na S9 e mantido assim de propósito (não é mais "pendência a resolver", é decisão registrada): "Visão Geral" tem posição fixa exigida pela spec, incompatível com um widget livremente reordenável sem inventar um conceito de "widget fixo" que a S9 não pediu | `src/components/atividades/dashboard-analytics.tsx` | Perguntar ao usuário se um "widget não reordenável" faz sentido, antes de tentar encaixar Campos 4-6 no motor |
+| 10 | Coluna `busca` (tsvector, GIN index) em Atividade/AtividadeGeral/Registro/Planilha segue **sem nenhum consumidor** desde a S1 — a S11 implementou "busca full-text" como busca em memória (mesmo padrão de Atividades), não como consulta Postgres real. Se um dia o volume de dados tornar o filtro em memória lento, a coluna já existe pronta para uma rota dedicada | `prisma/schema.prisma` (campo `busca`) | Só se o filtro em memória virar gargalo de performance |
+| 11 | UI de "Registro vinculado" no editor de Planilha não existe — o vínculo Registro↔Planilha criado na S11 só tem UI do lado do Registro (`registro-editor.tsx`). API já suporta os dois lados | `src/components/planilhas/planilha-editor.tsx` | S12 |
 
 ## Dívidas assumidas
 

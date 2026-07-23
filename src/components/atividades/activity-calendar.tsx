@@ -73,7 +73,8 @@ function PrazoEditavel({ entry, onSave }: { entry: PrazoEntry; onSave: (valor: s
 }
 
 export function ActivityCalendar() {
-  const { lookups, atividades, atividadesGerais, updateAtividade, updateAtividadeGeral } = useAppData();
+  const { lookups, atividades, atividadesGerais, updateAtividade, updateAtividadeGeral, updateRegistro } =
+    useAppData();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [filters, setFilters] = useState<CalendarFilters>(DEFAULT_CALENDAR_FILTERS);
   const [prazos, setPrazos] = useState<PrazoEntry[]>([]);
@@ -119,7 +120,9 @@ export function ActivityCalendar() {
   // resto do app — o dashboard e as demais telas refletem sem refresh manual
   // (Regra 10), já que é o mesmo estado compartilhado.
   function editarPrazo(entry: PrazoEntry, novoValor: string | null) {
-    if (entry.objetoTipo === "atividade") {
+    if (entry.objetoTipo === "registro") {
+      updateRegistro(entry.objetoId, { prazo: novoValor });
+    } else if (entry.objetoTipo === "atividade") {
       const atividade = atividades.find((a) => a.id === entry.objetoId);
       if (!atividade) return;
       if (entry.tipoPrazo === "atividade") {
@@ -188,9 +191,11 @@ export function ActivityCalendar() {
                   const empresa = lookups.empresa.find((e) => e.id === entry.empresaId)?.name ?? "Sem empresa";
                   const unidade = lookups.unidade.find((u) => u.id === entry.unidadeId)?.name;
                   const href =
-                    entry.objetoTipo === "atividade"
-                      ? `/atividades?open=${entry.objetoId}`
-                      : `/atividades-gerais?open=${entry.objetoId}`;
+                    entry.objetoTipo === "registro"
+                      ? `/registros?open=${entry.objetoId}`
+                      : entry.objetoTipo === "atividade"
+                        ? `/atividades?open=${entry.objetoId}`
+                        : `/atividades-gerais?open=${entry.objetoId}`;
                   return (
                     <li
                       key={`${entry.tipoPrazo}-${entry.origemId}`}
@@ -207,11 +212,15 @@ export function ActivityCalendar() {
                       </div>
                       <p className="text-muted-foreground">{entry.titulo || "Sem assunto"}</p>
                       <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px]">
-                        <span
-                          className={`rounded-full px-2 py-0.5 font-medium tracking-wide uppercase ${PRIORIDADE_STYLES[entry.prioridade]}`}
-                        >
-                          {entry.prioridade}
-                        </span>
+                        {entry.prioridade ? (
+                          <span
+                            className={`rounded-full px-2 py-0.5 font-medium tracking-wide uppercase ${PRIORIDADE_STYLES[entry.prioridade]}`}
+                          >
+                            {entry.prioridade}
+                          </span>
+                        ) : (
+                          <span />
+                        )}
                         <PrazoEditavel entry={entry} onSave={(valor) => editarPrazo(entry, valor)} />
                       </div>
                     </li>

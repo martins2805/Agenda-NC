@@ -40,11 +40,15 @@ export async function PATCH(
     if (body.atividadeGeralIds !== undefined) {
       await syncVinculos(tx, userId, { tipo: "planilha", id }, "atividadeGeral", body.atividadeGeralIds);
     }
+    if (body.registroIds !== undefined) {
+      await syncVinculos(tx, userId, { tipo: "planilha", id }, "registro", body.registroIds);
+    }
     return planilha;
   });
 
   const atividadeIds = await listarVinculados(prisma, userId, { tipo: "planilha", id }, "atividade");
   const atividadeGeralIds = await listarVinculados(prisma, userId, { tipo: "planilha", id }, "atividadeGeral");
+  const registroIds = await listarVinculados(prisma, userId, { tipo: "planilha", id }, "registro");
 
   const metadataChanged =
     body.nome !== undefined ||
@@ -59,7 +63,7 @@ export async function PATCH(
       .catch((error) => console.error("Falha ao indexar planilha", error));
   }
 
-  return NextResponse.json({ ...updated, atividadeIds, atividadeGeralIds });
+  return NextResponse.json({ ...updated, atividadeIds, atividadeGeralIds, registroIds });
 }
 
 export async function DELETE(

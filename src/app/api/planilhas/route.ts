@@ -31,11 +31,19 @@ export async function GET(request: Request) {
     planilhas.map((p) => p.id),
     "atividadeGeral"
   );
+  const vinculosRegistroPorId = await listarVinculadosEmLote(
+    prisma,
+    userId,
+    "planilha",
+    planilhas.map((p) => p.id),
+    "registro"
+  );
   return NextResponse.json(
     planilhas.map((p) => ({
       ...p,
       atividadeIds: vinculosPorId.get(p.id) ?? [],
       atividadeGeralIds: vinculosGeralPorId.get(p.id) ?? [],
+      registroIds: vinculosRegistroPorId.get(p.id) ?? [],
       createdAt: p.createdAt.toISOString(),
       deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
     }))
@@ -64,6 +72,7 @@ export async function POST(request: Request) {
     });
     await syncVinculos(tx, userId, { tipo: "planilha", id: planilha.id }, "atividade", body.atividadeIds ?? []);
     await syncVinculos(tx, userId, { tipo: "planilha", id: planilha.id }, "atividadeGeral", body.atividadeGeralIds ?? []);
+    await syncVinculos(tx, userId, { tipo: "planilha", id: planilha.id }, "registro", body.registroIds ?? []);
     return planilha;
   });
 
@@ -72,7 +81,12 @@ export async function POST(request: Request) {
     .catch((error) => console.error("Falha ao indexar planilha", error));
 
   return NextResponse.json(
-    { ...created, atividadeIds: body.atividadeIds ?? [], atividadeGeralIds: body.atividadeGeralIds ?? [] },
+    {
+      ...created,
+      atividadeIds: body.atividadeIds ?? [],
+      atividadeGeralIds: body.atividadeGeralIds ?? [],
+      registroIds: body.registroIds ?? [],
+    },
     { status: 201 }
   );
 }

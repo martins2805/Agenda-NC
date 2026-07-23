@@ -38,6 +38,7 @@ export async function PATCH(
         contato: body.contato,
         assunto: body.assunto,
         categoriaIds: body.categoriaIds,
+        prazo: body.prazo ? new Date(body.prazo) : null,
         tabs: {
           create: body.tabs.map((t, i) => ({
             id: t.id,
@@ -51,11 +52,13 @@ export async function PATCH(
     });
     await syncVinculos(tx, userId, { tipo: "registro", id }, "atividade", body.atividadeIds ?? []);
     await syncVinculos(tx, userId, { tipo: "registro", id }, "atividadeGeral", body.atividadeGeralIds ?? []);
+    await syncVinculos(tx, userId, { tipo: "registro", id }, "planilha", body.planilhaIds ?? []);
     return registro;
   });
 
   const atividadeIds = await listarVinculados(prisma, userId, { tipo: "registro", id }, "atividade");
   const atividadeGeralIds = await listarVinculados(prisma, userId, { tipo: "registro", id }, "atividadeGeral");
+  const planilhaIds = await listarVinculados(prisma, userId, { tipo: "registro", id }, "planilha");
 
   serializeRegistro(updated)
     .then((content) => syncKnowledgeChunk(userId, "registro", updated.id, content))
@@ -66,6 +69,8 @@ export async function PATCH(
     tabs: updated.tabs.sort((a, b) => a.ordem - b.ordem),
     atividadeIds,
     atividadeGeralIds,
+    planilhaIds,
+    prazo: updated.prazo ? updated.prazo.toISOString().slice(0, 10) : null,
   });
 }
 

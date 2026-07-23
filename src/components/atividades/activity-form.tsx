@@ -175,6 +175,8 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
       tabs: [{ id: makeRegistroTabId(), titulo: "Principal", conteudo: "" }],
       atividadeIds: [draft.id],
       atividadeGeralIds: [],
+      planilhaIds: [],
+      prazo: null,
       createdAt: new Date().toISOString(),
     });
   }
@@ -189,6 +191,7 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
       categoriaIds: [],
       atividadeIds: [draft.id],
       atividadeGeralIds: [],
+      registroIds: [],
       conteudo: null,
       createdAt: new Date().toISOString(),
     });

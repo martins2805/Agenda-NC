@@ -17,8 +17,8 @@ interface PrazoUnificadoRow {
   empresa_id: string | null;
   unidade_id: string | null;
   data: Date;
-  prioridade: string;
-  status: string;
+  prioridade: string | null;
+  status: string | null;
   tipo_prazo: string;
   tipo_atividade_ids: string[] | null;
 }

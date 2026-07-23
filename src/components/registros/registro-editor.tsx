@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Link2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ClipboardList, Link2, Plus, Table2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +29,8 @@ export function RegistroEditor({
   const {
     lookups,
     atividades,
+    atividadesGerais,
+    planilhas,
     addLookupItem,
     renameLookupItem,
     deactivateLookupItem,
@@ -45,6 +47,15 @@ export function RegistroEditor({
   function atividadeLabel(a: (typeof atividades)[number]) {
     const empresa = lookups.empresa.find((e) => e.id === a.empresaId);
     return [empresa?.name, a.assunto].filter(Boolean).join(" · ") || "Atividade sem empresa/assunto";
+  }
+
+  function execucaoLabel(g: (typeof atividadesGerais)[number]) {
+    const empresa = lookups.empresa.find((e) => e.id === g.empresaId);
+    return [empresa?.name, g.assunto].filter(Boolean).join(" · ") || "Execução sem empresa/assunto";
+  }
+
+  function planilhaLabel(p: (typeof planilhas)[number]) {
+    return p.nome || "Planilha sem nome";
   }
 
   return (
@@ -121,6 +132,14 @@ export function RegistroEditor({
             ))}
           </datalist>
         </div>
+        <div className="flex flex-col gap-1.5">
+          <Label>Prazo (opcional)</Label>
+          <Input
+            type="date"
+            value={registro.prazo ?? ""}
+            onChange={(e) => patch({ prazo: e.target.value || null })}
+          />
+        </div>
       </div>
 
       <ManagedMultiSelect
@@ -163,6 +182,32 @@ export function RegistroEditor({
             {linkedAtividades.length === 1 ? ` (status "${linkedAtividades[0].status}")` : ""}.
           </p>
         )}
+      </div>
+
+      <div className="flex flex-col gap-1.5 rounded-lg border bg-muted/30 p-3">
+        <Label className="flex items-center gap-1.5">
+          <ClipboardList className="size-3.5" />
+          Execução vinculada
+        </Label>
+        <FilterMultiSelect
+          placeholder="Nenhuma execução vinculada"
+          options={atividadesGerais.map((g) => ({ value: g.id, label: execucaoLabel(g) }))}
+          value={registro.atividadeGeralIds}
+          onChange={(ids) => patch({ atividadeGeralIds: ids })}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5 rounded-lg border bg-muted/30 p-3">
+        <Label className="flex items-center gap-1.5">
+          <Table2 className="size-3.5" />
+          Planilha vinculada
+        </Label>
+        <FilterMultiSelect
+          placeholder="Nenhuma planilha vinculada"
+          options={planilhas.filter((p) => !p.deletedAt).map((p) => ({ value: p.id, label: planilhaLabel(p) }))}
+          value={registro.planilhaIds}
+          onChange={(ids) => patch({ planilhaIds: ids })}
+        />
       </div>
 
       <RegistroTabs tabs={registro.tabs} onChange={(tabs) => patch({ tabs })} />

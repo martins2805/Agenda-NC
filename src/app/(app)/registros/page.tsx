@@ -27,8 +27,24 @@ function emptyRegistro(): Registro {
     tabs: [{ id: makeRegistroTabId(), titulo: "Aba 1", conteudo: "" }],
     atividadeIds: [],
     atividadeGeralIds: [],
+    planilhaIds: [],
+    prazo: null,
     createdAt: new Date().toISOString(),
   };
+}
+
+// Só remove tags para a busca em memória cobrir o texto das abas (rich text)
+// — mesma lógica de src/lib/knowledge-sync.ts, replicada aqui porque aquele
+// arquivo é server-only (importa embedText/Prisma) e este componente é client.
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export default function RegistrosPage() {
@@ -49,13 +65,15 @@ export default function RegistrosPage() {
       if (filters.empresaId && r.empresaId !== filters.empresaId) return false;
       if (filters.categoriaId && !r.categoriaIds.includes(filters.categoriaId))
         return false;
-      if (filters.vinculo === "vinculado" && r.atividadeIds.length === 0) return false;
-      if (filters.vinculo === "sem_vinculo" && r.atividadeIds.length > 0) return false;
+      const temVinculo =
+        r.atividadeIds.length > 0 || r.atividadeGeralIds.length > 0 || r.planilhaIds.length > 0;
+      if (filters.vinculo === "vinculado" && !temVinculo) return false;
+      if (filters.vinculo === "sem_vinculo" && temVinculo) return false;
 
       if (keyword) {
         const empresa = lookups.empresa.find((e) => e.id === r.empresaId)?.name ?? "";
-        const assunto = r.assunto;
-        const haystack = [r.nome, r.contato, empresa, assunto].join(" ").toLowerCase();
+        const conteudoAbas = r.tabs.map((t) => stripHtml(t.conteudo)).join(" ");
+        const haystack = [r.nome, r.contato, empresa, r.assunto, conteudoAbas].join(" ").toLowerCase();
         if (!haystack.includes(keyword)) return false;
       }
 

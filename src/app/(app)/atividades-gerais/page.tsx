@@ -418,6 +418,8 @@ export default function ExecucoesPage() {
         tabs: [{ id: makeRegistroTabId(), titulo: "Principal", conteudo: "" }],
         atividadeIds: [],
         atividadeGeralIds: [editing.id],
+        planilhaIds: [],
+        prazo: null,
         createdAt: new Date().toISOString(),
       });
     };
@@ -432,6 +434,7 @@ export default function ExecucoesPage() {
         categoriaIds: [],
         atividadeIds: [],
         atividadeGeralIds: [editing.id],
+        registroIds: [],
         conteudo: null,
         createdAt: new Date().toISOString(),
       });
