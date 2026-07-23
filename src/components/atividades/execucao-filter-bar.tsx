@@ -42,6 +42,7 @@ export function ExecucaoFilterBar({
   const tipoOptions = lookups.tipoAtividadeGeral.filter((t) => t.active).map((t) => ({ value: t.id, label: t.name }));
   const statusOptions = STATUS_GERAL_OPTIONS.map((s) => ({ value: s, label: s }));
   const prioridadeOptions = PRIORIDADE_OPTIONS.map((p) => ({ value: p, label: p }));
+  const setorOptions = lookups.setorInterno.filter((s) => s.active).map((s) => ({ value: s.id, label: s.name }));
 
   return (
     <div className="panel-card flex flex-col gap-3 p-3">
@@ -54,13 +55,14 @@ export function ExecucaoFilterBar({
           className="pl-8"
         />
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
         <FilterMultiSelect placeholder="Empresa" options={empresaOptions} value={filters.empresaIds} onChange={(empresaIds) => patch({ empresaIds })} />
         <FilterMultiSelect placeholder="Unidade" options={unidadeOptions} value={filters.unidadeIds} onChange={(unidadeIds) => patch({ unidadeIds })} />
         <FilterMultiSelect placeholder="Tipo" options={tipoOptions} value={filters.tipoIds} onChange={(tipoIds) => patch({ tipoIds })} />
         <FilterMultiSelect placeholder="Status" options={statusOptions} value={filters.status} onChange={(status) => patch({ status: status as StatusGeral[] })} />
         <FilterMultiSelect placeholder="Prioridade" options={prioridadeOptions} value={filters.prioridades} onChange={(prioridades) => patch({ prioridades: prioridades as Prioridade[] })} />
         <FilterMultiSelect placeholder="Prazo" options={PRAZO_OPTIONS} value={filters.prazos} onChange={(prazos) => patch({ prazos: prazos as ExecucaoFilters["prazos"] })} />
+        <FilterMultiSelect placeholder="Setor interno" options={setorOptions} value={filters.setorIds} onChange={(setorIds) => patch({ setorIds })} />
         <Select value={filters.ordenar} onValueChange={(v) => patch({ ordenar: v as OrderBy })}>
           <SelectTrigger className="w-full gap-1.5">
             <ArrowDownUp className="size-3.5 text-muted-foreground" />

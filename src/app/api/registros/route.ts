@@ -26,11 +26,19 @@ export async function GET(request: Request) {
     registros.map((r) => r.id),
     "atividade"
   );
+  const vinculosGeralPorId = await listarVinculadosEmLote(
+    prisma,
+    userId,
+    "registro",
+    registros.map((r) => r.id),
+    "atividadeGeral"
+  );
   return NextResponse.json(
     registros.map((r) => ({
       ...r,
       tabs: r.tabs.sort((a, b) => a.ordem - b.ordem),
       atividadeIds: vinculosPorId.get(r.id) ?? [],
+      atividadeGeralIds: vinculosGeralPorId.get(r.id) ?? [],
       createdAt: r.createdAt.toISOString(),
       deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
     }))
@@ -67,6 +75,7 @@ export async function POST(request: Request) {
       include,
     });
     await syncVinculos(tx, userId, { tipo: "registro", id: registro.id }, "atividade", body.atividadeIds ?? []);
+    await syncVinculos(tx, userId, { tipo: "registro", id: registro.id }, "atividadeGeral", body.atividadeGeralIds ?? []);
     return registro;
   });
 
@@ -79,6 +88,7 @@ export async function POST(request: Request) {
       ...created,
       tabs: created.tabs.sort((a, b) => a.ordem - b.ordem),
       atividadeIds: body.atividadeIds ?? [],
+      atividadeGeralIds: body.atividadeGeralIds ?? [],
     },
     { status: 201 }
   );

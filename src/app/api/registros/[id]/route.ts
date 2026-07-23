@@ -50,10 +50,12 @@ export async function PATCH(
       include,
     });
     await syncVinculos(tx, userId, { tipo: "registro", id }, "atividade", body.atividadeIds ?? []);
+    await syncVinculos(tx, userId, { tipo: "registro", id }, "atividadeGeral", body.atividadeGeralIds ?? []);
     return registro;
   });
 
   const atividadeIds = await listarVinculados(prisma, userId, { tipo: "registro", id }, "atividade");
+  const atividadeGeralIds = await listarVinculados(prisma, userId, { tipo: "registro", id }, "atividadeGeral");
 
   serializeRegistro(updated)
     .then((content) => syncKnowledgeChunk(userId, "registro", updated.id, content))
@@ -63,6 +65,7 @@ export async function PATCH(
     ...updated,
     tabs: updated.tabs.sort((a, b) => a.ordem - b.ordem),
     atividadeIds,
+    atividadeGeralIds,
   });
 }
 

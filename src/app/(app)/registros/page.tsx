@@ -26,6 +26,7 @@ function emptyRegistro(): Registro {
     categoriaIds: [],
     tabs: [{ id: makeRegistroTabId(), titulo: "Aba 1", conteudo: "" }],
     atividadeIds: [],
+    atividadeGeralIds: [],
     createdAt: new Date().toISOString(),
   };
 }

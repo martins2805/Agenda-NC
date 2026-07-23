@@ -169,6 +169,7 @@ export interface Registro {
   categoriaIds: string[];
   tabs: RegistroTab[];
   atividadeIds: string[];
+  atividadeGeralIds: string[];
   createdAt: string; // ISO datetime
   deletedAt?: string | null;
 }
@@ -181,6 +182,7 @@ export interface Planilha {
   assunto: string;
   categoriaIds: string[];
   atividadeIds: string[];
+  atividadeGeralIds: string[];
   conteudo: Record<string, unknown> | null;
   createdAt: string; // ISO datetime
   deletedAt?: string | null;

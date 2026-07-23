@@ -24,6 +24,7 @@ function emptyPlanilha(): Planilha {
     assunto: "",
     categoriaIds: [],
     atividadeIds: [],
+    atividadeGeralIds: [],
     conteudo: null,
     createdAt: new Date().toISOString(),
   };

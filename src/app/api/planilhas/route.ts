@@ -24,10 +24,18 @@ export async function GET(request: Request) {
     planilhas.map((p) => p.id),
     "atividade"
   );
+  const vinculosGeralPorId = await listarVinculadosEmLote(
+    prisma,
+    userId,
+    "planilha",
+    planilhas.map((p) => p.id),
+    "atividadeGeral"
+  );
   return NextResponse.json(
     planilhas.map((p) => ({
       ...p,
       atividadeIds: vinculosPorId.get(p.id) ?? [],
+      atividadeGeralIds: vinculosGeralPorId.get(p.id) ?? [],
       createdAt: p.createdAt.toISOString(),
       deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
     }))
@@ -55,6 +63,7 @@ export async function POST(request: Request) {
       },
     });
     await syncVinculos(tx, userId, { tipo: "planilha", id: planilha.id }, "atividade", body.atividadeIds ?? []);
+    await syncVinculos(tx, userId, { tipo: "planilha", id: planilha.id }, "atividadeGeral", body.atividadeGeralIds ?? []);
     return planilha;
   });
 
@@ -62,5 +71,8 @@ export async function POST(request: Request) {
     .then((content) => syncKnowledgeChunk(userId, "planilha", created.id, content))
     .catch((error) => console.error("Falha ao indexar planilha", error));
 
-  return NextResponse.json({ ...created, atividadeIds: body.atividadeIds ?? [] }, { status: 201 });
+  return NextResponse.json(
+    { ...created, atividadeIds: body.atividadeIds ?? [], atividadeGeralIds: body.atividadeGeralIds ?? [] },
+    { status: 201 }
+  );
 }

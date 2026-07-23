@@ -10,6 +10,7 @@ export interface ExecucaoFilters {
   status: StatusGeral[];
   prioridades: Prioridade[];
   prazos: PrazoRange[];
+  setorIds: string[];
   ordenar: OrderBy;
 }
 
@@ -21,6 +22,7 @@ export const DEFAULT_EXECUCAO_FILTERS: ExecucaoFilters = {
   status: [],
   prioridades: [],
   prazos: [],
+  setorIds: [],
   ordenar: "criacao",
 };
 
@@ -58,15 +60,24 @@ function toRecord(a: AtividadeGeral, lookups: Lookups): FilterableRecord {
 }
 
 export function matchesExecucao(a: AtividadeGeral, filters: ExecucaoFilters, lookups: Lookups): boolean {
-  return matchesRecord(toRecord(a, lookups), {
-    keyword: filters.keyword,
-    empresaIds: filters.empresaIds,
-    unidadeIds: filters.unidadeIds,
-    tipoIds: filters.tipoIds,
-    status: filters.status,
-    prioridades: filters.prioridades,
-    prazos: filters.prazos,
-  });
+  if (
+    !matchesRecord(toRecord(a, lookups), {
+      keyword: filters.keyword,
+      empresaIds: filters.empresaIds,
+      unidadeIds: filters.unidadeIds,
+      tipoIds: filters.tipoIds,
+      status: filters.status,
+      prioridades: filters.prioridades,
+      prazos: filters.prazos,
+    })
+  )
+    return false;
+
+  // Setor interno é específico de Execução, fora do motor genérico (mesmo
+  // padrão de produto/serviço em activity-filters.ts).
+  if (filters.setorIds.length > 0 && !filters.setorIds.some((id) => a.setorIds.includes(id))) return false;
+
+  return true;
 }
 
 export function sortExecucoes(list: AtividadeGeral[], ordenar: OrderBy): AtividadeGeral[] {
@@ -85,7 +96,8 @@ export function hasActiveExecucaoFilters(f: ExecucaoFilters): boolean {
     f.tipoIds.length > 0 ||
     f.status.length > 0 ||
     f.prioridades.length > 0 ||
-    f.prazos.length > 0
+    f.prazos.length > 0 ||
+    f.setorIds.length > 0
   );
 }
 

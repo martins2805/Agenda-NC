@@ -35,6 +35,16 @@ Atualizado ao final de cada sprint. Fonte da verdade sobre o que existe de fato.
 | S7 | Calendário | 2026-07-23 | — |
 | S8 | Dashboard — motor de widgets, filtros globais e Campos 1-3 | 2026-07-23 | — |
 | S9 | Dashboard — Propostas, Empresas e Visão Geral | 2026-07-23 | — |
+| S10 | Execuções | 2026-07-23 | — |
+
+**S10 — mini-spec (D14) e detalhe do aceite:**
+- Mini-spec: Execução é um processo com itens/subitens (árvore), cada um com status/prazo próprio, para substituir checklists longos demais para uma única Atividade. Confirmado com o usuário: é o mesmo conceito de `AtividadeGeral`/`ChecklistGeralItem` já em produção (rota `/atividades-gerais`) — **sem renomear para `Execucao`/`ExecucaoItem`** (ver `ERRATA-SPEC.md` #4, resolve a "Dívida assumida" #2)
+- [x] CRUD, itens/subitens com check e prazo, indicador de progresso, aparição no calendário e no Resumo Geral — **já estavam todos prontos antes desta sprint**, só verificados por leitura de código (árvore recursiva de verdade com indentação, barra de progresso em cards/tabela/cabeçalho)
+- [x] **Gap real fechado**: vínculo era assimétrico — só dava pra vincular Execução a partir do drawer de Atividade. Adicionado bloco "Objetos vinculados" na própria tela de edição da Execução (`atividades-gerais/page.tsx`), com Atividades, Registros e Planilhas (vincular existente, criar já vinculado, desvincular)
+- [x] **Gap real fechado**: vínculo com Registro/Planilha não existia (só existia com Atividade, da S6). `Registro`/`Planilha` ganham `atividadeGeralIds`, mesmo padrão de `atividadeIds` (`listarVinculadosEmLote`/`syncVinculos`/`listarVinculados` com o alvo `"atividadeGeral"`)
+- [x] **Gap real fechado**: filtro "Setor interno" não existia em Execuções, apesar do campo existir e ser editável — adicionado em `execucao-filters.ts`/`execucao-filter-bar.tsx`
+- [x] `typecheck`, `lint` e `build` passam limpos
+- [~] Verificação funcional real (vincular Atividade a partir da Execução e ver refletido dos dois lados, filtrar por setor) **não foi possível** — mesmo bloqueio de acesso ao banco de produção de todas as sprints anteriores
 
 **S9 — detalhe do aceite:**
 - [x] "Teste automatizado de consistência: soma dos gráficos = total do Campo 1" — `scripts/check-dashboard-consistency.ts` (roda com `npm run check:dashboard-consistency`), sem instalar test runner novo (usa `tsx`, já dependência do projeto, mais `assert` do Node). Verifica que `statusBuckets` e a distribuição por prioridade particionam 100% das atividades (soma == total), para qualquer combinação de status/prioridade — falha se um novo valor for adicionado sem atualizar os buckets. `vencimentoBuckets` fica de fora de propósito (não é partição total: atividade sem prazo não cai em nenhum bucket)
@@ -193,4 +203,4 @@ Simplificações conscientes, com o motivo e quando serão pagas.
 | # | O que foi simplificado | Motivo | Quando resolver |
 |---|---|---|---|
 | 1 | Produto evoluiu por commits diretos em vez do ritual de sprints do `PLANO-DE-SPRINTS.md` | Plano de sprints foi escrito depois que boa parte do código já existia | Não retroagir — sprints futuras (S14+) passam a seguir o ritual formal |
-| 2 | "Execuções" da spec foi implementado como `AtividadeGeral`, não como `Execucao`/`ExecucaoItem` | Decisão de nomenclatura tomada fora do processo de sprint, sem registro em `DECISOES.md` | Confirmar se é o mesmo conceito antes de abrir S10 |
+| ~~2~~ | ~~"Execuções" da spec foi implementado como `AtividadeGeral`, não como `Execucao`/`ExecucaoItem`~~ — **confirmado com o usuário em 2026-07-23**: é o mesmo conceito, mantido `AtividadeGeral` (sem renomear, sem migration). Ver `ERRATA-SPEC.md` #4 | Decisão de nomenclatura tomada fora do processo de sprint, sem registro em `DECISOES.md` | Resolvido — S10 completa o que falta em cima do modelo existente |
