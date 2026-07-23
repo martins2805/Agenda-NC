@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/select";
 import { Search, X, ArrowDownUp } from "lucide-react";
 import { useAppData } from "@/lib/app-data-context";
-import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
-import type { Prioridade, StatusConclusao } from "@/lib/types";
+import { PRIORIDADE_OPTIONS, STATUS_OPTIONS, STATUS_NEGOCIACAO_LABELS } from "@/lib/types";
+import type { Prioridade, StatusConclusao, StatusNegociacao } from "@/lib/types";
 import {
   DEFAULT_FILTERS,
   PRAZO_OPTIONS,
@@ -71,6 +71,10 @@ export function FilterBar({
     .map((s) => ({ value: s.id, label: s.name }));
   const statusOptions = STATUS_OPTIONS.map((s) => ({ value: s, label: s }));
   const prioridadeOptions = PRIORIDADE_OPTIONS.map((p) => ({ value: p, label: p }));
+  const statusNegociacaoOptions = Object.entries(STATUS_NEGOCIACAO_LABELS).map(([value, label]) => ({
+    value,
+    label,
+  }));
 
   const wrapper = className ?? "panel-card p-3";
 
@@ -136,6 +140,12 @@ export function FilterBar({
               options={servicoOptions}
               value={filters.servicoProdutoIds}
               onChange={(servicoProdutoIds) => patch({ servicoProdutoIds })}
+            />
+            <FilterMultiSelect
+              placeholder="Status de negociação"
+              options={statusNegociacaoOptions}
+              value={filters.statusNegociacao}
+              onChange={(statusNegociacao) => patch({ statusNegociacao: statusNegociacao as StatusNegociacao[] })}
             />
           </>
         )}

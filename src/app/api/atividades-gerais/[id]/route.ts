@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { atividadeGeralFromDb, prioridadeToDb } from "@/lib/atividade-mapper";
+import { deleteVinculosDe, listarVinculados, syncVinculos } from "@/lib/vinculos";
 import type { AtividadeGeral } from "@/lib/types";
 
 const include = { checklist: true };
@@ -22,7 +23,7 @@ export async function PATCH(
   const updated = await prisma.$transaction(async (tx) => {
     await tx.checklistGeralItem.deleteMany({ where: { atividadeGeralId: id } });
 
-    return tx.atividadeGeral.update({
+    const atividadeGeral = await tx.atividadeGeral.update({
       where: { id },
       data: {
         empresaId: body.empresaId,
@@ -51,9 +52,13 @@ export async function PATCH(
       },
       include,
     });
+    await syncVinculos(tx, userId, { tipo: "atividadeGeral", id }, "atividade", body.atividadeIds ?? []);
+    return atividadeGeral;
   });
 
-  return NextResponse.json(atividadeGeralFromDb(updated));
+  const atividadeIds = await listarVinculados(prisma, userId, { tipo: "atividadeGeral", id }, "atividade");
+
+  return NextResponse.json(atividadeGeralFromDb(updated, atividadeIds));
 }
 
 export async function DELETE(
@@ -65,7 +70,11 @@ export async function DELETE(
   const userId = session.user.id;
   const { id } = await params;
 
-  const result = await prisma.atividadeGeral.deleteMany({ where: { id, userId } });
+  const result = await prisma.$transaction(async (tx) => {
+    const deleted = await tx.atividadeGeral.deleteMany({ where: { id, userId } });
+    if (deleted.count > 0) await deleteVinculosDe(tx, userId, "atividadeGeral", id);
+    return deleted;
+  });
   if (result.count === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

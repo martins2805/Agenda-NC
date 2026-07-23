@@ -4,6 +4,9 @@ import type {
   Proposta as DbProposta,
   ChecklistItem as DbChecklistItem,
   ChecklistGeralItem as DbChecklistGeralItem,
+  Link as DbLink,
+  Anexo as DbAnexo,
+  Historico as DbHistorico,
   StatusConclusao as DbStatus,
   Prioridade as DbPrioridade,
 } from "@/generated/prisma/client";
@@ -13,6 +16,9 @@ import type {
   ChecklistGeralItem,
   Proposta,
   ChecklistItem,
+  Link,
+  Anexo,
+  HistoricoEntry,
   StatusConclusao,
   Prioridade,
 } from "@/lib/types";
@@ -24,7 +30,10 @@ const STATUS_TO_DB: Record<StatusConclusao, DbStatus> = {
   Concluído: "Concluido",
 };
 
-const STATUS_FROM_DB: Record<DbStatus, StatusConclusao> = {
+// Exportados para tradução do valor cru do enum quando ele vem de fora do
+// Prisma Client (ex.: a view prazo_unificado, lida via $queryRaw::text em
+// src/app/api/prazos/route.ts e traduzida em src/lib/prazo-filters.ts).
+export const STATUS_FROM_DB: Record<DbStatus, StatusConclusao> = {
   Pendente: "Pendente",
   AguardandoRetornoInterno: "Aguardando retorno interno",
   AguardandoRetornoCliente: "Aguardando retorno cliente",
@@ -38,7 +47,7 @@ const PRIORIDADE_TO_DB: Record<Prioridade, DbPrioridade> = {
   Baixo: "Baixo",
 };
 
-const PRIORIDADE_FROM_DB: Record<DbPrioridade, Prioridade> = {
+export const PRIORIDADE_FROM_DB: Record<DbPrioridade, Prioridade> = {
   Urgente: "Urgente",
   Importante: "Importante",
   Medio: "Médio",
@@ -49,7 +58,7 @@ const PRIORIDADE_FROM_DB: Record<DbPrioridade, Prioridade> = {
 // matching how `new Date("YYYY-MM-DDTHH:mm")` parsed it on write. Using
 // `toISOString()` here would convert through UTC and shift the displayed
 // time by the server's timezone offset.
-function toLocalDateTimeString(date: Date): string {
+export function toLocalDateTimeString(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -69,6 +78,8 @@ export function prioridadeToDb(prioridade: Prioridade): DbPrioridade {
 type FullDbAtividade = DbAtividade & {
   propostas: DbProposta[];
   checklist: DbChecklistItem[];
+  links: DbLink[];
+  anexos: DbAnexo[];
 };
 
 export function atividadeFromDb(a: FullDbAtividade): Atividade {
@@ -96,6 +107,42 @@ export function atividadeFromDb(a: FullDbAtividade): Atividade {
     checklist: a.checklist
       .sort((x, y) => x.ordem - y.ordem)
       .map(checklistItemFromDb),
+    links: a.links.sort((x, y) => x.ordem - y.ordem).map(linkFromDb),
+    anexos: a.anexos.map(anexoFromDb),
+  };
+}
+
+function linkFromDb(l: DbLink): Link {
+  return { id: l.id, titulo: l.titulo, url: l.url };
+}
+
+function anexoFromDb(a: DbAnexo): Anexo {
+  return {
+    id: a.id,
+    nomeOriginal: a.nomeOriginal,
+    mimeType: a.mimeType,
+    tamanho: a.tamanho,
+    createdAt: a.createdAt.toISOString(),
+  };
+}
+
+// Traduz o valor bruto gravado (enum do banco) para o rótulo em português
+// exibido na tela — status/prioridade viram texto legível; prazo fica como
+// ISO (o cliente formata a data/hora local).
+function traduzirValorHistorico(campo: string, valor: string | null): string | null {
+  if (valor === null) return null;
+  if (campo === "status") return STATUS_FROM_DB[valor as DbStatus] ?? valor;
+  if (campo === "prioridade") return PRIORIDADE_FROM_DB[valor as DbPrioridade] ?? valor;
+  return valor;
+}
+
+export function historicoFromDb(h: DbHistorico): HistoricoEntry {
+  return {
+    id: h.id,
+    campo: h.campo as HistoricoEntry["campo"],
+    valorAnterior: traduzirValorHistorico(h.campo, h.valorAnterior),
+    valorNovo: traduzirValorHistorico(h.campo, h.valorNovo),
+    createdAt: h.createdAt.toISOString(),
   };
 }
 
@@ -151,7 +198,10 @@ type FullDbAtividadeGeral = DbAtividadeGeral & {
   checklist: DbChecklistGeralItem[];
 };
 
-export function atividadeGeralFromDb(a: FullDbAtividadeGeral): AtividadeGeral {
+export function atividadeGeralFromDb(
+  a: FullDbAtividadeGeral,
+  atividadeIds: string[] = []
+): AtividadeGeral {
   return {
     id: a.id,
     empresaId: a.empresaId,
@@ -168,6 +218,7 @@ export function atividadeGeralFromDb(a: FullDbAtividadeGeral): AtividadeGeral {
     checklist: a.checklist
       .sort((x, y) => x.ordem - y.ordem)
       .map(checklistGeralItemFromDb),
+    atividadeIds,
   };
 }
 

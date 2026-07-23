@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, ListChecks } from "lucide-react";
-import { useAppData, makeAtividadeId, makePropostaId, makeChecklistItemId } from "@/lib/app-data-context";
+import { useAppData, makeAtividadeId, makePropostaId, makeChecklistItemId, makeLinkId } from "@/lib/app-data-context";
 import { useAutoOpenFromQuery } from "@/lib/use-auto-open";
 import { useViewMode } from "@/lib/use-view-mode";
 import { FilterBar } from "@/components/atividades/filter-bar";
@@ -86,6 +86,8 @@ export default function AtividadesPage() {
         parentId: c.parentId ? (idMap.get(c.parentId) ?? null) : null,
         concluido: false,
       })),
+      links: a.links.map((l) => ({ ...l, id: makeLinkId() })),
+      anexos: [],
     });
   }
 

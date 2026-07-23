@@ -18,6 +18,7 @@ import type {
   Planilha,
   Registro,
 } from "./types";
+import type { WidgetPreferenciaResolvida } from "./dashboard-widgets";
 
 interface LookupState {
   empresa: LookupItem[];
@@ -79,6 +80,8 @@ interface AppDataContextValue {
   registros: Registro[];
   planilhas: Planilha[];
   checklistTemplates: ChecklistTemplate[];
+  widgetPreferencias: WidgetPreferenciaResolvida[];
+  updateWidgetPreferencias: (list: WidgetPreferenciaResolvida[]) => void;
   loading: boolean;
   dataError: string | null;
   dismissDataError: () => void;
@@ -140,6 +143,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [registros, setRegistros] = useState<Registro[]>([]);
   const [planilhas, setPlanilhas] = useState<Planilha[]>([]);
   const [checklistTemplates, setChecklistTemplates] = useState<ChecklistTemplate[]>([]);
+  const [widgetPreferencias, setWidgetPreferencias] = useState<WidgetPreferenciaResolvida[]>([]);
   const [dataError, setDataError] = useState<string | null>(null);
   const planilhaSaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map()
@@ -166,6 +170,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         registrosRes,
         planilhasRes,
         checklistTemplatesRes,
+        widgetPreferenciasRes,
       ] = await Promise.all([
         fetch("/api/lookups"),
         fetch("/api/atividades"),
@@ -173,6 +178,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         fetch("/api/registros"),
         fetch("/api/planilhas"),
         fetch("/api/checklist-templates"),
+        fetch("/api/widget-preferencias"),
       ]);
 
       if (loadSeq.current !== seq) return;
@@ -207,6 +213,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         if (loadSeq.current !== seq) return;
         setChecklistTemplates(data);
       }
+      if (widgetPreferenciasRes.ok) {
+        const data = await widgetPreferenciasRes.json();
+        if (loadSeq.current !== seq) return;
+        setWidgetPreferencias(data);
+      }
     } catch (error) {
       if (loadSeq.current !== seq) return;
       console.error("Falha ao carregar dados", error);
@@ -231,6 +242,25 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const dismissDataError = useCallback(() => setDataError(null), []);
+
+  const updateWidgetPreferencias = useCallback((list: WidgetPreferenciaResolvida[]) => {
+    setWidgetPreferencias((previous) => {
+      fetch("/api/widget-preferencias", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(list),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error(`PUT widget-preferencias falhou: ${res.status}`);
+        })
+        .catch((error) => {
+          console.error("Falha ao salvar preferências de widget", error);
+          setWidgetPreferencias(previous);
+          setDataError("Não foi possível salvar a preferência de widget. A alteração foi desfeita.");
+        });
+      return list;
+    });
+  }, []);
 
   const addLookupItem = useCallback(
     (kind: LookupKind, name: string, empresaId?: string | null) => {
@@ -684,6 +714,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       registros,
       planilhas,
       checklistTemplates,
+      widgetPreferencias,
+      updateWidgetPreferencias,
       loading,
       dataError,
       dismissDataError,
@@ -717,6 +749,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       registros,
       planilhas,
       checklistTemplates,
+      widgetPreferencias,
+      updateWidgetPreferencias,
       loading,
       dataError,
       dismissDataError,
@@ -820,5 +854,9 @@ export function makeChecklistTemplateId() {
 }
 
 export function makeChecklistTemplateItemId() {
+  return makeId();
+}
+
+export function makeLinkId() {
   return makeId();
 }

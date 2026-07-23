@@ -90,6 +90,9 @@ model Atividade {
 
   propostas Proposta[]
   checklist ChecklistItem[]
+  links     Link[]
+  anexos    Anexo[]
+  historico Historico[]
 
   @@index([userId])
   @@index([deletedAt])
@@ -98,6 +101,54 @@ model Atividade {
   @@index([userId, status])
   @@index([userId, prioridade])
   @@index([userId, prazo])
+}
+
+// Lista de links de uma atividade (quantidade ilimitada, spec 5.12). Mesmo
+// padrão de Proposta/ChecklistItem: sub-tabela substituída inteira a cada
+// save (deleteMany + create na mesma transação).
+model Link {
+  id          String    @id @default(cuid())
+  atividadeId String
+  atividade   Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  titulo      String    @default("")
+  url         String
+  ordem       Int       @default(0)
+
+  @@index([atividadeId])
+}
+
+// Arquivo anexado a uma atividade. O binário fica em disco (volume do
+// Railway, ver UPLOAD_DIR em src/lib/anexos.ts) — aqui só o metadado.
+model Anexo {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  atividadeId    String
+  atividade      Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  nomeOriginal   String
+  nomeArmazenado String    @unique
+  mimeType       String
+  tamanho        Int
+  createdAt      DateTime  @default(now())
+
+  @@index([atividadeId])
+}
+
+// Log de auditoria de alteração de status/prazo/prioridade de uma atividade
+// (critério de aceite da S6). Fica fora do include padrão de GET
+// /api/atividades — cresce sem limite, é buscado sob demanda.
+model Historico {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  atividadeId   String
+  atividade     Atividade @relation(fields: [atividadeId], references: [id], onDelete: Cascade)
+  campo         String
+  valorAnterior String?
+  valorNovo     String?
+  createdAt     DateTime  @default(now())
+
+  @@index([atividadeId, createdAt])
 }
 
 model Proposta {
@@ -282,6 +333,26 @@ model User {
   chatMessages     ChatMessage[]
   pendingDeletions PendingDeletion[]
   vinculos         Vinculo[]
+  anexos           Anexo[]
+  historico        Historico[]
+  widgetPreferencias WidgetPreferencia[]
+}
+
+// Preferência de exibição de um widget do Dashboard (S8): ordem, visibilidade
+// e tamanho, por usuário. widgetId é a chave lógica do widget (ver
+// src/lib/dashboard-widgets.ts), não uma FK — widgets são definidos em código,
+// não em banco.
+model WidgetPreferencia {
+  id       String  @id @default(cuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  widgetId String
+  ordem    Int     @default(0)
+  visivel  Boolean @default(true)
+  tamanho  String  @default("normal")
+
+  @@unique([userId, widgetId])
+  @@index([userId])
 }
 
 // Vínculo polimórfico único entre objetos do sistema. Substitui os FKs

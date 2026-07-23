@@ -7,10 +7,10 @@ import {
   deleteKnowledgeChunk,
   serializeAtividade,
 } from "@/lib/knowledge-sync";
-import type { Atividade } from "@/lib/types";
+import type { Atividade, HistoricoEntry } from "@/lib/types";
 import { deleteVinculosDe } from "@/lib/vinculos";
 
-const include = { propostas: true, checklist: true };
+const include = { propostas: true, checklist: true, links: true, anexos: true };
 
 export async function PATCH(
   request: Request,
@@ -34,9 +34,40 @@ export async function PATCH(
   const willBeConcluida = body.status === "Concluído";
   const concluidoEm = willBeConcluida ? (wasConcluida ? owned.concluidoEm : new Date()) : null;
 
+  // Histórico (critério de aceite da S6): registra só o que de fato mudou,
+  // comparando o estado gravado (owned) com o que está chegando no PATCH.
+  const novoStatus = statusToDb(body.status);
+  const novaPrioridade = prioridadeToDb(body.prioridade);
+  const novoPrazo = body.prazo ? new Date(body.prazo) : null;
+  const prazoAnteriorIso = owned.prazo ? owned.prazo.toISOString() : null;
+  const prazoNovoIso = novoPrazo ? novoPrazo.toISOString() : null;
+
+  const mudancasHistorico: { campo: HistoricoEntry["campo"]; valorAnterior: string | null; valorNovo: string | null }[] = [];
+  if (owned.status !== novoStatus) {
+    mudancasHistorico.push({ campo: "status", valorAnterior: owned.status, valorNovo: novoStatus });
+  }
+  if (prazoAnteriorIso !== prazoNovoIso) {
+    mudancasHistorico.push({ campo: "prazo", valorAnterior: prazoAnteriorIso, valorNovo: prazoNovoIso });
+  }
+  if (owned.prioridade !== novaPrioridade) {
+    mudancasHistorico.push({ campo: "prioridade", valorAnterior: owned.prioridade, valorNovo: novaPrioridade });
+  }
+
   const updated = await prisma.$transaction(async (tx) => {
     await tx.proposta.deleteMany({ where: { atividadeId: id } });
     await tx.checklistItem.deleteMany({ where: { atividadeId: id } });
+    await tx.link.deleteMany({ where: { atividadeId: id } });
+
+    if (mudancasHistorico.length > 0) {
+      await tx.historico.createMany({
+        data: mudancasHistorico.map((m) => ({
+          id: crypto.randomUUID(),
+          userId,
+          atividadeId: id,
+          ...m,
+        })),
+      });
+    }
 
     return tx.atividade.update({
       where: { id },
@@ -83,6 +114,14 @@ export async function PATCH(
             prazo: c.prazo ? new Date(c.prazo) : null,
           })),
         },
+        links: {
+          create: body.links.map((l, i) => ({
+            id: l.id,
+            titulo: l.titulo,
+            url: l.url,
+            ordem: i,
+          })),
+        },
       },
       include,
     });
@@ -96,7 +135,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
@@ -104,10 +143,24 @@ export async function DELETE(
   const userId = session.user.id;
 
   const { id } = await params;
-  const result = await prisma.$transaction(async (tx) => {
-    const deleted = await tx.atividade.deleteMany({ where: { id, userId } });
-    if (deleted.count > 0) await deleteVinculosDe(tx, userId, "atividade", id);
-    return deleted;
+  const permanent = new URL(request.url).searchParams.get("permanent") === "1";
+
+  if (permanent) {
+    const result = await prisma.$transaction(async (tx) => {
+      const deleted = await tx.atividade.deleteMany({ where: { id, userId } });
+      if (deleted.count > 0) await deleteVinculosDe(tx, userId, "atividade", id);
+      return deleted;
+    });
+    if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    deleteKnowledgeChunk(userId, "atividade", id).catch((error) =>
+      console.error("Falha ao remover indexação", error)
+    );
+    return NextResponse.json({ ok: true });
+  }
+
+  const result = await prisma.atividade.updateMany({
+    where: { id, userId },
+    data: { deletedAt: new Date() },
   });
   if (result.count === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -10,6 +10,8 @@ import { ActivityCalendar } from "@/components/atividades/activity-calendar";
 import { ActivityCard } from "@/components/atividades/activity-card";
 import { ActivityForm } from "@/components/atividades/activity-form";
 import { DashboardAnalytics } from "@/components/atividades/dashboard-analytics";
+import { DashboardWidgets } from "@/components/dashboard/dashboard-widgets";
+import { WidgetConfigPanel } from "@/components/dashboard/widget-config-panel";
 import {
   DEFAULT_FILTERS,
   matchesActivity,
@@ -72,6 +74,7 @@ export default function DashboardPage() {
             <Link href="/planilhas" className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/15 px-3 text-sm font-medium text-white transition-colors hover:bg-white/25">
               <Table2 className="size-4" /> Planilha
             </Link>
+            <WidgetConfigPanel />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -98,19 +101,26 @@ export default function DashboardPage() {
         className="panel-card p-4"
       />
 
-      {/* Calendário (independente dos filtros) à esquerda + análise à direita */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,380px)_1fr]">
+      {/* Indicadores/gráficos à esquerda e ao centro (Área 2) + calendário fixo
+          à direita (Área 3), independente dos filtros do dashboard — D2/D3 */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_minmax(320px,380px)]">
+        <div className="flex flex-col gap-6">
+          {/* Campos 1-3 (S8) — motor de widgets: ordem/visibilidade/tamanho
+              configuráveis no botão de engrenagem do cabeçalho */}
+          <DashboardWidgets
+            filters={filters}
+            atividades={atividades}
+            atividadesGerais={atividadesGerais}
+            registros={registros}
+            planilhas={planilhas}
+          />
+          {/* Campos 4-6 (S9) — ainda fora do motor de widgets */}
+          <DashboardAnalytics filters={filters} atividades={atividades} />
+        </div>
         <div className="flex flex-col gap-3">
           <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Calendário</h3>
-          <ActivityCalendar atividades={atividades} atividadesGerais={atividadesGerais} />
+          <ActivityCalendar />
         </div>
-        <DashboardAnalytics
-          filters={filters}
-          atividades={atividades}
-          atividadesGerais={atividadesGerais}
-          registros={registros}
-          planilhas={planilhas}
-        />
       </div>
 
       {/* Atividades recentes — largura total */}

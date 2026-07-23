@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# anexos locais (dev sem volume configurado — ver UPLOAD_DIR em src/lib/anexos.ts)
+/storage

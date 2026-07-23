@@ -1,98 +1,23 @@
 "use client";
 
-import Link from "next/link";
-import { useMemo } from "react";
 import { useAppData } from "@/lib/app-data-context";
-import type { Atividade, AtividadeGeral, Planilha, Registro } from "@/lib/types";
+import type { Atividade } from "@/lib/types";
+import { atividadesHref, matchesActivity, type ActivityFilters } from "@/lib/activity-filters";
 import {
-  atividadesHref,
-  execucoesHref,
-  matchesActivity,
-  matchesPrazoRange,
-  simpleHref,
-  type ActivityFilters,
-} from "@/lib/activity-filters";
+  KpiCard,
+  DualKpi,
+  isOverdue,
+  statusBuckets,
+  vencimentoBuckets,
+  BASE_SCALE,
+  PRIORIDADE_COLORS,
+} from "@/components/dashboard/dashboard-shared";
 
-// Cores dos gráficos por dimensão — sempre via token (D8), nunca hex direto.
-const STATUS_BUCKET_COLORS = {
-  Pendente: "var(--status-pendente)",
-  "Aguardando retorno": "var(--status-outro)",
-  Concluído: "var(--status-concluido)",
-} as const;
-
-const VENCIMENTO_COLORS = {
-  Atrasadas: "var(--prazo-vencido)",
-  "Vencem hoje": "var(--prazo-proximo)",
-  "Próximos 7 dias": "var(--base-3)",
-  "Próximos 30 dias": "var(--prazo-em-dia)",
-} as const;
-
-const PRIORIDADE_COLORS = {
-  Urgente: "var(--prioridade-urgente)",
-  Importante: "var(--prioridade-importante)",
-  Médio: "var(--prioridade-medio)",
-  Baixo: "var(--prioridade-baixo)",
-} as const;
-
-// Paleta base para gráficos categóricos (empresa/produto), do mais escuro ao
-// mais claro — quem tem mais atividades aparece primeiro e mais escuro.
-const BASE_SCALE = ["var(--base-1)", "var(--base-2)", "var(--base-3)", "var(--base-4)"];
-
-function isOverdue(a: Atividade) {
-  return a.status !== "Concluído" && matchesPrazoRange(a.prazo, "atrasadas");
-}
-
-function KpiCard({
-  label,
-  value,
-  color,
-  href,
-}: {
-  label: string;
-  value: string | number;
-  color: string;
-  href: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex flex-col justify-between gap-2 rounded-2xl p-4 text-white shadow-[0_16px_36px_-24px_rgba(31,44,67,0.5)] transition-transform hover:-translate-y-0.5"
-      style={{ backgroundColor: color }}
-    >
-      <span className="text-xs font-bold uppercase tracking-wide text-white/80">{label}</span>
-      <span className="font-mono text-xl font-bold">{value}</span>
-    </Link>
-  );
-}
-
-function DualKpi({
-  label,
-  left,
-  right,
-  color,
-}: {
-  label: string;
-  left: { label: string; value: number; href: string };
-  right: { label: string; value: number; href: string };
-  color: string;
-}) {
-  return (
-    <div
-      className="flex flex-col gap-3 rounded-2xl p-4 text-white shadow-[0_16px_36px_-24px_rgba(31,44,67,0.5)]"
-      style={{ backgroundColor: color }}
-    >
-      <span className="text-xs font-bold uppercase tracking-wide text-white/80">{label}</span>
-      <div className="flex items-end justify-between gap-3">
-        {[left, right].map((side) => (
-          <Link key={side.label} href={side.href} className="flex flex-col hover:opacity-90">
-            <span className="font-mono text-xl font-bold">{side.value}</span>
-            <span className="text-xs font-medium text-white/80">{side.label}</span>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
+// Campos 4-6 (Propostas, Empresas, Visão Geral) — ainda não migrados para o
+// motor de widgets da S8 (só Campos 1-3 entram nesta sprint); formalizá-los
+// como widget, com a fidelidade de dados que a spec pede (D9 etc.), é escopo
+// da S9. Conteúdo/lógica inalterados, só a extração de helpers compartilhados
+// (ver src/components/dashboard/dashboard-shared.tsx).
 
 function VerticalBars({
   title,
@@ -158,99 +83,23 @@ function Lacuna({ title, children }: { title: string; children: React.ReactNode 
   );
 }
 
-function statusBuckets(list: Atividade[]) {
-  return [
-    { label: "Pendente", count: list.filter((a) => a.status === "Pendente").length, color: STATUS_BUCKET_COLORS.Pendente },
-    {
-      label: "Aguardando retorno",
-      count: list.filter(
-        (a) => a.status === "Aguardando retorno interno" || a.status === "Aguardando retorno cliente"
-      ).length,
-      color: STATUS_BUCKET_COLORS["Aguardando retorno"],
-    },
-    { label: "Concluído", count: list.filter((a) => a.status === "Concluído").length, color: STATUS_BUCKET_COLORS.Concluído },
-  ];
-}
-
-function vencimentoBuckets(list: Atividade[]) {
-  const abertas = list.filter((a) => a.status !== "Concluído");
-  return [
-    { label: "Atrasadas", count: abertas.filter((a) => matchesPrazoRange(a.prazo, "atrasadas")).length, color: VENCIMENTO_COLORS.Atrasadas },
-    { label: "Vencem hoje", count: abertas.filter((a) => matchesPrazoRange(a.prazo, "hoje")).length, color: VENCIMENTO_COLORS["Vencem hoje"] },
-    { label: "Próximos 7 dias", count: abertas.filter((a) => matchesPrazoRange(a.prazo, "7dias")).length, color: VENCIMENTO_COLORS["Próximos 7 dias"] },
-    { label: "Próximos 30 dias", count: abertas.filter((a) => matchesPrazoRange(a.prazo, "30dias")).length, color: VENCIMENTO_COLORS["Próximos 30 dias"] },
-  ];
-}
-
 export function DashboardAnalytics({
   filters,
   atividades,
-  atividadesGerais,
-  registros,
-  planilhas,
 }: {
   filters: ActivityFilters;
   atividades: Atividade[];
-  atividadesGerais: AtividadeGeral[];
-  registros: Registro[];
-  planilhas: Planilha[];
 }) {
   const { lookups } = useAppData();
 
   const propostaTipo = lookups.tipoAtividade.find((t) => t.name.toLowerCase() === "proposta");
   const propostaExtra = propostaTipo ? { tipoAtividadeIds: [propostaTipo.id] } : {};
 
-  const filtered = useMemo(
-    () => atividades.filter((a) => matchesActivity(a, filters, lookups)),
-    [atividades, filters, lookups]
-  );
-
-  // Execuções filtradas (apenas dimensões compatíveis com o modelo geral).
-  const execucoesFiltered = useMemo(() => {
-    return atividadesGerais.filter((a) => {
-      if (filters.empresaIds.length > 0 && !(a.empresaId && filters.empresaIds.includes(a.empresaId))) return false;
-      if (filters.unidadeIds.length > 0 && !(a.unidadeId && filters.unidadeIds.includes(a.unidadeId))) return false;
-      if (filters.prioridades.length > 0 && !filters.prioridades.includes(a.prioridade)) return false;
-      if (!filters.prazos.length ? false : !filters.prazos.some((r) => matchesPrazoRange(a.prazo, r))) return false;
-      const kw = filters.keyword.trim().toLowerCase();
-      if (kw && !a.assunto.toLowerCase().includes(kw) && !a.descricao.toLowerCase().includes(kw)) return false;
-      return true;
-    });
-  }, [atividadesGerais, filters]);
-
-  const registrosFiltered = useMemo(() => {
-    const kw = filters.keyword.trim().toLowerCase();
-    return registros.filter((r) => {
-      if (r.deletedAt) return false;
-      if (filters.empresaIds.length > 0 && !(r.empresaId && filters.empresaIds.includes(r.empresaId))) return false;
-      if (kw) {
-        const empresa = lookups.empresa.find((e) => e.id === r.empresaId)?.name ?? "";
-        if (![r.nome, r.assunto, r.contato, empresa].join(" ").toLowerCase().includes(kw)) return false;
-      }
-      return true;
-    });
-  }, [registros, filters, lookups]);
-
-  const planilhasFiltered = useMemo(() => {
-    const kw = filters.keyword.trim().toLowerCase();
-    return planilhas.filter((p) => {
-      if (p.deletedAt) return false;
-      if (filters.empresaIds.length > 0 && !(p.empresaId && filters.empresaIds.includes(p.empresaId))) return false;
-      if (kw) {
-        const empresa = lookups.empresa.find((e) => e.id === p.empresaId)?.name ?? "";
-        if (![p.nome, p.assunto, empresa].join(" ").toLowerCase().includes(kw)) return false;
-      }
-      return true;
-    });
-  }, [planilhas, filters, lookups]);
+  const filtered = atividades.filter((a) => matchesActivity(a, filters, lookups));
 
   const propostas = propostaTipo
     ? filtered.filter((a) => a.tipoAtividadeIds.includes(propostaTipo.id))
     : [];
-
-  const total = filtered.length;
-  const concluidas = filtered.filter((a) => a.status === "Concluído").length;
-  const indiceConclusao = total > 0 ? Math.round((concluidas / total) * 100) : 0;
 
   // Lacuna 5 — empresas ordenadas por volume (mais escuro = mais atividades).
   const empresaData = lookups.empresa
@@ -285,42 +134,6 @@ export function DashboardAnalytics({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Lacuna 1 — Dados gerais */}
-      <Lacuna title="Dados gerais">
-        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-          <KpiCard label="Total de atividades" value={total} color="var(--base-1)" href={atividadesHref(filters)} />
-          <KpiCard label="Total de execuções" value={execucoesFiltered.length} color="var(--base-2)" href={execucoesHref(filters)} />
-          <KpiCard label="Total de registros" value={registrosFiltered.length} color="var(--base-3)" href={simpleHref("/registros", filters)} />
-          <KpiCard label="Total de planilhas" value={planilhasFiltered.length} color="var(--base-3)" href={simpleHref("/planilhas", filters)} />
-        </div>
-      </Lacuna>
-
-      {/* Lacuna 2 — Status atividades */}
-      <Lacuna title="Status atividades">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <KpiCard label="Índice de Conclusão Atividades" value={`${indiceConclusao}%`} color="var(--base-2)" href={atividadesHref(filters)} />
-          <KpiCard label="Atividades Pendentes" value={filtered.filter((a) => a.status === "Pendente").length} color="var(--status-pendente)" href={atividadesHref(filters, { status: ["Pendente"] })} />
-          <KpiCard label="Atividades Vencidas" value={filtered.filter(isOverdue).length} color="var(--prazo-proximo)" href={atividadesHref(filters, { prazos: ["atrasadas"] })} />
-        </div>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <VerticalBars title="Status de Conclusão" data={statusBuckets(filtered)} />
-          <VerticalBars title="Status de vencimento" data={vencimentoBuckets(filtered)} />
-        </div>
-      </Lacuna>
-
-      {/* Lacuna 3 — Prioridade */}
-      <Lacuna title="Prioridade">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div className="grid grid-cols-1 gap-3">
-            <KpiCard label="Atividades urgentes" value={filtered.filter((a) => a.prioridade === "Urgente").length} color="var(--prioridade-urgente)" href={atividadesHref(filters, { prioridades: ["Urgente"] })} />
-            <KpiCard label="Atividades Importantes" value={filtered.filter((a) => a.prioridade === "Importante").length} color="var(--prioridade-importante)" href={atividadesHref(filters, { prioridades: ["Importante"] })} />
-          </div>
-          <div className="lg:col-span-2">
-            <VerticalBars title="Atividades x Prioridade" data={prioridadeData} />
-          </div>
-        </div>
-      </Lacuna>
-
       {/* Lacuna 4 — Propostas */}
       <Lacuna title="Propostas">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">

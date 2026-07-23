@@ -1,4 +1,4 @@
-import type { Atividade, Prioridade, StatusConclusao } from "./types";
+import type { Atividade, Prioridade, StatusConclusao, StatusNegociacao } from "./types";
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "./types";
 import { matchesRecord, sortRecords, type FilterableRecord } from "./filters/engine";
 import { filtersToParams as filtersToParamsGeneric, paramsToFilters as paramsToFiltersGeneric, type ListKeyDef } from "./filters/querystring";
@@ -23,6 +23,7 @@ export interface ActivityFilters {
   prazos: PrazoRange[];
   produtoTipos: string[]; // MRR | PS
   servicoProdutoIds: string[];
+  statusNegociacao: StatusNegociacao[];
   ordenar: OrderBy;
 }
 
@@ -36,6 +37,7 @@ export const DEFAULT_FILTERS: ActivityFilters = {
   prazos: [],
   produtoTipos: [],
   servicoProdutoIds: [],
+  statusNegociacao: [],
   ordenar: "criacao",
 };
 
@@ -111,6 +113,11 @@ export function matchesActivity(a: Atividade, filters: ActivityFilters, lookups:
     !a.propostas.some((p) => p.servicoProdutoIds.some((id) => filters.servicoProdutoIds.includes(id)))
   )
     return false;
+  if (
+    filters.statusNegociacao.length > 0 &&
+    !a.propostas.some((p) => p.statusNegociacao && filters.statusNegociacao.includes(p.statusNegociacao))
+  )
+    return false;
 
   return true;
 }
@@ -133,7 +140,8 @@ export function hasActiveFilters(filters: ActivityFilters): boolean {
     filters.prioridades.length > 0 ||
     filters.prazos.length > 0 ||
     filters.produtoTipos.length > 0 ||
-    filters.servicoProdutoIds.length > 0
+    filters.servicoProdutoIds.length > 0 ||
+    filters.statusNegociacao.length > 0
   );
 }
 
@@ -148,6 +156,7 @@ const LIST_KEYS: ListKeyDef<ActivityFilters>[] = [
   { key: "prazos", param: "prazo" },
   { key: "produtoTipos", param: "ptipo" },
   { key: "servicoProdutoIds", param: "prod" },
+  { key: "statusNegociacao", param: "stneg" },
 ];
 
 export function filtersToParams(filters: ActivityFilters): URLSearchParams {

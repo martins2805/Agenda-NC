@@ -107,6 +107,28 @@ export interface Proposta {
   statusNegociacao: StatusNegociacao | null;
 }
 
+export interface Link {
+  id: string;
+  titulo: string;
+  url: string;
+}
+
+export interface Anexo {
+  id: string;
+  nomeOriginal: string;
+  mimeType: string;
+  tamanho: number;
+  createdAt: string; // ISO datetime
+}
+
+export interface HistoricoEntry {
+  id: string;
+  campo: "status" | "prazo" | "prioridade";
+  valorAnterior: string | null;
+  valorNovo: string | null;
+  createdAt: string; // ISO datetime
+}
+
 export interface Atividade {
   id: string;
   empresaId: string | null;
@@ -124,6 +146,8 @@ export interface Atividade {
   status: StatusConclusao;
   prioridade: Prioridade;
   checklist: ChecklistItem[];
+  links: Link[];
+  anexos: Anexo[];
   createdAt: string; // ISO datetime
   deletedAt?: string | null;
   concluidoEm: string | null; // ISO datetime, setado pelo servidor (D13)
@@ -175,5 +199,6 @@ export interface AtividadeGeral {
   prioridade: Prioridade;
   setorIds: string[];
   checklist: ChecklistGeralItem[];
+  atividadeIds: string[];
   createdAt: string;
 }

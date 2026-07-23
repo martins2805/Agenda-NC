@@ -5,6 +5,8 @@ import type {
   Atividade as DbAtividade,
   Proposta as DbProposta,
   ChecklistItem as DbChecklistItem,
+  Link as DbLink,
+  Anexo as DbAnexo,
   Registro as DbRegistro,
   RegistroTab as DbRegistroTab,
   Planilha as DbPlanilha,
@@ -69,6 +71,8 @@ function stripHtml(html: string): string {
 type FullDbAtividade = DbAtividade & {
   propostas: DbProposta[];
   checklist: DbChecklistItem[];
+  links: DbLink[];
+  anexos: DbAnexo[];
 };
 
 export async function serializeAtividade(raw: FullDbAtividade): Promise<string> {
@@ -103,6 +107,12 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
   if (a.alinhamentos) lines.push(`Alinhamentos: ${stripHtml(a.alinhamentos)}`);
   if (a.emailConteudo) lines.push(`E-mail: ${a.emailConteudo}`);
   if (a.oportunidadeTexto) lines.push(`Oportunidade: ${a.oportunidadeTexto}`);
+
+  if (a.links.length > 0) {
+    lines.push(
+      `Links: ${a.links.map((l) => (l.titulo ? `${l.titulo} (${l.url})` : l.url)).join("; ")}`
+    );
+  }
 
   if (a.checklist.length > 0) {
     lines.push(

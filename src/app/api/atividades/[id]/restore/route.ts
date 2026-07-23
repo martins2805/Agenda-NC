@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { atividadeFromDb } from "@/lib/atividade-mapper";
 import { syncKnowledgeChunk, serializeAtividade } from "@/lib/knowledge-sync";
 
-const include = { propostas: true, checklist: true };
+const include = { propostas: true, checklist: true, links: true, anexos: true };
 
 export async function POST(
   _request: Request,

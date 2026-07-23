@@ -107,7 +107,7 @@ Preenchida a partir do código já existente no repositório (não é uma escolh
 | Estilo / componentes | Tailwind CSS 4 + shadcn/ui + Base UI (`@base-ui/react`) | FECHADA (2026-07-20) |
 | Cache e estado | Server Actions + `app-data-context.tsx` (React Context), sem TanStack Query | FECHADA (2026-07-20) |
 | Gráficos | Componentes internos (`src/components/charts`: bar-list, donut-chart, trend-line), sem Recharts | FECHADA (2026-07-20) |
-| Armazenamento de anexos | Não implementado — **PROPOSTA em aberto**, decidir na S6 | PROPOSTA |
+| Armazenamento de anexos | Volume do Railway (disco persistente montado no serviço), metadado em `Anexo` (Postgres) + binário em disco via `UPLOAD_DIR` (`src/lib/anexos.ts`) | FECHADA (2026-07-23, S6) |
 | Deploy | Não há config no repo (sem vercel.json/railway.json/Dockerfile) — **PROPOSTA em aberto**, perguntar ao usuário | PROPOSTA |
 | Autenticação | NextAuth v5 + bcryptjs, multiusuário (Role ADMIN/USER, `userId` em todas as tabelas) — ver **D15** | FECHADA (2026-07-20) |
 

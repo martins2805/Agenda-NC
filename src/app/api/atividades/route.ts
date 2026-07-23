@@ -5,17 +5,19 @@ import { atividadeFromDb, statusToDb, prioridadeToDb } from "@/lib/atividade-map
 import { syncKnowledgeChunk, serializeAtividade } from "@/lib/knowledge-sync";
 import type { Atividade } from "@/lib/types";
 
-const include = { propostas: true, checklist: true };
+const include = { propostas: true, checklist: true, links: true, anexos: true };
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const userId = session.user.id;
 
+  const trash = new URL(request.url).searchParams.get("trash") === "1";
+
   const atividades = await prisma.atividade.findMany({
-    where: { userId, deletedAt: null },
+    where: { userId, deletedAt: trash ? { not: null } : null },
     include,
-    orderBy: { createdAt: "desc" },
+    orderBy: trash ? { deletedAt: "desc" } : { createdAt: "desc" },
   });
   return NextResponse.json(atividades.map(atividadeFromDb));
 }
@@ -71,6 +73,14 @@ export async function POST(request: Request) {
           parentId: c.parentId ?? null,
           ordem: i,
           prazo: c.prazo ? new Date(c.prazo) : null,
+        })),
+      },
+      links: {
+        create: body.links.map((l, i) => ({
+          id: l.id,
+          titulo: l.titulo,
+          url: l.url,
+          ordem: i,
         })),
       },
     },

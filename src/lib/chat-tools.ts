@@ -160,7 +160,7 @@ export const TOOL_DECLARATIONS = [
   },
 ];
 
-const include = { propostas: true, checklist: true };
+const include = { propostas: true, checklist: true, links: true, anexos: true };
 
 const CONFIRMATION_WINDOW_MS = 15 * 60 * 1000;
 

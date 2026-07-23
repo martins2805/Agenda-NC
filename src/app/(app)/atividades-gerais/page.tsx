@@ -26,6 +26,7 @@ import { ManagedSelect } from "@/components/managed-select";
 import { ManagedMultiSelect } from "@/components/managed-multi-select";
 import { ChecklistTemplateManager } from "@/components/checklist-template-manager";
 import { ViewToggle, type ViewMode } from "@/components/view-toggle";
+import { useAutoOpenFromQuery } from "@/lib/use-auto-open";
 import { ExecucaoFilterBar } from "@/components/atividades/execucao-filter-bar";
 import {
   makeAtividadeGeralId,
@@ -73,6 +74,7 @@ function emptyAtividadeGeral(): AtividadeGeral {
     prioridade: "Médio",
     setorIds: [],
     checklist: [],
+    atividadeIds: [],
     createdAt: new Date().toISOString(),
   };
 }
@@ -344,6 +346,7 @@ export default function ExecucoesPage() {
   const {
     lookups,
     atividadesGerais,
+    loading,
     addLookupItem,
     renameLookupItem,
     deactivateLookupItem,
@@ -355,6 +358,8 @@ export default function ExecucoesPage() {
   const [draftNew, setDraftNew] = useState<AtividadeGeral | null>(null);
   const [view, setView] = useState<ViewMode>("cards");
   const [filters, setFilters] = useState<ExecucaoFilters>(initialFilters);
+
+  useAutoOpenFromQuery(atividadesGerais, loading, (a) => setEditingId(a.id));
   const [infoOpen, setInfoOpen] = useState(true);
 
   const editing = draftNew ?? atividadesGerais.find((a) => a.id === editingId) ?? null;
