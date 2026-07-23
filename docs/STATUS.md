@@ -2,6 +2,16 @@
 
 Atualizado ao final de cada sprint. Fonte da verdade sobre o que existe de fato.
 
+> **Nota (2026-07-23):** este arquivo ficou desatualizado por uma sessão em que o histórico de trabalho (sprints S6–S11, já commitadas em `git log`) não teve seu detalhe de aceite registrado aqui. Reconciliação completa pendente — ver seção "Sprints commitadas, aceite não documentado neste arquivo" mais abaixo.
+
+## Incidente 2026-07-23 — deploy quebrado pela migration da S7 (resolvido)
+
+Segundo incidente do mesmo tipo do da S1: a migration `20260723120000_prazo_unificado_origem_tipo` (S7, adiciona `origem_id`/`tipo_atividade_ids` à view `prazo_unificado`) inseriu a coluna nova **no meio** da lista de colunas do `CREATE OR REPLACE VIEW`, empurrando as 7 colunas seguintes uma posição — Postgres proíbe isso (só aceita colunas novas ao final). Deploy em crash loop (`P3009`) até o usuário colar o log e eu corrigir.
+
+Correção: reordenadas as colunas (novas ao final) em `20260723120000_prazo_unificado_origem_tipo` **e** em `20260723140000_registro_prazo` (que redefine a mesma view ao adicionar `Registro.prazo` — herdaria o mesmo bug se não fosse corrigida junto). Como o `CREATE OR REPLACE VIEW` falha atomicamente (não fica parcial), a migration seguinte (`20260723130000_widget_preferencia`) nunca tinha rodado — aplicou limpo assim que a S7 foi destravada via `prisma migrate resolve --rolled-back` (mesmo playbook da S1, passo temporário revertido após confirmação).
+
+**Lição:** `CREATE OR REPLACE VIEW` em Postgres não aceita inserir/reordenar colunas existentes, só apêndice ao final. Checar isso em toda migration futura que redefina uma view já existente.
+
 > **Nota (2026-07-22):** o histórico de commits mostra que o produto foi construído **antes** de `docs/PLANO-DE-SPRINTS.md` existir, por uma linha de desenvolvimento própria ("Parte 6", "Parte 7", "sprints de ajustes do documento" etc.), não pelo ritual S0→S13 descrito no plano. Nenhuma sprint do plano foi formalmente aberta, rodou checklist de aceite ou fechou por este processo. Por isso a tabela "Entregue" abaixo fica vazia — ela mede fechamento por processo, não existência de código — e o estado real do sistema está descrito em **"Inventário técnico atual"**.
 
 ## Sprint em execução
