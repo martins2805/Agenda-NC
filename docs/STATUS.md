@@ -6,15 +6,21 @@ Atualizado ao final de cada sprint. Fonte da verdade sobre o que existe de fato.
 
 ## Sprint em execução
 
-**S1 — Modelo de dados e motor de filtros.** Código completo e no repositório (schema, migration, `src/lib/vinculos.ts`, `src/lib/filters/`, rotas de API, UI de vínculo multi-select, seed). `typecheck`, `lint` (exceto o erro pré-existente descrito abaixo) e `build` passam.
+**S1 — Modelo de dados e motor de filtros.** Código completo e no repositório (schema, migration, `src/lib/vinculos.ts`, `src/lib/filters/`, rotas de API, UI de vínculo multi-select, seed). `typecheck`, `lint` e `build` passam.
 
-**Não fecha ainda** porque nem este agente nem a máquina do usuário alcançam o banco Postgres (Railway, `hayabusa.proxy.rlwy.net:29829`) — `npx prisma migrate dev` falha com `P1001: Can't reach database server` nos dois ambientes. Diagnóstico feito em 2026-07-22: `Test-NetConnection -ComputerName hayabusa.proxy.rlwy.net -Port 29829` na rede do usuário resolve o DNS e o `ping` funciona (`PingSucceeded: True`, 136ms), mas `TcpTestSucceeded: False` — a porta recusa conexão. Como isso falha em duas redes diferentes, a causa mais provável é o **serviço Postgres do Railway parado/dormindo ou com host:porta rotacionados num redeploy**, não firewall local. Requer checar o painel do Railway (não verificado ainda). Por isso:
-- A migration foi **escrita manualmente** (não gerada por `prisma migrate dev --create-only`, que exigiria conectividade) e **nunca foi aplicada** a nenhum banco.
-- O seed (`npm run db:seed`) **nunca foi executado**.
-- Nenhum critério de aceite da S1 foi verificado *executando* — só por leitura de código e `tsc`/`build`. Isso viola a regra "não marque item de aceite sem ter verificado de fato" do `CLAUDE.md`, então a sprint fica formalmente **aberta** até alguém com acesso ao banco rodar:
-  1. `npx prisma migrate dev` (aplica `prisma/migrations/20260722120000_add_vinculo_and_prazo_unificado/migration.sql`)
-  2. `npm run db:seed`
-  3. Os 6 critérios de aceite da S1 (tabela em `PLANO-DE-SPRINTS.md`), com evidência de cada um
+**Migration aplicada em produção em 2026-07-22** (deploy `11e20216`, confirmado por `railway logs`: "No pending migrations to apply."), mas por um caminho acidentado que vale registrar:
+
+1. Nem este agente nem a máquina do usuário conseguiram alcançar o Postgres pela porta pública (`hayabusa.proxy.rlwy.net:29829` — `P1001`, depois confirmado por `Test-NetConnection`: `ping` funciona, TCP na porta recusa; painel do Railway mostrou o TCP Proxy corretamente configurado). Causa mais provável: bloqueio de rede/firewall corporativo (Kaspersky Endpoint gerenciado por TI), não o serviço em si — ele sempre esteve "Online".
+2. Sem acesso direto, o primeiro `git push` (commit `9fd5786`) só foi testado por `tsc`/`build`, nunca contra um banco real. **Isso causou uma falha real em produção**: o deploy tentou aplicar a migration e quebrou com `42804 UNION types text and "StatusConclusao" cannot be matched` — `ChecklistGeralItem.status` é fisicamente uma coluna enum `StatusConclusao` no banco (resquício de uma migration anterior), embora `schema.prisma` a declare como `String`. Faltava um `::text` na view `prazo_unificado`.
+3. Pior: a migration **não roda em transação única** — tudo antes do ponto de falha (tipo `VinculoTipo`, tabela `Vinculo`, índices, FK, CHECK, backfill, índices novos em Atividade/AtividadeGeral/Registro/Planilha) ficou gravado. O app entrou em **crash loop** (container reiniciando e falhando repetidamente, ~18 tentativas), porque toda reaplicação do arquivo do zero esbarrava em "`VinculoTipo` já existe".
+4. Recuperação, via commits `9b1fc41` → `0355f9d` → `8da6f95`: corrigido o cast `::text`; migration reescrita para ser **idempotente** (`CREATE TABLE/INDEX IF NOT EXISTS`, `DO $$ ... EXCEPTION WHEN duplicate_object`, `CREATE OR REPLACE VIEW`); usado um passo temporário `prisma migrate resolve --rolled-back` no `start` do `package.json` (único caminho com acesso real ao banco — a rede privada do Railway, usada nos deploys) para destravar o estado "failed" e reaplicar; removido o passo temporário assim que confirmado o sucesso.
+
+**Lição registrada:** só descobri esse bug porque o usuário colou o log de deploy do Railway no chat depois do push. Da próxima vez que eu não conseguir testar uma migration contra um banco real antes de subir, isso deveria ser dito explicitamente como risco, não silenciado atrás de "typecheck e build passam".
+
+**O que ainda falta para fechar a S1 de fato:**
+- **Não rodei `npm run db:seed` contra produção** — de propósito, para não poluir dados reais de trabalho do usuário com 45+ atividades fictícias. O seed continua só testado por `tsc`, nunca executado.
+- Os critérios de aceite que dependem do seed (atividade com 2 tipos + 3 propostas, filtro combinado <100ms com 5.000 linhas) seguem **não verificados**.
+- Os critérios que dependem só do backfill de dados reais já existentes (vínculo de registro/planilha com atividade, `prazo_unificado` retornando dados de verdade) **podem** ser verificados agora contra produção, mas ainda não foram — precisa de uma consulta ao banco (via alguém com acesso, ou uma rota de diagnóstico temporária).
 
 ## Entregue (via ritual de sprint, com checklist de aceite verificado)
 
@@ -53,8 +59,8 @@ O que existe em `main` hoje, levantado por leitura direta do código (não presu
 
 | # | O que falta | Onde deveria estar | Sprint dona |
 |---|---|---|---|
-| ~~1~~ | ~~Vínculo polimórfico único~~ — **código escrito na S1** (`model Vinculo` em `schema.prisma`, `src/lib/vinculos.ts`), mas nunca aplicado a um banco real (ver "Sprint em execução") | S1 | S1 |
-| ~~2~~ | ~~View/fonte única `prazo_unificado`~~ — **código escrito na S1** (`CREATE VIEW` na migration, consumível via `GET /api/prazos`), mesma ressalva de aplicação pendente | S1 | S1 |
+| ~~1~~ | ~~Vínculo polimórfico único~~ — **aplicado em produção na S1** (`model Vinculo` em `schema.prisma`, `src/lib/vinculos.ts`, migration aplicada em 2026-07-22) | S1 | S1 |
+| ~~2~~ | ~~View/fonte única `prazo_unificado`~~ — **aplicada em produção na S1** (`CREATE OR REPLACE VIEW` na migration, consumível via `GET /api/prazos`) | S1 | S1 |
 | 3 | Página `/design-system` não existe | S2 | S2 |
 | 4 | Tela "Configurações" com CRUD de catálogos (empresa, unidade, tipo_atividade, status, prioridade etc., com cor/ordem/ativo) não existe — `/usuarios` é gestão de contas, não catálogo | S3 | S3 |
 | 5 | Calendário não é uma rota própria com filtros independentes — está embutido no Dashboard, e posicionado **à esquerda** (comentário `page.tsx:101`), o que já contraria a recomendação D2 (direita). Continua assim de propósito nesta sprint: o rewire do Calendário/Dashboard para consumir `prazo_unificado`/o motor de filtros novo é escopo de S7/S8, não de S1 | S7 | S7 |
@@ -67,7 +73,7 @@ Coisas notadas durante uma sprint que estavam fora do escopo dela. Não corrigir
 | # | O que | Onde | Sprint que deve resolver |
 |---|---|---|---|
 | 1 | Não existem scripts `test`, `typecheck`, `db:migrate` no `package.json` — a "Definition of done" do `CLAUDE.md` não é totalmente verificável hoje. `db:seed` foi adicionado na S1 | `package.json` | Antes de fechar qualquer sprint pelo ritual formal |
-| 2 | Migration da S1 nunca foi aplicada a um banco real (sem conectividade neste ambiente — confirmado também da rede do usuário, ver detalhe abaixo) — precisa rodar `npx prisma migrate dev` e confirmar que o backfill de `Vinculo` bateu com os `atividadeId` legados existentes em produção | `prisma/migrations/20260722120000_add_vinculo_and_prazo_unificado/` | Fechamento da S1 |
+| 2 | Migration da S1 aplicada em produção (2026-07-22, deploy `11e20216`), mas o `npm run db:seed` nunca rodou contra produção (de propósito — evitar poluir dados reais) — os critérios de aceite que dependem de dados seedados continuam sem verificação executada | `prisma/seed.ts` | Fechamento da S1, via ambiente separado ou seed local contra um banco de teste |
 | 3 | `Registro.atividadeId`/`Planilha.atividadeId` continuam no schema, marcados `@deprecated`, não mais escritos pelo app — `DROP COLUMN` fica para uma sprint futura de limpeza, depois de confirmar em produção que não sobrou leitura órfã | `prisma/schema.prisma` | Sprint de limpeza técnica, pós-S1 |
 | 4 | Soft-delete de `Atividade` é código morto (`deletedAt` existe no schema, mas `DELETE /api/atividades/[id]` sempre faz hard delete) — não corrigido na S1, só documentado | `src/app/api/atividades/[id]/route.ts` | A decidir — registrado em `ERRATA-SPEC.md` |
 | 5 | Telas autenticadas (Dashboard, Atividades, Registros, Planilhas) não foram verificadas visualmente após a S14 — banco fora do ar impediu login. Re-testar no browser quando o banco voltar | Todas as telas de `(app)` | Junto com o fechamento da S1 |
