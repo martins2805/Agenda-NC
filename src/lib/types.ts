@@ -10,11 +10,18 @@ export type LookupKind =
   | "tipoAtividadeGeral"
   | "setorInterno";
 
+// Nome de um token de cor da paleta base (--base-1..4), nunca um hex livre —
+// mantém o catálogo dentro da Regra 02 (zero valor visual hardcoded).
+export type LookupCor = "base-1" | "base-2" | "base-3" | "base-4";
+export const LOOKUP_COR_OPTIONS: LookupCor[] = ["base-1", "base-2", "base-3", "base-4"];
+
 export interface LookupItem {
   id: string;
   name: string;
   active: boolean;
   empresaId?: string | null; // usado apenas por itens do tipo "unidade"
+  cor: LookupCor | null; // null = cor automática (hash determinístico, tileColorFor)
+  ordem: number;
 }
 
 export type StatusConclusao =

@@ -85,6 +85,9 @@ interface AppDataContextValue {
   addLookupItem: (kind: LookupKind, name: string, empresaId?: string | null) => string;
   renameLookupItem: (kind: LookupKind, id: string, name: string) => void;
   deactivateLookupItem: (kind: LookupKind, id: string) => void;
+  activateLookupItem: (kind: LookupKind, id: string) => void;
+  setLookupItemCor: (kind: LookupKind, id: string, cor: LookupItem["cor"]) => void;
+  reorderLookupItem: (kind: LookupKind, id: string, direction: "up" | "down") => void;
   addAtividade: (atividade: Atividade) => void;
   updateAtividade: (id: string, patch: Partial<Atividade>) => void;
   deleteAtividade: (id: string) => void;
@@ -114,8 +117,18 @@ function groupLookups(items: (LookupItem & { kind: LookupKind })[]): LookupState
   for (const item of items) {
     grouped[item.kind] = [
       ...grouped[item.kind],
-      { id: item.id, name: item.name, active: item.active, empresaId: item.empresaId },
+      {
+        id: item.id,
+        name: item.name,
+        active: item.active,
+        empresaId: item.empresaId,
+        cor: item.cor ?? null,
+        ordem: item.ordem ?? 0,
+      },
     ];
+  }
+  for (const kind of Object.keys(grouped) as LookupKind[]) {
+    grouped[kind] = [...grouped[kind]].sort((a, b) => a.ordem - b.ordem);
   }
   return grouped;
 }
@@ -224,7 +237,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       const id = makeId();
       setLookups((prev) => ({
         ...prev,
-        [kind]: [...prev[kind], { id, name, active: true, empresaId: empresaId ?? null }],
+        [kind]: [
+          ...prev[kind],
+          { id, name, active: true, empresaId: empresaId ?? null, cor: null, ordem: prev[kind].length },
+        ],
       }));
       fetch("/api/lookups", {
         method: "POST",
@@ -266,6 +282,70 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ active: false }),
     }).catch((error) => console.error("Falha ao desativar item", error));
   }, []);
+
+  const activateLookupItem = useCallback((kind: LookupKind, id: string) => {
+    setLookups((prev) => ({
+      ...prev,
+      [kind]: prev[kind].map((item) => (item.id === id ? { ...item, active: true } : item)),
+    }));
+    fetch(`/api/lookups/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: true }),
+    }).catch((error) => console.error("Falha ao reativar item", error));
+  }, []);
+
+  const setLookupItemCor = useCallback((kind: LookupKind, id: string, cor: LookupItem["cor"]) => {
+    setLookups((prev) => ({
+      ...prev,
+      [kind]: prev[kind].map((item) => (item.id === id ? { ...item, cor } : item)),
+    }));
+    fetch(`/api/lookups/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cor }),
+    }).catch((error) => console.error("Falha ao alterar cor do item", error));
+  }, []);
+
+  // Troca a ordem com o vizinho imediato (acima/abaixo), só entre itens
+  // ativos — arquivados não entram na ordenação visível.
+  const reorderLookupItem = useCallback(
+    (kind: LookupKind, id: string, direction: "up" | "down") => {
+      setLookups((prev) => {
+        const list = [...prev[kind]].sort((a, b) => a.ordem - b.ordem);
+        const activeList = list.filter((i) => i.active);
+        const idx = activeList.findIndex((i) => i.id === id);
+        const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+        if (idx === -1 || swapIdx < 0 || swapIdx >= activeList.length) return prev;
+
+        const a = activeList[idx];
+        const b = activeList[swapIdx];
+        const aOrdem = a.ordem;
+        const bOrdem = b.ordem;
+
+        fetch(`/api/lookups/${a.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ordem: bOrdem }),
+        }).catch((error) => console.error("Falha ao reordenar item", error));
+        fetch(`/api/lookups/${b.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ordem: aOrdem }),
+        }).catch((error) => console.error("Falha ao reordenar item", error));
+
+        return {
+          ...prev,
+          [kind]: prev[kind].map((item) => {
+            if (item.id === a.id) return { ...item, ordem: bOrdem };
+            if (item.id === b.id) return { ...item, ordem: aOrdem };
+            return item;
+          }),
+        };
+      });
+    },
+    []
+  );
 
   const addAtividade = useCallback((atividade: Atividade) => {
     setAtividades((prev) => [atividade, ...prev]);
@@ -610,6 +690,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addLookupItem,
       renameLookupItem,
       deactivateLookupItem,
+      activateLookupItem,
+      setLookupItemCor,
+      reorderLookupItem,
       addAtividade,
       updateAtividade,
       deleteAtividade,
@@ -640,6 +723,9 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addLookupItem,
       renameLookupItem,
       deactivateLookupItem,
+      activateLookupItem,
+      setLookupItemCor,
+      reorderLookupItem,
       addAtividade,
       updateAtividade,
       deleteAtividade,

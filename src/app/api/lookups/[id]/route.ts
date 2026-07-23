@@ -12,11 +12,19 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await request.json();
-  const { name, active } = body as { name?: string; active?: boolean };
+  const { name, active, cor, ordem } = body as {
+    name?: string;
+    active?: boolean;
+    cor?: string | null;
+    ordem?: number;
+  };
 
-  const data: { name?: string; active?: boolean } = {};
+  const data: { name?: string; active?: boolean; cor?: string | null; ordem?: number } = {};
   if (typeof name === "string" && name.trim()) data.name = name.trim();
   if (typeof active === "boolean") data.active = active;
+  if (cor === null || (typeof cor === "string" && ["base-1", "base-2", "base-3", "base-4"].includes(cor)))
+    data.cor = cor;
+  if (typeof ordem === "number") data.ordem = ordem;
 
   const result = await prisma.lookupItem.updateMany({ where: { id, userId }, data });
   if (result.count === 0) {

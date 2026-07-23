@@ -31,10 +31,12 @@ export async function GET() {
 
   const items = await prisma.lookupItem.findMany({
     where: { userId },
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ ordem: "asc" }, { createdAt: "asc" }],
   });
   return NextResponse.json(items);
 }
+
+const VALID_CORES = ["base-1", "base-2", "base-3", "base-4"];
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -42,16 +44,25 @@ export async function POST(request: Request) {
   const userId = session.user.id;
 
   const body = await request.json();
-  const { id, kind, name, empresaId } = body as {
+  const { id, kind, name, empresaId, cor } = body as {
     id?: string;
     kind?: string;
     name?: string;
     empresaId?: string | null;
+    cor?: string | null;
   };
 
   if (!kind || !VALID_KINDS.includes(kind as LookupKind) || !name?.trim()) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
+  if (cor && !VALID_CORES.includes(cor)) {
+    return NextResponse.json({ error: "Invalid cor" }, { status: 400 });
+  }
+
+  const maxOrdem = await prisma.lookupItem.aggregate({
+    where: { userId, kind: kind as LookupKind },
+    _max: { ordem: true },
+  });
 
   const item = await prisma.lookupItem.create({
     data: {
@@ -60,6 +71,8 @@ export async function POST(request: Request) {
       kind: kind as LookupKind,
       name: name.trim(),
       empresaId: empresaId ?? null,
+      cor: cor ?? null,
+      ordem: (maxOrdem._max.ordem ?? -1) + 1,
     },
   });
   return NextResponse.json(item, { status: 201 });

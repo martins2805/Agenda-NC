@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ClipboardCheck, LayoutDashboard, ListChecks, FileText, Table2, Users, LogOut } from "lucide-react";
+import { ClipboardCheck, LayoutDashboard, ListChecks, FileText, Table2, Users, Settings, LogOut } from "lucide-react";
 import { logout } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +13,7 @@ const BASE_NAV_ITEMS = [
   { href: "/atividades-gerais", label: "Execuções", icon: ClipboardCheck },
   { href: "/registros", label: "Registros", icon: FileText },
   { href: "/planilhas", label: "Planilhas", icon: Table2 },
+  { href: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 const ADMIN_NAV_ITEM = { href: "/usuarios", label: "Usuários", icon: Users };

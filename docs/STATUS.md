@@ -28,6 +28,18 @@ Atualizado ao final de cada sprint. Fonte da verdade sobre o que existe de fato.
 |---|---|---|---|
 | S14 | Conformação visual — reverter tema escuro para claro (D16) | 2026-07-22 | — |
 | S2 | Design system | 2026-07-22 | — |
+| S3 | Shell + Configurações v1 | 2026-07-23 | — |
+
+**S3 — detalhe do aceite:**
+- [x] Barra lateral já era mínima e idêntica em todas as telas (`app-shell.tsx`, pré-existente) — adicionado item de navegação "Configurações"
+- [x] Navegação sem recarregar página — já garantido pelo App Router + `AppDataProvider` acima do layout (arquitetura pré-existente)
+- [x] Tela `/configuracoes`: CRUD de todos os 10 catálogos (`LookupKind`), com **cor** (novo campo `LookupItem.cor`, token da paleta base — nunca hex livre), **ordem** (novo campo `LookupItem.ordem`, setas de mover para cima/baixo) e **arquivamento** (já existia via `active`, agora com reativação)
+- [x] `unidade` tratada à parte — pertence a uma empresa (`empresaId`), a seção exige selecionar a empresa antes de criar/listar unidades
+- [x] Migration nova (`20260723090000_lookup_cor_ordem`) — **idempotente desde o início** (`ADD COLUMN IF NOT EXISTS`), lição da S1 aplicada preventivamente
+- [x] "Criar um tipo de atividade em Configurações aparece no formulário sem redeploy" — estruturalmente garantido: `addLookupItem` escreve no mesmo `AppDataProvider` que `ManagedMultiSelect` lê; é o mesmo estado client-side, não uma tela separada
+- [x] "Arquivar não quebra registro antigo" — `deactivateLookupItem` só marca `active=false`; a resolução de nome em registros antigos usa a lista completa de `lookups[kind]` (ativos + arquivados), só as opções de seleção filtram por `active`
+- [x] `typecheck`, `lint`, `build` passam limpos; zero hex fora dos tokens nos arquivos novos
+- [~] Verificação visual real **não foi possível** — mesmo bloqueio de banco/login da S1/S2. Confiança vem de build + revisão de código.
 
 **S2 — detalhe do aceite:**
 - [x] `grep` por hex fora dos tokens = 0 — corrigidos hex hardcoded pré-existentes em `dashboard-analytics.tsx`, `dashboard/page.tsx` e `status-colors.ts` (mapas mortos `STATUS_HEX`/`PRIORIDADE_HEX`/`STATUS_NEGOCIACAO_HEX`, sem consumidor, removidos). Único hex fora de `globals.css` que sobrevive de propósito: `rich-text-editor.tsx` — paleta de cores do editor de texto rico, gravada como `style="color:#..."` dentro do HTML persistido do usuário, não é chrome de UI
@@ -74,7 +86,7 @@ O que existe em `main` hoje, levantado por leitura direta do código (não presu
 | ~~1~~ | ~~Vínculo polimórfico único~~ — **aplicado em produção na S1** (`model Vinculo` em `schema.prisma`, `src/lib/vinculos.ts`, migration aplicada em 2026-07-22) | S1 | S1 |
 | ~~2~~ | ~~View/fonte única `prazo_unificado`~~ — **aplicada em produção na S1** (`CREATE OR REPLACE VIEW` na migration, consumível via `GET /api/prazos`) | S1 | S1 |
 | ~~3~~ | ~~Página `/design-system` não existe~~ — **criada na S2**, fora do grupo `(app)` (sem depender de login/banco) | S2 | S2 |
-| 4 | Tela "Configurações" com CRUD de catálogos (empresa, unidade, tipo_atividade, status, prioridade etc., com cor/ordem/ativo) não existe — `/usuarios` é gestão de contas, não catálogo | S3 | S3 |
+| ~~4~~ | ~~Tela "Configurações" com CRUD de catálogos~~ — **criada na S3** (`/configuracoes`), com cor/ordem/arquivamento | S3 | S3 |
 | 5 | Calendário não é uma rota própria com filtros independentes — está embutido no Dashboard, e posicionado **à esquerda** (comentário `page.tsx:101`), o que já contraria a recomendação D2 (direita). Continua assim de propósito nesta sprint: o rewire do Calendário/Dashboard para consumir `prazo_unificado`/o motor de filtros novo é escopo de S7/S8, não de S1 | S7 | S7 |
 | ~~6~~ | ~~Motor de filtros único~~ — **criado na S1** em `src/lib/filters/` (`engine.ts`, `prazo.ts`, `types.ts`, `querystring.ts`); `activity-filters.ts`/`execucao-filters.ts` viraram wrappers finos sobre ele, sem quebrar nenhum dos 8 consumidores existentes | S1, Regra 03 | S1 |
 

@@ -57,6 +57,8 @@ model LookupItem {
   name      String
   active    Boolean    @default(true)
   empresaId String?    // usado apenas por itens do tipo "unidade"
+  cor       String?    // nome de token da paleta base (ex.: "base-1"), nunca hex livre
+  ordem     Int        @default(0)
   createdAt DateTime   @default(now())
 
   @@index([userId, kind])
