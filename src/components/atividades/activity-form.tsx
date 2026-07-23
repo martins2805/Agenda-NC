@@ -65,6 +65,7 @@ function emptyAtividade(): Atividade {
     prioridade: "Médio",
     checklist: [],
     createdAt: new Date().toISOString(),
+    concluidoEm: null,
   };
 }
 

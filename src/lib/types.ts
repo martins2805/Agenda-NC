@@ -126,6 +126,7 @@ export interface Atividade {
   checklist: ChecklistItem[];
   createdAt: string; // ISO datetime
   deletedAt?: string | null;
+  concluidoEm: string | null; // ISO datetime, setado pelo servidor (D13)
 }
 
 export interface RegistroTab {

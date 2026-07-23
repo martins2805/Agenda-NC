@@ -89,6 +89,7 @@ export function atividadeFromDb(a: FullDbAtividade): Atividade {
     prioridade: PRIORIDADE_FROM_DB[a.prioridade],
     createdAt: a.createdAt.toISOString(),
     deletedAt: a.deletedAt ? a.deletedAt.toISOString() : null,
+    concluidoEm: a.concluidoEm ? a.concluidoEm.toISOString() : null,
     propostas: a.propostas
       .sort((x, y) => x.numero - y.numero)
       .map(propostaFromDb),

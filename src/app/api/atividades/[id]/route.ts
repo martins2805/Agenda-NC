@@ -27,6 +27,13 @@ export async function PATCH(
 
   const body = (await request.json()) as Atividade;
 
+  // Data de conclusão é derivada no servidor, nunca confiada ao cliente:
+  // entra em Concluído -> carimba agora (a menos que já estivesse concluída,
+  // aí preserva a data original); sai de Concluído -> limpa.
+  const wasConcluida = owned.status === "Concluido";
+  const willBeConcluida = body.status === "Concluído";
+  const concluidoEm = willBeConcluida ? (wasConcluida ? owned.concluidoEm : new Date()) : null;
+
   const updated = await prisma.$transaction(async (tx) => {
     await tx.proposta.deleteMany({ where: { atividadeId: id } });
     await tx.checklistItem.deleteMany({ where: { atividadeId: id } });
@@ -47,6 +54,7 @@ export async function PATCH(
         alinhamentos: body.alinhamentos,
         status: statusToDb(body.status),
         prioridade: prioridadeToDb(body.prioridade),
+        concluidoEm,
         propostas: {
           create: body.propostas.map((p) => ({
             id: p.id,

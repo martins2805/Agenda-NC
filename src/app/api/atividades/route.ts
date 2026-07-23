@@ -44,6 +44,7 @@ export async function POST(request: Request) {
       alinhamentos: body.alinhamentos,
       status: statusToDb(body.status),
       prioridade: prioridadeToDb(body.prioridade),
+      concluidoEm: body.status === "Concluído" ? new Date() : null,
       propostas: {
         create: body.propostas.map((p) => ({
           id: p.id,

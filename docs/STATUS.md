@@ -29,6 +29,18 @@ Atualizado ao final de cada sprint. Fonte da verdade sobre o que existe de fato.
 | S14 | Conformação visual — reverter tema escuro para claro (D16) | 2026-07-22 | — |
 | S2 | Design system | 2026-07-22 | — |
 | S3 | Shell + Configurações v1 | 2026-07-23 | — |
+| S4 | Atividades — cadastro | 2026-07-23 | — |
+
+**S4 — detalhe do aceite:**
+- [x] Formulário já existia (`activity-form.tsx`), quase inteiramente conforme a spec — popup em tela cheia, nenhum campo obrigatório, defaults automáticos (status=Pendente, prioridade=Médio)
+- [x] Blocos condicionais (E-mail, Oportunidade, Proposta, Agendamento) já existiam, independentes — selecionar 2 tipos abre os 2 blocos
+- [x] Checklist com prazo opcional por item, com botão de remover prazo — já existia (`checklist-editor.tsx`)
+- [x] Criação inline de catálogo já existia via `ManagedSelect`/`ManagedMultiSelect`, mesmo estado do `AppDataProvider` usado em Configurações (S3) — aparece na atividade seguinte sem redeploy
+- [x] Texto longo não é cortado em nenhum campo (`Textarea` com `field-sizing-content`, `RichTextEditor` sem overflow/truncate)
+- [x] **Gap real encontrado e corrigido**: "data de conclusão automática" (escopo explícito da S4 / D13) não existia — `Atividade` não tinha nenhum campo de data de conclusão. Adicionado `concluidoEm` (migration idempotente `20260723100000_atividade_concluido_em`), **calculado no servidor** (não confiado ao cliente): carimba ao entrar em "Concluído", preserva a data original se já estava concluída, limpa ao sair
+- [x] `typecheck`, `lint`, `build` passam limpos
+- [ ] **Gap conhecido, não fechado nesta sprint**: D6 menciona "Categoria, Área, Projeto e Processo... catálogos opcionais recolhidos" — esses 4 catálogos não existem em nenhum lugar do código (não são `LookupKind`, não são campo de `Atividade`). Não inventei essa estrutura sem mais contexto — nenhum critério de aceite testa isso diretamente, e criar 4 catálogos novos + UI colapsável sem saber exatamente o que cada um representa seria um chute. Registrado como pendência.
+- [~] Verificação visual real **não foi possível** — mesmo bloqueio de banco/login de todas as sprints anteriores.
 
 **S3 — detalhe do aceite:**
 - [x] Barra lateral já era mínima e idêntica em todas as telas (`app-shell.tsx`, pré-existente) — adicionado item de navegação "Configurações"
@@ -101,6 +113,7 @@ Coisas notadas durante uma sprint que estavam fora do escopo dela. Não corrigir
 | 3 | `Registro.atividadeId`/`Planilha.atividadeId` continuam no schema, marcados `@deprecated`, não mais escritos pelo app — `DROP COLUMN` fica para uma sprint futura de limpeza, depois de confirmar em produção que não sobrou leitura órfã | `prisma/schema.prisma` | Sprint de limpeza técnica, pós-S1 |
 | 4 | Soft-delete de `Atividade` é código morto (`deletedAt` existe no schema, mas `DELETE /api/atividades/[id]` sempre faz hard delete) — não corrigido na S1, só documentado | `src/app/api/atividades/[id]/route.ts` | A decidir — registrado em `ERRATA-SPEC.md` |
 | 5 | Telas autenticadas (Dashboard, Atividades, Registros, Planilhas) não foram verificadas visualmente após a S14 — banco fora do ar impediu login. Re-testar no browser quando o banco voltar | Todas as telas de `(app)` | Junto com o fechamento da S1 |
+| 6 | D6 menciona Categoria/Área/Projeto/Processo como "catálogos opcionais recolhidos" no cadastro de Atividade — não existem em nenhum lugar do código hoje. Não construí isso na S4 sem saber o que cada catálogo representa de fato (chutar a estrutura seria pior que não ter) | `docs/DECISOES.md` D6, `activity-form.tsx` | Perguntar ao usuário antes de qualquer sprint futura que dependa disso |
 
 ## Dívidas assumidas
 

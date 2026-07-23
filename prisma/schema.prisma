@@ -84,6 +84,7 @@ model Atividade {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   deletedAt         DateTime?
+  concluidoEm       DateTime?        // setado pelo servidor ao entrar em status=Concluído, limpo ao sair
   /// coluna gerada (tsvector) criada via SQL raw na migration; Unsupported = Prisma não gerencia
   busca             Unsupported("tsvector")?
 
