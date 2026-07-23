@@ -10,25 +10,11 @@ export const STATUS_STYLES: Record<StatusConclusao, string> = {
   "Aguardando retorno cliente": "bg-[var(--status-outro)] text-white",
 };
 
-export const STATUS_HEX: Record<StatusConclusao, string> = {
-  Concluído: "#2e5749",
-  Pendente: "#da9b2b",
-  "Aguardando retorno interno": "#3e4c59",
-  "Aguardando retorno cliente": "#3e4c59",
-};
-
 export const PRIORIDADE_STYLES: Record<Prioridade, string> = {
   Urgente: "bg-[var(--prioridade-urgente)] text-white",
   Importante: "bg-[var(--prioridade-importante)] text-white",
   Médio: "bg-[var(--prioridade-medio)] text-white",
   Baixo: "bg-[var(--prioridade-baixo)] text-white",
-};
-
-export const PRIORIDADE_HEX: Record<Prioridade, string> = {
-  Urgente: "#780001",
-  Importante: "#bf512c",
-  Médio: "#da9b2b",
-  Baixo: "#2e5749",
 };
 
 // Status geral usado em Atividade Geral e nos itens de checklist geral.
@@ -79,9 +65,3 @@ export const STATUS_NEGOCIACAO_STYLES: Record<StatusNegociacao, string> = {
   na: "bg-[var(--negociacao-na)] text-white",
 };
 
-export const STATUS_NEGOCIACAO_HEX: Record<StatusNegociacao, string> = {
-  em_andamento: "#da9b2b",
-  fup: "#bf512c",
-  aceite: "#2e5749",
-  na: "#d8d8d8",
-};

@@ -13,30 +13,30 @@ import {
   type ActivityFilters,
 } from "@/lib/activity-filters";
 
-// Cores dos gráficos por dimensão (conforme especificação da Parte 7).
+// Cores dos gráficos por dimensão — sempre via token (D8), nunca hex direto.
 const STATUS_BUCKET_COLORS = {
-  Pendente: "#780001",
-  "Aguardando retorno": "#3E4C59",
-  Concluído: "#2E5749",
+  Pendente: "var(--status-pendente)",
+  "Aguardando retorno": "var(--status-outro)",
+  Concluído: "var(--status-concluido)",
 } as const;
 
 const VENCIMENTO_COLORS = {
-  Atrasadas: "#780001",
-  "Vencem hoje": "#BF512C",
-  "Próximos 7 dias": "#8BAAAD",
-  "Próximos 30 dias": "#2E5749",
+  Atrasadas: "var(--prazo-vencido)",
+  "Vencem hoje": "var(--prazo-proximo)",
+  "Próximos 7 dias": "var(--base-3)",
+  "Próximos 30 dias": "var(--prazo-em-dia)",
 } as const;
 
 const PRIORIDADE_COLORS = {
-  Urgente: "#780001",
-  Importante: "#BF512C",
-  Médio: "#DA9B2B",
-  Baixo: "#2E5749",
+  Urgente: "var(--prioridade-urgente)",
+  Importante: "var(--prioridade-importante)",
+  Médio: "var(--prioridade-medio)",
+  Baixo: "var(--prioridade-baixo)",
 } as const;
 
 // Paleta base para gráficos categóricos (empresa/produto), do mais escuro ao
 // mais claro — quem tem mais atividades aparece primeiro e mais escuro.
-const BASE_SCALE = ["#1F2C43", "#3E4C59", "#8BAAAD", "#D8D8D8"];
+const BASE_SCALE = ["var(--base-1)", "var(--base-2)", "var(--base-3)", "var(--base-4)"];
 
 function isOverdue(a: Atividade) {
   return a.status !== "Concluído" && matchesPrazoRange(a.prazo, "atrasadas");
@@ -288,19 +288,19 @@ export function DashboardAnalytics({
       {/* Lacuna 1 — Dados gerais */}
       <Lacuna title="Dados gerais">
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-          <KpiCard label="Total de atividades" value={total} color="#1F2C43" href={atividadesHref(filters)} />
-          <KpiCard label="Total de execuções" value={execucoesFiltered.length} color="#3E4C59" href={execucoesHref(filters)} />
-          <KpiCard label="Total de registros" value={registrosFiltered.length} color="#8BAAAD" href={simpleHref("/registros", filters)} />
-          <KpiCard label="Total de planilhas" value={planilhasFiltered.length} color="#8BAAAD" href={simpleHref("/planilhas", filters)} />
+          <KpiCard label="Total de atividades" value={total} color="var(--base-1)" href={atividadesHref(filters)} />
+          <KpiCard label="Total de execuções" value={execucoesFiltered.length} color="var(--base-2)" href={execucoesHref(filters)} />
+          <KpiCard label="Total de registros" value={registrosFiltered.length} color="var(--base-3)" href={simpleHref("/registros", filters)} />
+          <KpiCard label="Total de planilhas" value={planilhasFiltered.length} color="var(--base-3)" href={simpleHref("/planilhas", filters)} />
         </div>
       </Lacuna>
 
       {/* Lacuna 2 — Status atividades */}
       <Lacuna title="Status atividades">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <KpiCard label="Índice de Conclusão Atividades" value={`${indiceConclusao}%`} color="#3E4C59" href={atividadesHref(filters)} />
-          <KpiCard label="Atividades Pendentes" value={filtered.filter((a) => a.status === "Pendente").length} color="#780001" href={atividadesHref(filters, { status: ["Pendente"] })} />
-          <KpiCard label="Atividades Vencidas" value={filtered.filter(isOverdue).length} color="#BF512C" href={atividadesHref(filters, { prazos: ["atrasadas"] })} />
+          <KpiCard label="Índice de Conclusão Atividades" value={`${indiceConclusao}%`} color="var(--base-2)" href={atividadesHref(filters)} />
+          <KpiCard label="Atividades Pendentes" value={filtered.filter((a) => a.status === "Pendente").length} color="var(--status-pendente)" href={atividadesHref(filters, { status: ["Pendente"] })} />
+          <KpiCard label="Atividades Vencidas" value={filtered.filter(isOverdue).length} color="var(--prazo-proximo)" href={atividadesHref(filters, { prazos: ["atrasadas"] })} />
         </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <VerticalBars title="Status de Conclusão" data={statusBuckets(filtered)} />
@@ -312,8 +312,8 @@ export function DashboardAnalytics({
       <Lacuna title="Prioridade">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="grid grid-cols-1 gap-3">
-            <KpiCard label="Atividades urgentes" value={filtered.filter((a) => a.prioridade === "Urgente").length} color="#780001" href={atividadesHref(filters, { prioridades: ["Urgente"] })} />
-            <KpiCard label="Atividades Importantes" value={filtered.filter((a) => a.prioridade === "Importante").length} color="#BF512C" href={atividadesHref(filters, { prioridades: ["Importante"] })} />
+            <KpiCard label="Atividades urgentes" value={filtered.filter((a) => a.prioridade === "Urgente").length} color="var(--prioridade-urgente)" href={atividadesHref(filters, { prioridades: ["Urgente"] })} />
+            <KpiCard label="Atividades Importantes" value={filtered.filter((a) => a.prioridade === "Importante").length} color="var(--prioridade-importante)" href={atividadesHref(filters, { prioridades: ["Importante"] })} />
           </div>
           <div className="lg:col-span-2">
             <VerticalBars title="Atividades x Prioridade" data={prioridadeData} />
@@ -324,11 +324,11 @@ export function DashboardAnalytics({
       {/* Lacuna 4 — Propostas */}
       <Lacuna title="Propostas">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <KpiCard label="Total atividades de proposta" value={propostas.length} color="#3E4C59" href={atividadesHref(filters, propostaExtra)} />
-          <KpiCard label="Propostas Urgentes" value={propostas.filter((a) => a.prioridade === "Urgente").length} color="#3E4C59" href={atividadesHref(filters, { ...propostaExtra, prioridades: ["Urgente"] })} />
-          <KpiCard label="Propostas Importantes" value={propostas.filter((a) => a.prioridade === "Importante").length} color="#3E4C59" href={atividadesHref(filters, { ...propostaExtra, prioridades: ["Importante"] })} />
-          <KpiCard label="Propostas Pendentes" value={propostas.filter((a) => a.status === "Pendente").length} color="#3E4C59" href={atividadesHref(filters, { ...propostaExtra, status: ["Pendente"] })} />
-          <KpiCard label="Propostas Vencidas" value={propostas.filter(isOverdue).length} color="#3E4C59" href={atividadesHref(filters, { ...propostaExtra, prazos: ["atrasadas"] })} />
+          <KpiCard label="Total atividades de proposta" value={propostas.length} color="var(--base-2)" href={atividadesHref(filters, propostaExtra)} />
+          <KpiCard label="Propostas Urgentes" value={propostas.filter((a) => a.prioridade === "Urgente").length} color="var(--base-2)" href={atividadesHref(filters, { ...propostaExtra, prioridades: ["Urgente"] })} />
+          <KpiCard label="Propostas Importantes" value={propostas.filter((a) => a.prioridade === "Importante").length} color="var(--base-2)" href={atividadesHref(filters, { ...propostaExtra, prioridades: ["Importante"] })} />
+          <KpiCard label="Propostas Pendentes" value={propostas.filter((a) => a.status === "Pendente").length} color="var(--base-2)" href={atividadesHref(filters, { ...propostaExtra, status: ["Pendente"] })} />
+          <KpiCard label="Propostas Vencidas" value={propostas.filter(isOverdue).length} color="var(--base-2)" href={atividadesHref(filters, { ...propostaExtra, prazos: ["atrasadas"] })} />
         </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <VerticalBars title="Propostas x Status" data={statusBuckets(propostas)} />
@@ -342,19 +342,19 @@ export function DashboardAnalytics({
           <div className="lg:col-span-2">
             <VerticalBars
               title="Atividade x Empresa"
-              data={empresaData.length ? empresaData : [{ label: "Sem dados", count: 0, color: "#D8D8D8" }]}
+              data={empresaData.length ? empresaData : [{ label: "Sem dados", count: 0, color: "var(--base-4)" }]}
             />
           </div>
           <DualKpi
             label="Tipo de Produto/Serviço"
-            color="#8BAAAD"
+            color="var(--base-3)"
             left={{ label: "MRR", value: mrrCount, href: atividadesHref(filters, { ...propostaExtra, produtoTipos: ["MRR"] }) }}
             right={{ label: "PS", value: psCount, href: atividadesHref(filters, { ...propostaExtra, produtoTipos: ["PS"] }) }}
           />
         </div>
         <VerticalBars
           title="Produtos/Serviços vinculados"
-          data={produtoData.length ? produtoData : [{ label: "Sem dados", count: 0, color: "#D8D8D8" }]}
+          data={produtoData.length ? produtoData : [{ label: "Sem dados", count: 0, color: "var(--base-4)" }]}
         />
       </Lacuna>
 

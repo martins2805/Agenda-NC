@@ -27,6 +27,18 @@ Atualizado ao final de cada sprint. Fonte da verdade sobre o que existe de fato.
 | Sprint | Nome | Fechada em | Tag |
 |---|---|---|---|
 | S14 | Conformação visual — reverter tema escuro para claro (D16) | 2026-07-22 | — |
+| S2 | Design system | 2026-07-22 | — |
+
+**S2 — detalhe do aceite:**
+- [x] `grep` por hex fora dos tokens = 0 — corrigidos hex hardcoded pré-existentes em `dashboard-analytics.tsx`, `dashboard/page.tsx` e `status-colors.ts` (mapas mortos `STATUS_HEX`/`PRIORIDADE_HEX`/`STATUS_NEGOCIACAO_HEX`, sem consumidor, removidos). Único hex fora de `globals.css` que sobrevive de propósito: `rich-text-editor.tsx` — paleta de cores do editor de texto rico, gravada como `style="color:#..."` dentro do HTML persistido do usuário, não é chrome de UI
+- [x] **Bug real encontrado e corrigido**: os tokens `--status-pendente` e `--prazo-proximo` em `globals.css` divergiam da **D8** (decisão fechada, precedência máxima) — `dashboard-analytics.tsx` já usava os valores corretos da D8 (`#780001`/`#BF512C`) fora do token; agora os tokens foram corrigidos para bater com D8 e tudo aponta para eles
+- [x] Removido `dashboard-stats.tsx` — componente morto (zero imports), duplicava `dashboard-analytics.tsx` com hex hardcoded
+- [x] Página `/design-system` criada (`src/app/design-system/page.tsx`), fora do grupo `(app)` — não depende de login nem de `AppDataProvider`/banco, prerenderizada como estática pelo build. Cobre: tipografia, paleta base, cores semânticas, botões, os 8 estados obrigatórios, badges, campos de texto (com teste de 500+ caracteres), select/multi-select com typeahead, checkbox, cards, tabs, drawer, modal, tooltip, toast, progress bar, skeleton, empty state, paginação, calendário, referência de sidebar/header
+- [x] Componentes novos criados (faltavam para os 18 do Cap. 3): `tooltip.tsx`, `toast.tsx` (+ `ToastProvider` montado no layout raiz), `progress.tsx`, `skeleton.tsx`, `empty-state.tsx`, `pagination.tsx` — todos wrapping Base UI (`@base-ui/react`) no mesmo padrão dos componentes existentes
+- [x] `prefers-reduced-motion: reduce` respeitado globalmente (`globals.css`) — animações/transições somem quase por completo
+- [x] Foco visível por teclado — já garantido pelos componentes existentes (`focus-visible:ring-3` em toda a base), com seção dedicada de teste na página
+- [x] `typecheck`, `lint`, `build` passam limpos
+- [~] Verificação visual real no browser **não foi possível** — `/design-system` exige login (middleware protege tudo exceto `/login`), e o acesso ao banco continua bloqueado (mesmo problema da S1). Confiança vem do build (`/design-system` prerenderizado como estático sem erro) + revisão de código, não de uma captura de tela real. Re-verificar visualmente quando o banco voltar.
 
 **S14 — detalhe do aceite:**
 - [x] `grep` por hex fora dos tokens = 0 — todo hex confinado à seção de tokens de `globals.css`
@@ -61,7 +73,7 @@ O que existe em `main` hoje, levantado por leitura direta do código (não presu
 |---|---|---|---|
 | ~~1~~ | ~~Vínculo polimórfico único~~ — **aplicado em produção na S1** (`model Vinculo` em `schema.prisma`, `src/lib/vinculos.ts`, migration aplicada em 2026-07-22) | S1 | S1 |
 | ~~2~~ | ~~View/fonte única `prazo_unificado`~~ — **aplicada em produção na S1** (`CREATE OR REPLACE VIEW` na migration, consumível via `GET /api/prazos`) | S1 | S1 |
-| 3 | Página `/design-system` não existe | S2 | S2 |
+| ~~3~~ | ~~Página `/design-system` não existe~~ — **criada na S2**, fora do grupo `(app)` (sem depender de login/banco) | S2 | S2 |
 | 4 | Tela "Configurações" com CRUD de catálogos (empresa, unidade, tipo_atividade, status, prioridade etc., com cor/ordem/ativo) não existe — `/usuarios` é gestão de contas, não catálogo | S3 | S3 |
 | 5 | Calendário não é uma rota própria com filtros independentes — está embutido no Dashboard, e posicionado **à esquerda** (comentário `page.tsx:101`), o que já contraria a recomendação D2 (direita). Continua assim de propósito nesta sprint: o rewire do Calendário/Dashboard para consumir `prazo_unificado`/o motor de filtros novo é escopo de S7/S8, não de S1 | S7 | S7 |
 | ~~6~~ | ~~Motor de filtros único~~ — **criado na S1** em `src/lib/filters/` (`engine.ts`, `prazo.ts`, `types.ts`, `querystring.ts`); `activity-filters.ts`/`execucao-filters.ts` viraram wrappers finos sobre ele, sem quebrar nenhum dos 8 consumidores existentes | S1, Regra 03 | S1 |

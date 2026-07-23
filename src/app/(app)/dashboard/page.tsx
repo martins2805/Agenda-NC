@@ -60,7 +60,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button className="gap-1.5 bg-white text-[#1F2C43] hover:bg-white/90" onClick={novaAtividade}>
+            <Button className="gap-1.5 bg-white text-[var(--base-1)] hover:bg-white/90" onClick={novaAtividade}>
               <Plus className="size-4" /> Nova Atividade
             </Button>
             <Link href="/atividades-gerais" className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/15 px-3 text-sm font-medium text-white transition-colors hover:bg-white/25">
