@@ -30,6 +30,21 @@ Atualizado ao final de cada sprint. Fonte da verdade sobre o que existe de fato.
 | S2 | Design system | 2026-07-22 | — |
 | S3 | Shell + Configurações v1 | 2026-07-23 | — |
 | S4 | Atividades — cadastro | 2026-07-23 | — |
+| S5 | Atividades — listagem | 2026-07-23 | — |
+
+**S5 — detalhe do aceite:**
+- [x] Modo Cards já existia com a hierarquia do Cap. 5 (Produto/Serviço no lugar do assunto quando Proposta, escopo/amostragem em menor destaque, etiqueta MRR/PS, valor total) — pré-existente
+- [x] Modo Lista já existia — pré-existente
+- [x] Ações rápidas: **alterar status e prioridade já existiam** (`QuickStatusBadge`/`QuickPrioridadeBadge`, popover inline, sem abrir a atividade) — só faltavam na tabela, agora reutilizados lá também (extraídos e exportados de `activity-card.tsx`)
+- [x] Índice de conclusão do checklist em 2 formatos (barra + quantidade) já existia no card; **adicionado na tabela**, que só tinha a quantidade
+- [x] **Gaps reais corrigidos**:
+  - **URL não refletia os filtros** — só lia da URL no mount, nunca escrevia de volta. Adicionado `history.replaceState` (sem navegação Next, sem refetch) a cada mudança de filtro — colar a URL em outra aba agora reproduz exatamente o estado
+  - **Modo (cards/lista) não tinha memória** — resetava para "cards" a cada carregamento. Novo hook `useViewMode` (localStorage) usado em Atividades
+  - **"Duplicar" não existia** como ação rápida — adicionado em card e tabela; remapeia ids do checklist preservando a árvore de subitens (parentId)
+  - **Sem paginação** — 1.000+ atividades renderizavam tudo de uma vez. Adicionada paginação (60/página) usando o componente `Pagination` da S2
+- [ ] **"Arquivar" não foi implementado como ação rápida** — Atividade não tem soft-delete funcional (achado já registrado na S1/ERRATA-SPEC.md: `deletedAt` existe no schema mas nenhuma rota grava nele, `DELETE` é sempre hard delete). Implementar "arquivar" de verdade exigiria resolver essa arquitetura primeiro, o que está fora do escopo desta sprint
+- [x] `typecheck`, `lint`, `build` passam limpos; sem migration nesta sprint
+- [~] Verificação visual real **não foi possível** — mesmo bloqueio de banco/login de todas as sprints anteriores.
 
 **S4 — detalhe do aceite:**
 - [x] Formulário já existia (`activity-form.tsx`), quase inteiramente conforme a spec — popup em tela cheia, nenhum campo obrigatório, defaults automáticos (status=Pendente, prioridade=Médio)

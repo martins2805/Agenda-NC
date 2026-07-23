@@ -1,19 +1,21 @@
 "use client";
 
-import { Trash2, Check } from "lucide-react";
+import { Trash2, Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppData } from "@/lib/app-data-context";
 import { formatLocalDateTime } from "@/lib/calculations";
-import { STATUS_STYLES, PRIORIDADE_STYLES } from "@/lib/status-colors";
 import { cn } from "@/lib/utils";
 import type { Atividade } from "@/lib/types";
+import { QuickStatusBadge, QuickPrioridadeBadge } from "@/components/atividades/activity-card";
 
 export function ActivityTable({
   atividades,
   onEdit,
+  onDuplicate,
 }: {
   atividades: Atividade[];
   onEdit: (a: Atividade) => void;
+  onDuplicate?: (a: Atividade) => void;
 }) {
   const { lookups, deleteAtividade, updateAtividade } = useAppData();
 
@@ -79,41 +81,58 @@ export function ActivityTable({
                 <td className="px-3 py-2 text-muted-foreground">
                   {a.prazo ? formatLocalDateTime(a.prazo) : "—"}
                 </td>
-                <td className="px-3 py-2">
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase",
-                      STATUS_STYLES[a.status]
-                    )}
-                  >
-                    {a.status}
-                  </span>
+                <td className="px-3 py-2 font-mono text-[11px]" onClick={(e) => e.stopPropagation()}>
+                  <QuickStatusBadge atividade={a} />
                 </td>
-                <td className="px-3 py-2">
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase",
-                      PRIORIDADE_STYLES[a.prioridade]
-                    )}
-                  >
-                    {a.prioridade}
-                  </span>
+                <td className="px-3 py-2 font-mono text-[11px]" onClick={(e) => e.stopPropagation()}>
+                  <QuickPrioridadeBadge atividade={a} />
                 </td>
                 <td className="px-3 py-2 text-muted-foreground">
-                  {checkTotal > 0 ? `${checkDone}/${checkTotal}` : "—"}
+                  {checkTotal > 0 ? (
+                    <div className="flex items-center gap-2">
+                      <div className="progress-track w-16">
+                        <span
+                          style={{
+                            width: `${Math.round((checkDone / checkTotal) * 100)}%`,
+                            background: "var(--base-1)",
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs">{checkDone}/{checkTotal}</span>
+                    </div>
+                  ) : (
+                    "—"
+                  )}
                 </td>
                 <td className="px-3 py-2 text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteAtividade(a.id);
-                    }}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </Button>
+                  <div className="flex items-center justify-end gap-1">
+                    {onDuplicate && (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="text-muted-foreground"
+                        title="Duplicar atividade"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDuplicate(a);
+                        }}
+                      >
+                        <Copy className="size-3.5" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-destructive"
+                      title="Excluir atividade"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteAtividade(a.id);
+                      }}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             );

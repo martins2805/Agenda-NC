@@ -11,6 +11,7 @@ import {
   CalendarClock,
   Trash2,
   CheckSquare,
+  Copy,
   Phone,
   Check,
   Building2,
@@ -38,7 +39,7 @@ import {
   STATUS_NEGOCIACAO_STYLES,
 } from "@/lib/status-colors";
 
-function QuickStatusBadge({ atividade }: { atividade: Atividade }) {
+export function QuickStatusBadge({ atividade }: { atividade: Atividade }) {
   const { updateAtividade } = useAppData();
   const [open, setOpen] = useState(false);
 
@@ -85,7 +86,7 @@ function QuickStatusBadge({ atividade }: { atividade: Atividade }) {
   );
 }
 
-function QuickPrioridadeBadge({ atividade }: { atividade: Atividade }) {
+export function QuickPrioridadeBadge({ atividade }: { atividade: Atividade }) {
   const { updateAtividade } = useAppData();
   const [open, setOpen] = useState(false);
 
@@ -212,9 +213,10 @@ function QuickContato({ atividade }: { atividade: Atividade }) {
 interface ActivityCardProps {
   atividade: Atividade;
   onEdit: () => void;
+  onDuplicate?: () => void;
 }
 
-export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
+export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardProps) {
   const { lookups, registros, planilhas, deleteAtividade, updateAtividade } = useAppData();
 
   const empresa = lookups.empresa.find((e) => e.id === atividade.empresaId);
@@ -282,10 +284,25 @@ export function ActivityCard({ atividade, onEdit }: ActivityCardProps) {
             >
               <Check className="size-4" />
             </button>
+            {onDuplicate && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 text-muted-foreground"
+                title="Duplicar atividade"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDuplicate();
+                }}
+              >
+                <Copy className="size-3.5" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
               className="size-7 text-destructive"
+              title="Excluir atividade"
               onClick={(e) => {
                 e.stopPropagation();
                 deleteAtividade(atividade.id);
