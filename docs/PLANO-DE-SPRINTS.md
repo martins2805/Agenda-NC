@@ -86,6 +86,8 @@ A especificação tem 16 pontos de conflito ou lacuna (D16 acrescentado pelo PRO
 | **S12** | Planilhas | Mini-spec + grid + vínculos | 2–3 dias |
 | **S13** | Fechamento | Responsivo, busca global, backup, performance | 2 dias |
 | **S14** | Conformação visual (PROMPT 1) | Refatoração retroativa do layout de todas as telas já construídas para a identidade "mobile-desktop", **sem tocar em função** | 1,5–2 dias |
+| **S15** | Remoção de módulos (D17) | Execuções, Registros e Planilhas fora da interface; dados preservados no banco | 1–1,5 dias |
+| **S16** | Correções PROMPT 2 | Concluídos fora do calendário, concluídas ao fim da lista, toolbar fixa do editor, direcionamento do dashboard | 1–1,5 dias |
 
 **Total: 25,5 a 30 dias úteis de execução assistida.**
 
@@ -386,6 +388,60 @@ Mini-spec **e decisão de biblioteca de grid** (com ou sem fórmulas; se com, de
 
 ---
 
+### S15 — Remoção dos módulos Execuções, Registros e Planilhas (D17)
+
+**Origem:** seção "Adaptações Matheus" do documento consolidado (2026-08-14): "PÁGINAS: Excluir execuções, planilhas e registros". Decisão **D17 fechada** — remover da interface, **preservar dados no banco** (sem migration destrutiva; `DROP` eventual fica para sprint de limpeza futura, com aviso).
+
+**Objetivo:** os três módulos deixam de existir para o usuário. Atividades (com checklist, propostas, anexos e links) passa a ser o único objeto de trabalho, ao lado de Dashboard, Calendário e Configurações.
+
+**Escopo — inventário verificado no código:**
+
+1. **Navegação e rotas de página** — remover de `app-shell.tsx` os itens "Execuções", "Registros" e "Planilhas"; remover as pastas de página `src/app/(app)/atividades-gerais`, `src/app/(app)/registros`, `src/app/(app)/planilhas` e seus componentes exclusivos (`src/components/registros`, `src/components/planilhas`, kanban/editores que só eles usam — verificar consumidores antes de apagar cada arquivo)
+2. **Rotas de API** — remover `src/app/api/atividades-gerais`, `src/app/api/registros`, `src/app/api/planilhas` (o dado fica no banco; sem UI, as rotas viram superfície morta)
+3. **`AppDataProvider`** (`app-data-context.tsx`, 67 ocorrências) — parar de carregar/expor registros, planilhas e atividades gerais (ganho de performance no load inicial)
+4. **Dashboard** — Campo 1 "Resumo Geral" (`resumo-geral-widget.tsx`): remover KPIs "Total Execuções", "Total Registros", "Total Planilhas"; remover os botões de criação rápida desses objetos no cabeçalho
+5. **Calendário** — `prazo-filters.ts`/`activity-calendar.tsx`: exibir apenas prazos de origem Atividade e Checklist de Atividade (a view `prazo_unificado` continua existindo; o consumidor filtra as origens `atividade_geral`, `checklist_geral` e `registro`); remover etiquetas de tipo de prazo que citem Execução/Registro/Planilha
+6. **Cadastro/detalhe de Atividade** (`activity-form.tsx`, 55 ocorrências) — remover blocos "Registros vinculados", "Planilhas vinculadas", "Execuções vinculadas"
+7. **Busca global** (`global-search.tsx`, 20 ocorrências) — restringir a Atividades
+8. **Backup/exportação** (`backup-export.tsx`) — exportar só o que restou (atividades, lookups, modelos de checklist); manter capacidade de exportar os dados órfãos dos módulos removidos **uma última vez** antes da remoção, se o usuário quiser guardar
+9. **Lixeira** — verificar se lista registros/planilhas e restringir a atividades
+10. **Filtros** — remover `execucao-filters.ts` e wrappers exclusivos dos módulos removidos; motor único em `src/lib/filters` fica intacto
+
+**Fora do escopo:** qualquer `DROP TABLE`/`DROP VIEW`/migration; modelos Prisma (ficam no schema, marcados `@deprecated` como o padrão já usado na errata #3); os dados existentes; `Vinculo` (tabela polimórfica fica — vínculos órfãos ficam inertes).
+
+**Aceite**
+- [ ] Sidebar mostra só Dashboard, Atividades, Configurações (+ Usuários/Lixeira)
+- [ ] Nenhuma rota `/registros`, `/planilhas`, `/atividades-gerais` responde (404)
+- [ ] Dashboard sem KPIs nem botões de criação dos módulos removidos; contagens de Atividades intactas
+- [ ] Calendário mostra apenas prazos de atividade e de checklist de atividade
+- [ ] Formulário de atividade sem os blocos de vínculo removidos; salvar/editar atividade continua funcionando
+- [ ] Busca global (Ctrl+K) retorna só atividades
+- [ ] Nenhuma migration no diff; `prisma/schema.prisma` sem remoção de model
+- [ ] `typecheck`, `lint`, `build` passam; `/design-system` idêntico; telas restantes funcionando
+
+**Armadilha:** apagar componente compartilhado achando que era exclusivo (ex.: `rich-text-editor.tsx` mora em `src/components/registros/` mas pode ser usado pela descrição da atividade — mover, não apagar). Conferir imports de cada arquivo antes de excluir.
+
+---
+
+### S16 — Correções do PROMPT 2
+
+**Origem:** seção "PROMPT 2" do documento consolidado. Itens pequenos e sem ambiguidade; os grandes (widgets completos, cores configuráveis, prazo recorrente, multi-unidade) ficam no backlog com mini-spec própria.
+
+**Escopo**
+1. **Calendário: não exibir concluídos** — prazos cujo status é Concluído (ou item de checklist marcado) saem do calendário e do painel "Prazos vinculados"
+2. **Atividades concluídas ao fim da lista** — em cards e lista, concluídas sempre depois das não concluídas (dentro de cada grupo, mantém a ordenação escolhida) e com tratamento visual esmaecido usando tokens existentes
+3. **Toolbar fixa no editor de descrição** — barra de formatação do editor de texto rico fica `sticky` no topo do campo durante a rolagem
+4. **Direcionamento do dashboard** — diagnosticar no navegador (bug reportado pelo usuário; código de `atividadesHref`/`mergeFilters` existe mas nunca foi verificado ao vivo) e corrigir o que impedir clique → tela de destino com filtros somados
+
+**Aceite**
+- [ ] Atividade concluída com prazo não aparece no calendário; desmarcá-la volta a aparecer sem refresh
+- [ ] Lista/cards: concluídas sempre ao final, em qualquer ordenação
+- [ ] Toolbar do editor visível com texto de 3+ telas de altura rolado
+- [ ] Clicar em cada KPI/gráfico do dashboard (com e sem filtro global aplicado) abre Atividades com o filtro correto — **verificado clicando, no navegador**
+- [ ] `typecheck`, `lint`, `build`; `/design-system` idêntico; regressão das telas restantes
+
+---
+
 ## 6. Matriz de rastreabilidade
 
 Para garantir que nada da especificação ficou de fora.
@@ -425,6 +481,12 @@ Para garantir que nada da especificação ficou de fora.
 Registrado para não virar escopo silencioso no meio de uma sprint:
 
 - Visualização em Kanban (item aberto no checklist do documento)
+- **PROMPT 2 / Adaptações Matheus — itens grandes, cada um exige mini-spec antes de virar sprint:**
+  - Widgets do dashboard completos: incluir/excluir/editar todos os campos e tamanhos (exige decidir "widget fixo" para a Visão Geral — pendência #9 do STATUS)
+  - Configurações: cor configurável de todos os campos, etiquetas, cards e gráficos (hoje só itens de catálogo têm cor)
+  - Prazo recorrente para atividade (não existe nenhuma estrutura de recorrência)
+  - Vincular a mesma atividade a mais de uma unidade (`unidadeId` é singular no schema — exige migration N:N)
+  - "Calendário básico" e "alterar filtros/campos/etiquetas do cadastro" (Adaptações Matheus) — pedidos sem detalhamento; especificar com o usuário
 - Colunas configuráveis e redimensionáveis na lista (Cap. 5.15, marcado como "futuramente")
 - Módulos Vendas, Comissão, Financeiro, CRM, Clientes (Cap. 1.7)
 - Comentários nas atividades (Cap. 5.14, marcado como futuro)

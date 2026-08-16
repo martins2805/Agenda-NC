@@ -49,7 +49,12 @@ export function ActivityTable({
             return (
               <tr
                 key={a.id}
-                className="cursor-pointer border-b last:border-0 hover:bg-muted/40"
+                className={cn(
+                  "cursor-pointer border-b last:border-0 hover:bg-muted/40",
+                  // S16 (PROMPT 2): mesmo tratamento do card — concluídas ficam
+                  // esmaecidas ao final da lista, voltando ao normal no hover.
+                  concluida && "opacity-60 hover:opacity-100"
+                )}
                 onClick={() => onEdit(a)}
               >
                 <td className="px-3 py-2">

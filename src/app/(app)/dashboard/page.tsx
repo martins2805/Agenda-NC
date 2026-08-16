@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Plus, FileText, Table2, ClipboardCheck } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppData } from "@/lib/app-data-context";
 import { FilterBar } from "@/components/atividades/filter-bar";
@@ -22,7 +22,7 @@ import {
 import type { Atividade } from "@/lib/types";
 
 export default function DashboardPage() {
-  const { atividades, atividadesGerais, registros, planilhas, lookups } = useAppData();
+  const { atividades, lookups } = useAppData();
   const [filters, setFilters] = useState<ActivityFilters>(DEFAULT_FILTERS);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Atividade | null>(null);
@@ -65,24 +65,14 @@ export default function DashboardPage() {
             <Button className="gap-1.5 bg-white text-[var(--base-1)] hover:bg-white/90" onClick={novaAtividade}>
               <Plus className="size-4" /> Nova Atividade
             </Button>
-            <Link href="/atividades-gerais" className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/15 px-3 text-sm font-medium text-white transition-colors hover:bg-white/25">
-              <ClipboardCheck className="size-4" /> Nova Execução
-            </Link>
-            <Link href="/registros" className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/15 px-3 text-sm font-medium text-white transition-colors hover:bg-white/25">
-              <FileText className="size-4" /> Registro
-            </Link>
-            <Link href="/planilhas" className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white/15 px-3 text-sm font-medium text-white transition-colors hover:bg-white/25">
-              <Table2 className="size-4" /> Planilha
-            </Link>
             <WidgetConfigPanel />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-3 gap-3">
           {[
             { label: "Atividades", value: filtered.length },
             { label: "Pendentes", value: pendentes },
             { label: "Vencidas", value: vencidas },
-            { label: "Execuções", value: atividadesGerais.length },
           ].map((item) => (
             <div key={item.label} className="rounded-2xl bg-white/10 p-3 backdrop-blur-sm">
               <p className="text-xs font-medium uppercase tracking-wide text-white/70">{item.label}</p>
@@ -107,13 +97,7 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-6">
           {/* Campos 1-3 (S8) — motor de widgets: ordem/visibilidade/tamanho
               configuráveis no botão de engrenagem do cabeçalho */}
-          <DashboardWidgets
-            filters={filters}
-            atividades={atividades}
-            atividadesGerais={atividadesGerais}
-            registros={registros}
-            planilhas={planilhas}
-          />
+          <DashboardWidgets filters={filters} atividades={atividades} />
           {/* Campos 4-5 (S9) — ainda fora do motor de widgets */}
           <DashboardAnalytics filters={filters} atividades={atividades} />
         </div>

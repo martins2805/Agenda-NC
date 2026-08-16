@@ -124,3 +124,9 @@ Preenchida a partir do código já existente no repositório (não é uma escolh
 **Decisão:** reverter para o tema claro. D1 permanece como estava: fundo do app `#EEF4ED`; `#1F2C43` só em sidebar/header.
 **Bloqueia:** S14 (conformação visual retroativa) — reverter o tema escuro global e remover o botão temporário de alternância (`6ab9996`)
 **Status:** FECHADA (2026-07-22)
+
+## D17 — Remoção dos módulos Execuções, Planilhas e Registros
+**Conflito:** a spec (Cap. 1.7, 2.3) define Execuções, Registros e Planilhas como módulos da primeira versão, e as sprints S10–S12 os entregaram. A seção "Adaptações Matheus" do documento consolidado (2026-08-14) pede: "PÁGINAS: Excluir execuções, planilhas e registros".
+**Decisão:** remover os três módulos da interface — páginas, itens de navegação, botões de criação, blocos de vínculo, KPIs do dashboard, fontes do calendário e escopo da busca global. **Sem migration destrutiva:** tabelas, dados e a view `prazo_unificado` permanecem no banco intactos (remoção reversível; eventual `DROP` fica para uma sprint de limpeza futura, com aviso prévio, conforme regra "não rode migration destrutiva sem avisar").
+**Bloqueia:** S15
+**Status:** FECHADA (2026-08-14, confirmada pelo usuário no chat)

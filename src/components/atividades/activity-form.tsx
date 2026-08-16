@@ -1,18 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
-  ClipboardList,
   Download,
-  FileText,
   History,
-  Link2,
   Paperclip,
-  Plus,
-  Table2,
   Trash2,
-  X,
 } from "lucide-react";
 import {
   Sheet,
@@ -39,16 +32,12 @@ import { ChecklistEditor } from "@/components/checklist-editor";
 import { ChecklistTemplateManager } from "@/components/checklist-template-manager";
 import { PropostaEditor } from "@/components/proposta-editor";
 import { LinkEditor } from "@/components/atividades/link-editor";
-import { RichTextEditor } from "@/components/registros/rich-text-editor";
+import { RichTextEditor } from "@/components/rich-text-editor";
 import {
   useAppData,
   useAssuntoSuggestions,
   makeAtividadeId,
   makePropostaId,
-  makeRegistroId,
-  makeRegistroTabId,
-  makePlanilhaId,
-  makeAtividadeGeralId,
   makeChecklistItemId,
 } from "@/lib/app-data-context";
 import { applyChecklistTemplate } from "@/lib/checklist-templates";
@@ -94,20 +83,11 @@ interface ActivityFormProps {
 export function ActivityForm({ open, onOpenChange, editing, onCreated }: ActivityFormProps) {
   const {
     lookups,
-    registros,
-    planilhas,
-    atividadesGerais,
     addLookupItem,
     renameLookupItem,
     deactivateLookupItem,
     addAtividade,
     updateAtividade,
-    addRegistro,
-    updateRegistro,
-    addPlanilha,
-    updatePlanilha,
-    addAtividadeGeral,
-    updateAtividadeGeral,
   } = useAppData();
   const assuntoSuggestions = useAssuntoSuggestions();
 
@@ -152,68 +132,8 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
   const showAgendamento =
     !!tipoAgendamento && draft.tipoAtividadeIds.includes(tipoAgendamento.id);
 
-  const linkedRegistros = registros.filter((r) => r.atividadeIds.includes(draft.id));
-  const linkedPlanilhas = planilhas.filter((p) => p.atividadeIds.includes(draft.id));
-  const linkedExecucoes = atividadesGerais.filter((g) => g.atividadeIds.includes(draft.id));
-  const linkableRegistros = registros.filter((r) => !r.atividadeIds.includes(draft.id) && !r.deletedAt);
-  const linkablePlanilhas = planilhas.filter((p) => !p.atividadeIds.includes(draft.id) && !p.deletedAt);
-  const linkableExecucoes = atividadesGerais.filter((g) => !g.atividadeIds.includes(draft.id));
-
   function patch(p: Partial<Atividade>) {
     setDraft((prev) => ({ ...prev, ...p }));
-  }
-
-  function createRegistroVinculado() {
-    addRegistro({
-      id: makeRegistroId(),
-      nome: "",
-      empresaId: draft.empresaId,
-      unidadeId: draft.unidadeId,
-      contato: "",
-      assunto: draft.assunto,
-      categoriaIds: [],
-      tabs: [{ id: makeRegistroTabId(), titulo: "Principal", conteudo: "" }],
-      atividadeIds: [draft.id],
-      atividadeGeralIds: [],
-      planilhaIds: [],
-      prazo: null,
-      createdAt: new Date().toISOString(),
-    });
-  }
-
-  function createPlanilhaVinculada() {
-    addPlanilha({
-      id: makePlanilhaId(),
-      nome: "",
-      empresaId: draft.empresaId,
-      unidadeId: draft.unidadeId,
-      assunto: draft.assunto,
-      categoriaIds: [],
-      atividadeIds: [draft.id],
-      atividadeGeralIds: [],
-      registroIds: [],
-      conteudo: null,
-      createdAt: new Date().toISOString(),
-    });
-  }
-
-  function createExecucaoVinculada() {
-    addAtividadeGeral({
-      id: makeAtividadeGeralId(),
-      empresaId: draft.empresaId,
-      unidadeId: draft.unidadeId,
-      tipoIds: [],
-      assunto: draft.assunto,
-      vinculos: "",
-      prazo: null,
-      descricao: "",
-      status: "Pendente",
-      prioridade: "Médio",
-      setorIds: [],
-      checklist: [],
-      atividadeIds: [draft.id],
-      createdAt: new Date().toISOString(),
-    });
   }
 
   async function handleUpload(files: FileList | null) {
@@ -314,159 +234,6 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
                 <option key={s} value={s} />
               ))}
             </datalist>
-          </div>
-
-          <div className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-3">
-            <Label className="flex items-center gap-1.5">
-              <Link2 className="size-3.5" />
-              Vínculos
-            </Label>
-
-            {(linkedRegistros.length > 0 || linkedPlanilhas.length > 0 || linkedExecucoes.length > 0) && (
-              <div className="flex flex-col gap-1.5">
-                {linkedExecucoes.map((g) => (
-                  <div key={g.id} className="flex items-center gap-1.5">
-                    <Link
-                      href={`/atividades-gerais?open=${g.id}`}
-                      className="flex flex-1 items-center gap-1.5 text-sm text-primary hover:underline"
-                    >
-                      <ClipboardList className="size-3.5 shrink-0" />
-                      {g.assunto || "Execução"}
-                    </Link>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-6 shrink-0 text-muted-foreground"
-                      title="Desvincular"
-                      onClick={() =>
-                        updateAtividadeGeral(g.id, { atividadeIds: g.atividadeIds.filter((id) => id !== draft.id) })
-                      }
-                    >
-                      <X className="size-3.5" />
-                    </Button>
-                  </div>
-                ))}
-                {linkedRegistros.map((r) => (
-                  <div key={r.id} className="flex items-center gap-1.5">
-                    <Link
-                      href={`/registros?open=${r.id}`}
-                      className="flex flex-1 items-center gap-1.5 text-sm text-primary hover:underline"
-                    >
-                      <FileText className="size-3.5 shrink-0" />
-                      {r.nome || r.tabs[0]?.titulo || "Registro"}
-                    </Link>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-6 shrink-0 text-muted-foreground"
-                      title="Desvincular"
-                      onClick={() =>
-                        updateRegistro(r.id, { atividadeIds: r.atividadeIds.filter((id) => id !== draft.id) })
-                      }
-                    >
-                      <X className="size-3.5" />
-                    </Button>
-                  </div>
-                ))}
-                {linkedPlanilhas.map((p) => (
-                  <div key={p.id} className="flex items-center gap-1.5">
-                    <Link
-                      href={`/planilhas?open=${p.id}`}
-                      className="flex flex-1 items-center gap-1.5 text-sm text-primary hover:underline"
-                    >
-                      <Table2 className="size-3.5 shrink-0" />
-                      {p.nome || "Planilha"}
-                    </Link>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-6 shrink-0 text-muted-foreground"
-                      title="Desvincular"
-                      onClick={() =>
-                        updatePlanilha(p.id, { atividadeIds: p.atividadeIds.filter((id) => id !== draft.id) })
-                      }
-                    >
-                      <X className="size-3.5" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-              <div className="flex gap-1.5">
-                <Select
-                  value=""
-                  onValueChange={(id) => {
-                    const registro = registros.find((r) => r.id === id);
-                    if (id && registro) updateRegistro(id, { atividadeIds: [...registro.atividadeIds, draft.id] });
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Vincular registro existente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {linkableRegistros.map((r) => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.nome || r.tabs[0]?.titulo || "Registro sem nome"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button type="button" variant="outline" size="icon" className="shrink-0" title="Criar novo registro vinculado" onClick={createRegistroVinculado}>
-                  <Plus className="size-4" />
-                </Button>
-              </div>
-              <div className="flex gap-1.5">
-                <Select
-                  value=""
-                  onValueChange={(id) => {
-                    const planilha = planilhas.find((p) => p.id === id);
-                    if (id && planilha) updatePlanilha(id, { atividadeIds: [...planilha.atividadeIds, draft.id] });
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Vincular planilha existente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {linkablePlanilhas.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.nome || "Planilha sem nome"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button type="button" variant="outline" size="icon" className="shrink-0" title="Criar nova planilha vinculada" onClick={createPlanilhaVinculada}>
-                  <Plus className="size-4" />
-                </Button>
-              </div>
-              <div className="flex gap-1.5">
-                <Select
-                  value=""
-                  onValueChange={(id) => {
-                    const execucao = atividadesGerais.find((g) => g.id === id);
-                    if (id && execucao) updateAtividadeGeral(id, { atividadeIds: [...execucao.atividadeIds, draft.id] });
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Vincular execução existente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {linkableExecucoes.map((g) => (
-                      <SelectItem key={g.id} value={g.id}>
-                        {g.assunto || "Execução sem nome"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button type="button" variant="outline" size="icon" className="shrink-0" title="Criar nova execução vinculada" onClick={createExecucaoVinculada}>
-                  <Plus className="size-4" />
-                </Button>
-              </div>
-            </div>
           </div>
 
           {showEmail && (

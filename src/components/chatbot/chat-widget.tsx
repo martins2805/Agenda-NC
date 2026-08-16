@@ -240,9 +240,8 @@ export function ChatWidget() {
             )}
             {!loadingHistory && messages.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                Oi, eu sou a Aya! Pergunte algo sobre suas atividades, registros
-                ou planilhas. Digite <span className="font-mono">/ajuda</span> para
-                ver os comandos.
+                Oi, eu sou a Aya! Pergunte algo sobre suas atividades. Digite{" "}
+                <span className="font-mono">/ajuda</span> para ver os comandos.
               </p>
             )}
             {messages.map((m) => (

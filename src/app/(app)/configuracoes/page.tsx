@@ -36,6 +36,10 @@ const KIND_LABELS: Record<LookupKind, string> = {
   setorInterno: "Setores internos",
 };
 
+// Restrito aos catálogos usados por Atividades na S15 (D17) — categoriaRegistro,
+// categoriaPlanilha, tipoAtividadeGeral e setorInterno pertenciam só aos módulos
+// removidos (Registros, Planilhas, Execuções). Os dados continuam no banco,
+// só saíram desta tela de catálogos.
 const KIND_ORDER: LookupKind[] = [
   "empresa",
   "unidade",
@@ -43,10 +47,6 @@ const KIND_ORDER: LookupKind[] = [
   "servicoProduto",
   "escopo",
   "amostragem",
-  "categoriaRegistro",
-  "categoriaPlanilha",
-  "tipoAtividadeGeral",
-  "setorInterno",
 ];
 
 const COR_SWATCH: Record<LookupCor, string> = {

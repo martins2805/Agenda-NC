@@ -1,7 +1,7 @@
 import { STATUS_FROM_DB, PRIORIDADE_FROM_DB } from "./atividade-mapper";
 import { matchesRecord, type FilterableRecord } from "./filters/engine";
 import type { PrazoRange } from "./filters/types";
-import { STATUS_OPTIONS, STATUS_GERAL_OPTIONS } from "./types";
+import { STATUS_OPTIONS } from "./types";
 import type { Prioridade } from "./types";
 
 export type { PrazoRange } from "./filters/types";
@@ -53,13 +53,12 @@ export function prazoEntryFromApi(row: PrazoUnificadoApiRow): PrazoEntry {
   };
 }
 
+// Consumido só pelo calendário (S15/D17: restrito a objetoTipo "atividade" —
+// Execuções e Registros saíram da interface).
 export function tipoPrazoLabel(entry: Pick<PrazoEntry, "objetoTipo" | "tipoPrazo">): string {
-  if (entry.tipoPrazo === "registro") return "Registro";
   if (entry.tipoPrazo === "proposta") return "Proposta";
-  if (entry.tipoPrazo === "checklist") {
-    return entry.objetoTipo === "atividadeGeral" ? "Checklist (Execução)" : "Checklist (Atividade)";
-  }
-  return entry.objetoTipo === "atividadeGeral" ? "Execução" : "Atividade";
+  if (entry.tipoPrazo === "checklist") return "Checklist (Atividade)";
+  return "Atividade";
 }
 
 export interface CalendarFilters {
@@ -82,11 +81,8 @@ export const DEFAULT_CALENDAR_FILTERS: CalendarFilters = {
   prazos: [],
 };
 
-// União dos status de Atividade (StatusConclusao) e de Execução (StatusGeral)
-// — o calendário mistura as duas origens, então o filtro precisa cobrir ambas.
-export const CALENDAR_STATUS_OPTIONS: string[] = [
-  ...new Set<string>([...STATUS_OPTIONS, ...STATUS_GERAL_OPTIONS]),
-];
+// Restrito aos status de Atividade (S15/D17: calendário só exibe Atividade).
+export const CALENDAR_STATUS_OPTIONS: string[] = [...STATUS_OPTIONS];
 
 interface Lookups {
   empresa: { id: string; name: string }[];

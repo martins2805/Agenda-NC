@@ -123,11 +123,18 @@ export function matchesActivity(a: Atividade, filters: ActivityFilters, lookups:
 }
 
 export function sortActivities(list: Atividade[], ordenar: OrderBy): Atividade[] {
-  return sortRecords(list, ordenar, (a) => ({
+  const ordenada = sortRecords(list, ordenar, (a) => ({
     prazo: a.prazo,
     prioridade: a.prioridade,
     createdAt: a.createdAt,
   }));
+  // S16 (PROMPT 2): concluídas sempre ao final, em qualquer ordenação. A
+  // ordenação escolhida continua valendo dentro de cada grupo — isto é só
+  // uma partição estável por cima, não uma segunda regra de ordenação.
+  return [
+    ...ordenada.filter((a) => a.status !== "Concluído"),
+    ...ordenada.filter((a) => a.status === "Concluído"),
+  ];
 }
 
 export function hasActiveFilters(filters: ActivityFilters): boolean {
@@ -177,21 +184,6 @@ export function atividadesHref(base: ActivityFilters, extra: Partial<ActivityFil
   const params = filtersToParams(mergeFilters(base, extra));
   const qs = params.toString();
   return qs ? `/atividades?${qs}` : "/atividades";
-}
-
-export function execucoesHref(base: ActivityFilters, extra: Partial<ActivityFilters> = {}): string {
-  const params = filtersToParams(mergeFilters(base, extra));
-  const qs = params.toString();
-  return qs ? `/atividades-gerais?${qs}` : "/atividades-gerais";
-}
-
-// Registros/Planilhas usam filtros mais simples (empresa única + palavra-chave).
-export function simpleHref(basePath: string, base: ActivityFilters): string {
-  const sp = new URLSearchParams();
-  if (base.keyword.trim()) sp.set("kw", base.keyword.trim());
-  if (base.empresaIds.length > 0) sp.set("emp", base.empresaIds[0]);
-  const qs = sp.toString();
-  return qs ? `${basePath}?${qs}` : basePath;
 }
 
 export const STATUS_ALL = STATUS_OPTIONS;

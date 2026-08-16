@@ -27,8 +27,7 @@ function toKey(date: Date) {
 }
 
 // Só a Atividade tem prazo com hora (usado no bloco "Agendamento") — os demais
-// (checklist, checklist de execução, prazo de execução, prazoFim de proposta)
-// são datas simples.
+// (checklist, prazoFim de proposta) são datas simples.
 function isDateTimeField(entry: PrazoEntry): boolean {
   return entry.objetoTipo === "atividade" && entry.tipoPrazo === "atividade";
 }
@@ -73,18 +72,22 @@ function PrazoEditavel({ entry, onSave }: { entry: PrazoEntry; onSave: (valor: s
 }
 
 export function ActivityCalendar() {
-  const { lookups, atividades, atividadesGerais, updateAtividade, updateAtividadeGeral, updateRegistro } =
-    useAppData();
+  const { lookups, atividades, updateAtividade } = useAppData();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [filters, setFilters] = useState<CalendarFilters>(DEFAULT_CALENDAR_FILTERS);
   const [prazos, setPrazos] = useState<PrazoEntry[]>([]);
 
   // Consumidor exclusivo de prazo_unificado (S1/S7) — nenhuma agregação de
-  // prazos é recalculada aqui, só lida da view via /api/prazos.
+  // prazos é recalculada aqui, só lida da view via /api/prazos. Restrito a
+  // prazos de Atividade (e checklist/proposta de Atividade) na S15 (D17) —
+  // Execuções e Registros saíram da interface; a view continua devolvendo
+  // as linhas deles, só não são mais exibidas aqui.
   const fetchPrazos = useCallback(() => {
     fetch("/api/prazos")
       .then((res) => (res.ok ? (res.json() as Promise<PrazoUnificadoApiRow[]>) : []))
-      .then((rows) => setPrazos(rows.map(prazoEntryFromApi)))
+      .then((rows) =>
+        setPrazos(rows.filter((r) => r.objetoTipo === "atividade").map(prazoEntryFromApi))
+      )
       .catch(() => setPrazos([]));
   }, []);
 
@@ -92,16 +95,35 @@ export function ActivityCalendar() {
     fetchPrazos();
   }, [fetchPrazos]);
 
+  // S16 (PROMPT 2): prazo de algo já concluído não aparece no calendário.
+  // A conclusão é lida do estado compartilhado (`atividades`), não do snapshot
+  // que veio de prazo_unificado — assim concluir/desmarcar em qualquer tela
+  // reflete aqui na hora, sem refetch e sem botão "Atualizar" (Regra 10).
+  // Se a atividade não estiver no estado (ainda carregando), cai de volta no
+  // status da própria view em vez de sumir com o prazo por engano.
+  const concluido = useCallback(
+    (entry: PrazoEntry) => {
+      const atividade = atividades.find((a) => a.id === entry.objetoId);
+      if (entry.tipoPrazo === "checklist") {
+        const item = atividade?.checklist.find((c) => c.id === entry.origemId);
+        return item ? item.concluido : entry.status === "Concluído";
+      }
+      return (atividade?.status ?? entry.status) === "Concluído";
+    },
+    [atividades]
+  );
+
   const entriesByDate = useMemo(() => {
     const map = new Map<string, PrazoEntry[]>();
     for (const p of prazos) {
+      if (concluido(p)) continue;
       const key = p.data.slice(0, 10);
       const list = map.get(key) ?? [];
       list.push(p);
       map.set(key, list);
     }
     return map;
-  }, [prazos]);
+  }, [prazos, concluido]);
 
   const filteredEntriesByDate = useMemo(() => {
     if (!hasActiveCalendarFilters(filters)) return entriesByDate;
@@ -120,32 +142,18 @@ export function ActivityCalendar() {
   // resto do app — o dashboard e as demais telas refletem sem refresh manual
   // (Regra 10), já que é o mesmo estado compartilhado.
   function editarPrazo(entry: PrazoEntry, novoValor: string | null) {
-    if (entry.objetoTipo === "registro") {
-      updateRegistro(entry.objetoId, { prazo: novoValor });
-    } else if (entry.objetoTipo === "atividade") {
-      const atividade = atividades.find((a) => a.id === entry.objetoId);
-      if (!atividade) return;
-      if (entry.tipoPrazo === "atividade") {
-        updateAtividade(atividade.id, { prazo: novoValor });
-      } else if (entry.tipoPrazo === "checklist") {
-        updateAtividade(atividade.id, {
-          checklist: atividade.checklist.map((c) => (c.id === entry.origemId ? { ...c, prazo: novoValor } : c)),
-        });
-      } else if (entry.tipoPrazo === "proposta") {
-        updateAtividade(atividade.id, {
-          propostas: atividade.propostas.map((p) => (p.id === entry.origemId ? { ...p, prazoFim: novoValor } : p)),
-        });
-      }
-    } else {
-      const geral = atividadesGerais.find((g) => g.id === entry.objetoId);
-      if (!geral) return;
-      if (entry.tipoPrazo === "atividade") {
-        updateAtividadeGeral(geral.id, { prazo: novoValor });
-      } else if (entry.tipoPrazo === "checklist") {
-        updateAtividadeGeral(geral.id, {
-          checklist: geral.checklist.map((c) => (c.id === entry.origemId ? { ...c, prazo: novoValor } : c)),
-        });
-      }
+    const atividade = atividades.find((a) => a.id === entry.objetoId);
+    if (!atividade) return;
+    if (entry.tipoPrazo === "atividade") {
+      updateAtividade(atividade.id, { prazo: novoValor });
+    } else if (entry.tipoPrazo === "checklist") {
+      updateAtividade(atividade.id, {
+        checklist: atividade.checklist.map((c) => (c.id === entry.origemId ? { ...c, prazo: novoValor } : c)),
+      });
+    } else if (entry.tipoPrazo === "proposta") {
+      updateAtividade(atividade.id, {
+        propostas: atividade.propostas.map((p) => (p.id === entry.origemId ? { ...p, prazoFim: novoValor } : p)),
+      });
     }
     // /api/prazos é uma cópia separada do estado global — busca de novo depois
     // da própria edição (não é um botão "Atualizar", é consequência da ação).
@@ -190,12 +198,7 @@ export function ActivityCalendar() {
                 {entries.map((entry) => {
                   const empresa = lookups.empresa.find((e) => e.id === entry.empresaId)?.name ?? "Sem empresa";
                   const unidade = lookups.unidade.find((u) => u.id === entry.unidadeId)?.name;
-                  const href =
-                    entry.objetoTipo === "registro"
-                      ? `/registros?open=${entry.objetoId}`
-                      : entry.objetoTipo === "atividade"
-                        ? `/atividades?open=${entry.objetoId}`
-                        : `/atividades-gerais?open=${entry.objetoId}`;
+                  const href = `/atividades?open=${entry.objetoId}`;
                   return (
                     <li
                       key={`${entry.tipoPrazo}-${entry.origemId}`}

@@ -1,24 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { resolveOrCreateLookup, resolveOrCreateLookups } from "@/lib/lookup-resolve";
+import { resolveOrCreateLookup } from "@/lib/lookup-resolve";
 import { statusToDb, prioridadeToDb, atividadeFromDb } from "@/lib/atividade-mapper";
-import {
-  syncKnowledgeChunk,
-  deleteKnowledgeChunk,
-  serializeAtividade,
-  serializeRegistro,
-  serializePlanilha,
-} from "@/lib/knowledge-sync";
+import { syncKnowledgeChunk, deleteKnowledgeChunk, serializeAtividade } from "@/lib/knowledge-sync";
 import type { StatusConclusao, Prioridade } from "@/lib/types";
 
 const STATUS_ENUM = ["Pendente", "Aguardando retorno interno", "Aguardando retorno cliente", "Concluído"];
 const PRIORIDADE_ENUM = ["Urgente", "Importante", "Médio", "Baixo"];
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
 
 export const TOOL_DECLARATIONS = [
   {
@@ -71,88 +58,6 @@ export const TOOL_DECLARATIONS = [
             id: { type: "string" },
             confirmado: { type: "boolean" },
           },
-          required: ["id", "confirmado"],
-        },
-      },
-      {
-        name: "criar_registro",
-        description:
-          "Cria um novo registro (anotação de reunião) no Agenda NC.",
-        parameters: {
-          type: "object",
-          properties: {
-            empresa: { type: "string" },
-            unidade: { type: "string" },
-            assunto: { type: "string" },
-            contato: { type: "string" },
-            categorias: { type: "array", items: { type: "string" } },
-            conteudo: { type: "string", description: "Texto livre do registro" },
-          },
-        },
-      },
-      {
-        name: "atualizar_registro",
-        description: "Atualiza metadados de um registro existente (não edita o conteúdo das abas).",
-        parameters: {
-          type: "object",
-          properties: {
-            id: { type: "string" },
-            empresa: { type: "string" },
-            unidade: { type: "string" },
-            assunto: { type: "string" },
-            contato: { type: "string" },
-            categorias: { type: "array", items: { type: "string" } },
-          },
-          required: ["id"],
-        },
-      },
-      {
-        name: "excluir_registro",
-        description:
-          "Exclui um registro definitivamente. SÓ chame com confirmado=true depois de confirmação explícita do usuário.",
-        parameters: {
-          type: "object",
-          properties: { id: { type: "string" }, confirmado: { type: "boolean" } },
-          required: ["id", "confirmado"],
-        },
-      },
-      {
-        name: "criar_planilha",
-        description: "Cria uma nova planilha (só metadados; conteúdo de células não é editável pelo chat).",
-        parameters: {
-          type: "object",
-          properties: {
-            nome: { type: "string" },
-            empresa: { type: "string" },
-            unidade: { type: "string" },
-            assunto: { type: "string" },
-            categorias: { type: "array", items: { type: "string" } },
-          },
-        },
-      },
-      {
-        name: "atualizar_planilha",
-        description: "Atualiza metadados de uma planilha existente.",
-        parameters: {
-          type: "object",
-          properties: {
-            id: { type: "string" },
-            nome: { type: "string" },
-            empresa: { type: "string" },
-            unidade: { type: "string" },
-            assunto: { type: "string" },
-            categorias: { type: "array", items: { type: "string" } },
-          },
-          required: ["id"],
-        },
-      },
-      {
-        name: "excluir_planilha",
-        description:
-          "Exclui uma planilha definitivamente. SÓ chame com confirmado=true depois de confirmação explícita do usuário.",
-        parameters: {
-          type: "object",
-          properties: { id: { type: "string" }, confirmado: { type: "boolean" } },
           required: ["id", "confirmado"],
         },
       },
@@ -300,163 +205,12 @@ async function excluirAtividade(userId: string, args: Record<string, unknown>, c
   return { ok: true };
 }
 
-async function criarRegistro(userId: string, args: Record<string, unknown>) {
-  const empresaId = args.empresa ? await resolveOrCreateLookup(userId, "empresa", String(args.empresa)) : null;
-  const unidadeId = args.unidade ? await resolveOrCreateLookup(userId, "unidade", String(args.unidade)) : null;
-  const categoriaIds = await resolveOrCreateLookups(
-    userId,
-    "categoriaRegistro",
-    Array.isArray(args.categorias) ? (args.categorias as string[]) : undefined
-  );
-
-  const created = await prisma.registro.create({
-    data: {
-      id: crypto.randomUUID(),
-      userId,
-      empresaId,
-      unidadeId,
-      assunto: typeof args.assunto === "string" ? args.assunto : "",
-      contato: typeof args.contato === "string" ? args.contato : "",
-      categoriaIds,
-      tabs: {
-        create: [
-          {
-            id: crypto.randomUUID(),
-            titulo: "Aba 1",
-            conteudo: typeof args.conteudo === "string" ? `<p>${escapeHtml(args.conteudo)}</p>` : "",
-            ordem: 0,
-          },
-        ],
-      },
-    },
-    include: { tabs: true },
-  });
-
-  serializeRegistro(created)
-    .then((content) => syncKnowledgeChunk(userId, "registro", created.id, content))
-    .catch((error) => console.error("Falha ao indexar registro (chat)", error));
-
-  return { ok: true, id: created.id };
-}
-
-async function atualizarRegistro(userId: string, args: Record<string, unknown>) {
-  const id = String(args.id ?? "");
-  if (!id) return { ok: false, error: "id é obrigatório" };
-
-  const owned = await prisma.registro.findFirst({ where: { id, userId } });
-  if (!owned) return { ok: false, error: `Registro com id ${id} não encontrado` };
-
-  const data: Record<string, unknown> = {};
-  if (args.empresa !== undefined) data.empresaId = await resolveOrCreateLookup(userId, "empresa", String(args.empresa));
-  if (args.unidade !== undefined) data.unidadeId = await resolveOrCreateLookup(userId, "unidade", String(args.unidade));
-  if (args.assunto !== undefined) data.assunto = String(args.assunto);
-  if (args.contato !== undefined) data.contato = String(args.contato);
-  if (args.categorias !== undefined)
-    data.categoriaIds = await resolveOrCreateLookups(userId, "categoriaRegistro", args.categorias as string[]);
-
-  try {
-    const updated = await prisma.registro.update({ where: { id }, data, include: { tabs: true } });
-    serializeRegistro(updated)
-      .then((content) => syncKnowledgeChunk(userId, "registro", updated.id, content))
-      .catch((error) => console.error("Falha ao indexar registro (chat)", error));
-    return { ok: true, id: updated.id };
-  } catch {
-    return { ok: false, error: `Registro com id ${id} não encontrado` };
-  }
-}
-
-async function excluirRegistro(userId: string, args: Record<string, unknown>, ctx: ToolContext) {
-  const id = String(args.id ?? "");
-  if (!id) return { ok: false, error: "id é obrigatório" };
-
-  const guard = await guardDeletion(userId, "registro", id, ctx, args.confirmado);
-  if (!guard.proceed) return { ok: false, error: guard.error };
-
-  const result = await prisma.registro.deleteMany({ where: { id, userId } });
-  if (result.count === 0) return { ok: false, error: `Registro com id ${id} não encontrado` };
-  deleteKnowledgeChunk(userId, "registro", id).catch((error) => console.error(error));
-  return { ok: true };
-}
-
-async function criarPlanilha(userId: string, args: Record<string, unknown>) {
-  const empresaId = args.empresa ? await resolveOrCreateLookup(userId, "empresa", String(args.empresa)) : null;
-  const unidadeId = args.unidade ? await resolveOrCreateLookup(userId, "unidade", String(args.unidade)) : null;
-  const categoriaIds = await resolveOrCreateLookups(
-    userId,
-    "categoriaPlanilha",
-    Array.isArray(args.categorias) ? (args.categorias as string[]) : undefined
-  );
-
-  const created = await prisma.planilha.create({
-    data: {
-      id: crypto.randomUUID(),
-      userId,
-      nome: typeof args.nome === "string" && args.nome ? args.nome : "Nova planilha",
-      empresaId,
-      unidadeId,
-      assunto: typeof args.assunto === "string" ? args.assunto : "",
-      categoriaIds,
-    },
-  });
-
-  serializePlanilha(created)
-    .then((content) => syncKnowledgeChunk(userId, "planilha", created.id, content))
-    .catch((error) => console.error("Falha ao indexar planilha (chat)", error));
-
-  return { ok: true, id: created.id };
-}
-
-async function atualizarPlanilha(userId: string, args: Record<string, unknown>) {
-  const id = String(args.id ?? "");
-  if (!id) return { ok: false, error: "id é obrigatório" };
-
-  const owned = await prisma.planilha.findFirst({ where: { id, userId } });
-  if (!owned) return { ok: false, error: `Planilha com id ${id} não encontrada` };
-
-  const data: Record<string, unknown> = {};
-  if (args.nome !== undefined) data.nome = String(args.nome);
-  if (args.empresa !== undefined) data.empresaId = await resolveOrCreateLookup(userId, "empresa", String(args.empresa));
-  if (args.unidade !== undefined) data.unidadeId = await resolveOrCreateLookup(userId, "unidade", String(args.unidade));
-  if (args.assunto !== undefined) data.assunto = String(args.assunto);
-  if (args.categorias !== undefined)
-    data.categoriaIds = await resolveOrCreateLookups(userId, "categoriaPlanilha", args.categorias as string[]);
-
-  try {
-    const updated = await prisma.planilha.update({ where: { id }, data });
-    serializePlanilha(updated)
-      .then((content) => syncKnowledgeChunk(userId, "planilha", updated.id, content))
-      .catch((error) => console.error("Falha ao indexar planilha (chat)", error));
-    return { ok: true, id: updated.id };
-  } catch {
-    return { ok: false, error: `Planilha com id ${id} não encontrada` };
-  }
-}
-
-async function excluirPlanilha(userId: string, args: Record<string, unknown>, ctx: ToolContext) {
-  const id = String(args.id ?? "");
-  if (!id) return { ok: false, error: "id é obrigatório" };
-
-  const guard = await guardDeletion(userId, "planilha", id, ctx, args.confirmado);
-  if (!guard.proceed) return { ok: false, error: guard.error };
-
-  const result = await prisma.planilha.deleteMany({ where: { id, userId } });
-  if (result.count === 0) return { ok: false, error: `Planilha com id ${id} não encontrada` };
-  deleteKnowledgeChunk(userId, "planilha", id).catch((error) => console.error(error));
-  return { ok: true };
-}
-
 type ToolHandler = (userId: string, args: Record<string, unknown>, ctx: ToolContext) => Promise<object>;
 
 const HANDLERS: Record<string, ToolHandler> = {
   criar_atividade: (userId, args) => criarAtividade(userId, args),
   atualizar_atividade: (userId, args) => atualizarAtividade(userId, args),
   excluir_atividade: excluirAtividade,
-  criar_registro: (userId, args) => criarRegistro(userId, args),
-  atualizar_registro: (userId, args) => atualizarRegistro(userId, args),
-  excluir_registro: excluirRegistro,
-  criar_planilha: (userId, args) => criarPlanilha(userId, args),
-  atualizar_planilha: (userId, args) => atualizarPlanilha(userId, args),
-  excluir_planilha: excluirPlanilha,
 };
 
 export async function executeTool(

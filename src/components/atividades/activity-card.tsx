@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,8 +14,6 @@ import {
   Phone,
   Check,
   Building2,
-  FileText,
-  Table2,
   Package,
 } from "lucide-react";
 import { useAppData } from "@/lib/app-data-context";
@@ -217,7 +214,7 @@ interface ActivityCardProps {
 }
 
 export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardProps) {
-  const { lookups, registros, planilhas, deleteAtividade, updateAtividade } = useAppData();
+  const { lookups, deleteAtividade, updateAtividade } = useAppData();
 
   const empresa = lookups.empresa.find((e) => e.id === atividade.empresaId);
   const unidade = lookups.unidade.find((u) => u.id === atividade.unidadeId);
@@ -239,12 +236,18 @@ export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardPro
   const prazoStatus = atividadePrazoStatus(atividade);
   const concluida = atividade.status === "Concluído";
 
-  const linkedRegistros = registros.filter((r) => r.atividadeIds.includes(atividade.id) && !r.deletedAt);
-  const linkedPlanilhas = planilhas.filter((p) => p.atividadeIds.includes(atividade.id) && !p.deletedAt);
 
   return (
     <Card
-      className="cursor-pointer border-l-4 border-l-[var(--base-1)] transition-shadow hover:shadow-md"
+      className={cn(
+        "cursor-pointer border-l-4 transition-shadow hover:shadow-md",
+        // S16 (PROMPT 2): concluídas vão para o fim da lista (sortActivities) e
+        // ficam visualmente recuadas — borda na cor de "concluído" e conteúdo
+        // esmaecido, que volta ao normal no hover para continuar legível.
+        concluida
+          ? "border-l-[var(--status-concluido)] opacity-60 hover:opacity-100"
+          : "border-l-[var(--base-1)]"
+      )}
       onClick={onEdit}
     >
       <CardContent className="flex flex-col gap-3">
@@ -402,31 +405,6 @@ export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardPro
           </div>
         )}
 
-        {/* 9. Vínculos (registro/planilha) com direcionamento */}
-        {(linkedRegistros.length > 0 || linkedPlanilhas.length > 0) && (
-          <div className="flex flex-wrap gap-2 text-[11px]" onClick={(e) => e.stopPropagation()}>
-            {linkedRegistros.map((r) => (
-              <Link
-                key={r.id}
-                href={`/registros?open=${r.id}`}
-                className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-muted-foreground hover:underline"
-              >
-                <FileText className="size-3" />
-                {r.nome || r.tabs[0]?.titulo || "Registro"}
-              </Link>
-            ))}
-            {linkedPlanilhas.map((p) => (
-              <Link
-                key={p.id}
-                href={`/planilhas?open=${p.id}`}
-                className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-muted-foreground hover:underline"
-              >
-                <Table2 className="size-3" />
-                {p.nome || "Planilha"}
-              </Link>
-            ))}
-          </div>
-        )}
       </CardContent>
     </Card>
   );

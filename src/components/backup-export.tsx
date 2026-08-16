@@ -10,19 +10,15 @@ import { useAppData } from "@/lib/app-data-context";
 // que compõe o backup já está carregado no AppDataProvider (mesmo dado que
 // alimenta as telas) — nenhuma chamada de rede extra.
 export function BackupExport() {
-  const { lookups, atividades, atividadesGerais, registros, planilhas, checklistTemplates, loading } =
-    useAppData();
+  const { lookups, atividades, checklistTemplates, loading } = useAppData();
   const toast = useToast();
 
   function handleExport() {
     const backup = {
       exportadoEm: new Date().toISOString(),
-      versao: 1,
+      versao: 2,
       lookups,
       atividades,
-      atividadesGerais,
-      registros,
-      planilhas,
       checklistTemplates,
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
@@ -43,8 +39,8 @@ export function BackupExport() {
         <DatabaseBackup className="size-4 text-muted-foreground" />
       </div>
       <p className="text-sm text-muted-foreground">
-        Baixa um arquivo JSON com todos os dados do sistema — atividades, execuções, registros,
-        planilhas e catálogos — para guardar uma cópia fora do sistema.
+        Baixa um arquivo JSON com todos os dados do sistema — atividades e catálogos — para
+        guardar uma cópia fora do sistema.
       </p>
       <Button
         type="button"

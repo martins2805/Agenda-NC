@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ClipboardCheck, LayoutDashboard, ListChecks, FileText, Table2, Users, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, ListChecks, Users, Settings, LogOut } from "lucide-react";
 import { logout } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { GlobalSearch } from "@/components/global-search";
@@ -11,9 +11,6 @@ import { GlobalSearch } from "@/components/global-search";
 const BASE_NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/atividades", label: "Atividades", icon: ListChecks },
-  { href: "/atividades-gerais", label: "Execuções", icon: ClipboardCheck },
-  { href: "/registros", label: "Registros", icon: FileText },
-  { href: "/planilhas", label: "Planilhas", icon: Table2 },
   { href: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
@@ -81,8 +78,8 @@ export function AppShell({
       <main className="w-full flex-1 px-4 pb-24 pt-4 sm:px-6 sm:pb-10">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
           {/* Header mínimo, idêntico em todas as telas — só a busca global
-              (Ctrl+K), que cobre Atividades/Execuções/Registros/Planilhas de
-              uma vez (S13: "busca global de verdade, em todos os objetos"). */}
+              (Ctrl+K), que cobre Atividades (S13: "busca global de verdade,
+              em todos os objetos"; escopo restrito na S15 — ver D17). */}
           <div className="flex justify-end">
             <GlobalSearch />
           </div>

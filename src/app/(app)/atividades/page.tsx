@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Plus, ListChecks } from "lucide-react";
 import { useAppData, makeAtividadeId, makePropostaId, makeChecklistItemId, makeLinkId } from "@/lib/app-data-context";
@@ -13,7 +14,6 @@ import { ActivityForm } from "@/components/atividades/activity-form";
 import { ViewToggle } from "@/components/view-toggle";
 import { Pagination } from "@/components/ui/pagination";
 import {
-  DEFAULT_FILTERS,
   matchesActivity,
   sortActivities,
   filtersToParams,
@@ -22,30 +22,52 @@ import {
 } from "@/lib/activity-filters";
 import type { Atividade } from "@/lib/types";
 
-function initialFilters(): ActivityFilters {
-  if (typeof window === "undefined") return DEFAULT_FILTERS;
-  return paramsToFilters(new URLSearchParams(window.location.search));
-}
-
 const PAGE_SIZE = 60;
 
 export default function AtividadesPage() {
   const { lookups, atividades, loading, addAtividade } = useAppData();
-  const [filters, setFilters] = useState<ActivityFilters>(initialFilters);
+  // Fonte dos filtros de entrada é o searchParams do router (não
+  // window.location), para que o direcionamento do dashboard funcione também
+  // quando já estamos em /atividades — trocar só a query string não remonta o
+  // componente, então ler a URL apenas no inicializador do useState ignorava
+  // silenciosamente os filtros do link (bug do PROMPT 2, corrigido na S16).
+  const searchParams = useSearchParams();
+  const [filters, setFilters] = useState<ActivityFilters>(() =>
+    paramsToFilters(new URLSearchParams(searchParams.toString()))
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Atividade | null>(null);
   const [view, setView] = useViewMode("atividades-view");
   const [page, setPage] = useState(1);
+  // Última query string escrita por esta tela — usada para distinguir "a URL
+  // mudou porque o usuário mexeu num filtro aqui" (ignorar) de "a URL mudou
+  // por uma navegação de fora" (adotar os filtros do link).
+  const escritoPorNos = useRef<string | null>(null);
 
   useAutoOpenFromQuery(atividades, loading, (a) => {
     setEditing(a);
     setFormOpen(true);
   });
 
+  useEffect(() => {
+    const recebido = searchParams.toString();
+    if (recebido === escritoPorNos.current) return;
+    setFilters(paramsToFilters(new URLSearchParams(recebido)));
+    setPage(1);
+  }, [searchParams]);
+
   // A URL reflete o estado de filtros — colar em outra aba reproduz a
   // mesma lista. history.replaceState (sem navegação Next) evita refetch.
   useEffect(() => {
-    const qs = filtersToParams(filters).toString();
+    const params = filtersToParams(filters);
+    // `open` não é um filtro, mas é lido por useAutoOpenFromQuery só DEPOIS
+    // que os dados carregam. Sem preservá-lo aqui, esta reescrita (que roda
+    // na montagem, antes disso) apagava o parâmetro e o deep-link do
+    // calendário/busca global nunca abria a atividade — S16.
+    const open = new URLSearchParams(window.location.search).get("open");
+    if (open) params.set("open", open);
+    const qs = params.toString();
+    escritoPorNos.current = qs;
     const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
     window.history.replaceState(null, "", url);
   }, [filters]);

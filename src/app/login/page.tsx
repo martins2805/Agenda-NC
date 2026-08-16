@@ -43,7 +43,7 @@ export default async function LoginPage({
         </div>
 
         <p className="mb-6 text-sm text-muted-foreground">
-          Entre para acessar suas atividades, registros e planilhas.
+          Entre para acessar suas atividades.
         </p>
 
         <form action={authenticate} className="flex flex-col gap-4">

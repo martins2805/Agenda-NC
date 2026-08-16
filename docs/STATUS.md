@@ -36,6 +36,8 @@ Correção: reordenadas as colunas (novas ao final) em `20260723120000_prazo_uni
 
 | Sprint | Nome | Fechada em | Tag |
 |---|---|---|---|
+| S16 | Correções do PROMPT 2 | 2026-08-14 (com 1 aceite pendente) | — |
+| S15 | Remoção dos módulos Execuções, Registros e Planilhas (D17) | 2026-08-14 | — |
 | S14 | Conformação visual — reverter tema escuro para claro (D16) | 2026-07-22 | — |
 | S2 | Design system | 2026-07-22 | — |
 | S3 | Shell + Configurações v1 | 2026-07-23 | — |
@@ -49,6 +51,35 @@ Correção: reordenadas as colunas (novas ao final) em `20260723120000_prazo_uni
 | S11 | Registros | 2026-07-23 | — |
 | S12 | Planilhas | 2026-07-23 | — |
 | S13 | Fechamento | 2026-07-23 | — |
+
+**S16 — detalhe do aceite (PROMPT 2):**
+- [x] **Calendário não exibe concluídos** — `activity-calendar.tsx` filtra prazos cujo objeto está concluído. A conclusão é lida do estado compartilhado (`atividades` do `AppDataProvider`), **não** do snapshot vindo de `prazo_unificado` — é isso que faz "desmarcar volta a aparecer" valer sem refetch e sem botão "Atualizar" (Regra 10). Cobre os 3 tipos de linha: prazo da atividade, item de checklist concluído (`checklist[].concluido`) e `prazoFim` de proposta (segue o status da atividade). Se a atividade ainda não estiver no estado (carregando), cai de volta no status da própria view em vez de sumir com o prazo por engano
+- [x] **Concluídas ao fim da lista** — partição estável aplicada dentro de `sortActivities` (`activity-filters.ts`), então vale em cards, tabela e "Atividades recentes" do dashboard de uma vez, sem duplicar regra por tela. A ordenação escolhida (criação/prazo/prioridade) continua valendo **dentro** de cada grupo — é uma partição por cima, não uma segunda regra de ordenação
+- [x] **Tratamento visual das concluídas** — `opacity-60` com retorno a `opacity-100` no hover (mantém legível quando o usuário for ler) no card e na linha da tabela; o card ainda troca a borda esquerda para `var(--status-concluido)`. Só tokens, nenhum hex novo
+- [x] **Toolbar fixa no editor de descrição** — `sticky top-0 z-10` na barra de formatação (`rich-text-editor.tsx`), com fundo trocado de `bg-muted/40` (translúcido, deixaria o texto aparecer por baixo ao rolar) para `bg-card` (opaco). Encadeamento de rolagem conferido por leitura: o contêiner que rola é o `SheetContent` (`overflow-y-auto`), o `SheetHeader` não é fixo e nenhum ancestral tem `overflow: hidden`
+- [x] **Direcionamento do dashboard — 2 defeitos concretos encontrados e corrigidos** (por leitura de código; ver ressalva de verificação abaixo):
+  - **Filtros do link ignorados quando já se está em `/atividades`**: os filtros vinham de `window.location.search` lido **apenas no inicializador do `useState`**, ou seja, só na montagem. Trocar apenas a query string da mesma rota não remonta o componente no App Router, então o filtro do KPI clicado era silenciosamente descartado. Passou a usar `useSearchParams()` (fonte do router) com sincronização quando a URL muda por navegação de fora — um `useRef` guarda a última query string escrita pela própria tela para não entrar em laço com o `history.replaceState` que ela mesma faz
+  - **`?open=` apagado antes de ser lido**: o efeito que reescreve a URL a partir dos filtros roda na montagem e não preservava `open`, enquanto `useAutoOpenFromQuery` só lê esse parâmetro **depois** que os dados carregam (`loading` vira false). O parâmetro já tinha sido removido da URL a essa altura — ou seja, clicar num card do calendário ou num resultado da busca global levava para `/atividades` mas nunca abria a atividade. O efeito agora preserva `open` ao reescrever
+- [x] **Sobra da S15 removida** (fechamento, não escopo novo): `execucoesHref` e `simpleHref` em `activity-filters.ts` ficaram sem nenhum consumidor depois que a S15 reescreveu o `ResumoGeralWidget` — eram código morto gerando links para `/atividades-gerais`, `/registros` e `/planilhas`, rotas que não existem mais
+- [x] `typecheck`, `lint` e `build` passam limpos; `/atividades` continua dinâmica no build (o `useSearchParams()` não exigiu limite de Suspense) e `/design-system` continua estática/idêntica
+- [ ] **ACEITE PENDENTE — "clicar em cada KPI/gráfico do dashboard e ver o filtro correto aplicado, verificado no navegador"**: não foi possível. O critério desta sprint exigia explicitamente verificação clicando, e o mesmo bloqueio de acesso ao banco/login de todas as sprints anteriores continua (rede corporativa bloqueia a porta pública do Postgres do Railway). Os dois defeitos acima são demonstráveis por leitura de código, mas **não confirmei que eram a causa do que o usuário relatou** — pode haver um terceiro problema que só aparece ao vivo. Reabrir este item assim que houver um navegador autenticado
+- [~] Os demais itens (calendário sem concluídos, ordem/esmaecimento das concluídas, toolbar fixa) também não foram vistos renderizados — mesma causa. Confiança vem de `build`/`typecheck`/`lint` limpos e revisão de código
+
+**S15 — detalhe do aceite (D17):**
+- [x] Sidebar mostra só Dashboard, Atividades, Configurações (+ Usuários/Lixeira para admin) — `app-shell.tsx` sem os itens Execuções/Registros/Planilhas
+- [x] Rotas `/registros`, `/planilhas`, `/atividades-gerais` removidas (páginas, componentes exclusivos e rotas de API `src/app/api/{registros,planilhas,atividades-gerais}`); `build` confirma que não aparecem mais na lista de rotas geradas
+- [x] Dashboard sem os KPIs "Total Execuções/Registros/Planilhas" (Campo 1 — `resumo-geral-widget.tsx` — restrito a "Total de atividades") nem os botões de criação rápida desses módulos no herói do dashboard; contagens de Atividades intactas
+- [x] Calendário mostra apenas prazos de Atividade (e checklist/proposta de Atividade) — `activity-calendar.tsx` filtra `objetoTipo === "atividade"` antes de exibir; a view `prazo_unificado` continua devolvendo as linhas de Execução/Registro sem uso, sem migration
+- [x] Formulário de atividade sem os blocos de vínculo com Registro/Planilha/Execução (`activity-form.tsx`); salvar/editar atividade continua funcionando
+- [x] Busca global (Ctrl+K) restrita a Atividades (`global-search.tsx` reescrito)
+- [x] Backup exporta só o que restou (atividades, lookups, modelos de checklist — `backup-export.tsx`, versão do JSON bump para 2)
+- [x] Lixeira restrita a Atividades (`lixeira/page.tsx` reescrito, sem as seções de Registros/Planilhas)
+- [x] **Achado fora do inventário original, tratado no mesmo escopo**: o assistente de chat (Aya) tinha ferramentas (`criar_registro`, `atualizar_registro`, `excluir_registro`, `criar_planilha`, `atualizar_planilha`, `excluir_planilha` em `src/lib/chat-tools.ts`) que criavam/editavam/excluíam Registro e Planilha direto via Prisma, por fora das rotas de API removidas — deixaria esses objetos "reviver" sem nenhuma tela para vê-los. Removidas as 6 ferramentas e suas declarações; `chat-index.ts` (índice de entidades do prompt) e o preâmbulo do sistema (`api/chat/route.ts`) e a mensagem de boas-vindas (`chat-widget.tsx`) atualizados para não mencionar mais Registros/Planilhas
+- [x] **Armadilha do plano evitada**: `rich-text-editor.tsx` morava em `src/components/registros/` mas também é usado pelos campos "Descrição"/"Alinhamentos" de Atividade — movido para `src/components/rich-text-editor.tsx` (não apagado) antes de remover o resto da pasta
+- [x] Catálogos exclusivos dos módulos removidos (`categoriaRegistro`, `categoriaPlanilha`, `tipoAtividadeGeral`, `setorInterno`) saíram da lista visível em `/configuracoes` (`KIND_ORDER`), sem remover o `LookupKind` do schema/tipos — reversível, sem migration
+- [x] Nenhuma migration no diff; `prisma/schema.prisma` sem remoção de model — dados de Execuções/Registros/Planilhas continuam intactos no banco (D17)
+- [x] `typecheck`, `lint` e `build` passam limpos; `build` lista as 21 rotas restantes sem erro, incluindo `/design-system` ainda estático
+- [~] **Verificação funcional/visual real não foi possível** — mesmo bloqueio de acesso ao banco/login de todas as sprints anteriores (rede corporativa bloqueia a porta pública do Postgres do Railway). Confiança vem de `typecheck`/`lint`/`build` limpos e revisão de código; re-verificar visualmente quando o banco voltar a responder
 
 **S13 — detalhe do aceite:**
 - [x] **Busca global de verdade, em todos os objetos** — `src/components/global-search.tsx` (novo), disparada por Ctrl/Cmd+K, cobre Atividades/Execuções/Registros/Planilhas de uma vez (título, empresa, contato, descrição/conteúdo de abas — tudo já carregado no `AppDataProvider`, sem chamada de rede extra), agrupado por tipo, navega via o mesmo padrão `?open=<id>` já usado em todo o app. Montada no cabeçalho de `app-shell.tsx`, visível em todas as telas
@@ -211,9 +242,9 @@ O que existe em `main` hoje, levantado por leitura direta do código (não presu
 |---|---|---|
 | Auth | NextAuth v5 + bcryptjs, multiusuário (`Role` ADMIN/USER), rota `/login` | `src/lib/auth.ts`, `src/lib/auth.config.ts` — diverge da spec original ("usuário único"); **D15 fechada (2026-07-22): manter multiusuário**, registrado em `ERRATA-SPEC.md` |
 | Atividades | Rota `/atividades`, componentes em `src/components/atividades` | `src/app/(app)/atividades` |
-| Atividades gerais | Rota `/atividades-gerais` — parece cobrir o papel de "Execuções" do plano, mas sob outro nome/modelo (`AtividadeGeral`, não `Execucao`/`ExecucaoItem`) | `prisma/schema.prisma`, `src/lib/execucao-filters.ts` |
-| Registros | Rota `/registros`, modelos `Registro` + `RegistroTab` | `src/app/(app)/registros` |
-| Planilhas | Rota `/planilhas`, modelo `Planilha` | `src/app/(app)/planilhas` |
+| Atividades gerais (Execuções) | **Removido da interface na S15 (D17)** — modelo `AtividadeGeral` continua no banco, sem rota/UI/API | `prisma/schema.prisma` |
+| Registros | **Removido da interface na S15 (D17)** — modelos `Registro` + `RegistroTab` continuam no banco, sem rota/UI/API | `prisma/schema.prisma` |
+| Planilhas | **Removido da interface na S15 (D17)** — modelo `Planilha` continua no banco, sem rota/UI/API | `prisma/schema.prisma` |
 | Usuários | Rota `/usuarios` — gestão de contas, não catálogo (empresa/tipo/status etc.) | `src/app/(app)/usuarios` |
 | Lixeira | Rota `/lixeira` + modelo `PendingDeletion` — mecanismo de soft delete existe, mas por fora do padrão "catálogo com `ativo`" descrito no plano (D12) | `src/app/(app)/lixeira` |
 | Dashboard | Rota `/dashboard`, com calendário embutido (`ActivityCalendar`) e gráficos (`src/components/charts`) | `src/app/(app)/dashboard/page.tsx` |

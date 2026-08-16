@@ -99,9 +99,13 @@ function ToolbarButton({
   );
 }
 
+// S16 (PROMPT 2): a barra de formatação fica fixa no topo do campo enquanto o
+// texto rola — em textos longos ela saía de vista e obrigava a rolar de volta
+// para aplicar qualquer formatação. Fundo `bg-card` (opaco, não translúcido)
+// para o texto não aparecer por baixo dela ao passar.
 function Toolbar({ editor }: { editor: Editor }) {
   return (
-    <div className="flex flex-wrap items-center gap-0.5 rounded-t-lg border border-b-0 bg-muted/40 p-1">
+    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 rounded-t-lg border border-b-0 bg-card p-1">
       <ToolbarButton
         label="Negrito"
         active={editor.isActive("bold")}

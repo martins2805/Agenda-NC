@@ -14,7 +14,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Agenda NC",
-  description: "Controle vivo de atividades, reuniões e planilhas",
+  description: "Controle vivo de atividades",
 };
 
 export const viewport: Viewport = {
