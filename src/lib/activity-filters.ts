@@ -1,5 +1,6 @@
 import type { Atividade, Prioridade, StatusConclusao, StatusNegociacao } from "./types";
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "./types";
+import { htmlToSearchText } from "./utils";
 import { matchesRecord, sortRecords, type FilterableRecord } from "./filters/engine";
 import { filtersToParams as filtersToParamsGeneric, paramsToFilters as paramsToFiltersGeneric, type ListKeyDef } from "./filters/querystring";
 
@@ -52,6 +53,22 @@ interface Lookups {
   tipoAtividade: { id: string; name: string }[];
 }
 
+// A descrição é HTML de editor rico e pode carregar imagens base64 de
+// megabytes — usar o HTML bruto no searchText (como era antes da S16) fazia
+// cada tecla do filtro de palavra-chave varrer megabytes por atividade e
+// derrubava a aba do navegador. Cache por objeto: as atividades do estado são
+// substituídas (não mutadas) a cada edição, então a chave se auto-invalida.
+const descricaoLimpaCache = new WeakMap<Atividade, string>();
+
+function descricaoLimpa(a: Atividade): string {
+  let limpa = descricaoLimpaCache.get(a);
+  if (limpa === undefined) {
+    limpa = htmlToSearchText(a.descricao);
+    descricaoLimpaCache.set(a, limpa);
+  }
+  return limpa;
+}
+
 function toRecord(a: Atividade, lookups: Lookups): FilterableRecord {
   const empresa = lookups.empresa.find((e) => e.id === a.empresaId)?.name ?? "";
   const unidade = lookups.unidade.find((u) => u.id === a.unidadeId)?.name ?? "";
@@ -67,7 +84,7 @@ function toRecord(a: Atividade, lookups: Lookups): FilterableRecord {
     a.assunto,
     tipos,
     a.contato,
-    a.descricao,
+    descricaoLimpa(a),
     a.emailConteudo,
     a.oportunidadeTexto,
     a.status,

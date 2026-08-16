@@ -130,3 +130,9 @@ Preenchida a partir do código já existente no repositório (não é uma escolh
 **Decisão:** remover os três módulos da interface — páginas, itens de navegação, botões de criação, blocos de vínculo, KPIs do dashboard, fontes do calendário e escopo da busca global. **Sem migration destrutiva:** tabelas, dados e a view `prazo_unificado` permanecem no banco intactos (remoção reversível; eventual `DROP` fica para uma sprint de limpeza futura, com aviso prévio, conforme regra "não rode migration destrutiva sem avisar").
 **Bloqueia:** S15
 **Status:** FECHADA (2026-08-14, confirmada pelo usuário no chat)
+
+## D18 — Estilo visual "liquid glass"
+**Conflito:** a spec (Cap. 3) pede "transparência discreta" e "não utilizar efeito 'vidro' exagerado"; a D16 reverteu um tema escuro de vidro fosco. Em 2026-08-16 o usuário pediu explicitamente "na aparência um estilo liquid glass".
+**Decisão:** liquid glass **sobre o tema claro** — D1 permanece (fundo `#EEF4ED`, `#1F2C43` na sidebar/header) e as cores semânticas (D8) ficam intocadas. Painéis, cards, sidebar, hero e superfícies flutuantes (menus, diálogos, sheets) viram vidro translúcido com `backdrop-blur`, brilho interno e manchas radiais suaves de neutros da paleta base no fundo. Guarda-corpos: opacidade alta o bastante para leitura (Cap. 3 continua valendo — "transparência nunca compromete leitura"), fallback sólido quando o navegador não suporta `backdrop-filter` e quando o usuário pede menos transparência ao sistema (`prefers-reduced-transparency`). Nenhum hex novo: o vidro é `color-mix` de tokens existentes.
+**Bloqueia:** S17
+**Status:** FECHADA (2026-08-16, pedido do usuário no chat)

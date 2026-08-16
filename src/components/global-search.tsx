@@ -13,15 +13,12 @@ import {
 } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
 import { useAppData } from "@/lib/app-data-context";
+import { htmlToSearchText } from "@/lib/utils";
 
 // Busca global (S13). Escopo restrito a Atividades na S15 (D17) — Execuções,
 // Registros e Planilhas saíram da interface. Todos os dados já estão
 // carregados no AppDataProvider — nenhuma chamada de rede extra, só
 // filtragem local, igual ao resto do motor de filtros do sistema.
-
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, " ");
-}
 
 interface ResultItem {
   id: string;
@@ -49,28 +46,44 @@ export function GlobalSearch() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
+  // Corpus pré-processado UMA vez por mudança de dados — nunca por tecla.
+  // Digitar recalculava stripHtml sobre descrições com imagens base64 de
+  // megabytes para toda atividade, a cada caractere: derrubava a aba do
+  // navegador (crash reproduzido em produção). Ver htmlToSearchText.
+  const corpus = useMemo(() => {
     const empresaName = (id: string | null) => lookups.empresa.find((e) => e.id === id)?.name ?? "";
-    if (!q) return [];
-
-    const atividadeResults: ResultItem[] = atividades
-      .filter((a) =>
-        [a.assunto, a.contato, stripHtml(a.descricao), a.emailConteudo, a.oportunidadeTexto, empresaName(a.empresaId)]
-          .join(" ")
-          .toLowerCase()
-          .includes(q)
-      )
-      .slice(0, MAX_RESULTS)
-      .map((a) => ({
+    return atividades.map((a) => ({
+      item: {
         id: a.id,
         label: a.assunto || "Atividade sem assunto",
         sublabel: empresaName(a.empresaId) || "Sem empresa",
         href: `/atividades?open=${a.id}`,
-      }));
+      } satisfies ResultItem,
+      texto: [
+        a.assunto,
+        a.contato,
+        htmlToSearchText(a.descricao),
+        a.emailConteudo,
+        a.oportunidadeTexto,
+        empresaName(a.empresaId),
+      ]
+        .join(" ")
+        .toLowerCase(),
+    }));
+  }, [atividades, lookups]);
 
-    return atividadeResults;
-  }, [query, atividades, lookups]);
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    const out: ResultItem[] = [];
+    for (const entry of corpus) {
+      if (entry.texto.includes(q)) {
+        out.push(entry.item);
+        if (out.length >= MAX_RESULTS) break;
+      }
+    }
+    return out;
+  }, [query, corpus]);
 
   function select(item: ResultItem) {
     setOpen(false);

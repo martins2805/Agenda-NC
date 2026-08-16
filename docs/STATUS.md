@@ -36,7 +36,8 @@ Correção: reordenadas as colunas (novas ao final) em `20260723120000_prazo_uni
 
 | Sprint | Nome | Fechada em | Tag |
 |---|---|---|---|
-| S16 | Correções do PROMPT 2 | 2026-08-14 (com 1 aceite pendente) | — |
+| S17 | Liquid glass (D18) + hotfix busca global | 2026-08-16 | — |
+| S16 | Correções do PROMPT 2 | 2026-08-14 — aceite pendente **fechado em produção em 2026-08-16** | — |
 | S15 | Remoção dos módulos Execuções, Registros e Planilhas (D17) | 2026-08-14 | — |
 | S14 | Conformação visual — reverter tema escuro para claro (D16) | 2026-07-22 | — |
 | S2 | Design system | 2026-07-22 | — |
@@ -51,6 +52,15 @@ Correção: reordenadas as colunas (novas ao final) em `20260723120000_prazo_uni
 | S11 | Registros | 2026-07-23 | — |
 | S12 | Planilhas | 2026-07-23 | — |
 | S13 | Fechamento | 2026-07-23 | — |
+
+**S17 — detalhe do aceite (D18 + verificação em produção de 2026-08-16):**
+
+*Contexto: nesta data o bloqueio de rede ao Postgres do Railway não estava mais ativo, e a verificação em navegador real (Chrome do usuário, autenticado em produção) finalmente aconteceu — fechando também o aceite pendente da S16.*
+
+- [x] **Verificação em produção da S15** (deploy `95c1e8f`): sidebar só com Dashboard/Atividades/Configurações/Usuários; hero só com "Nova Atividade"; Resumo Geral só "Total de Atividades"; busca "Pesquisar atividades..."; dados dos módulos removidos confirmados intactos no banco por consulta read-only (8 registros, 4 planilhas, 2 execuções — D17)
+- [x] **Aceite pendente da S16 FECHADO em produção, clicando**: KPI "Atividades Pendentes" → `/atividades?st=Pendente` com chip "Pendente" aplicado e lista correta; card do calendário → `/atividades?open=<id>` **abrindo a atividade automaticamente**; concluídas ao fim da lista, esmaecidas com hover; toolbar do editor fixa no topo com descrição longa rolando por baixo; painel "Prazos vinculados" com etiqueta correta
+- [x] **BUG GRAVE encontrado na verificação ao vivo e corrigido (hotfix)**: digitar UMA tecla na busca global derrubava a aba do navegador ("This page couldn't load"), 100% reproduzível em produção. Causa: o filtro rodava `stripHtml` sobre `descricao` (HTML de editor rico com imagens base64 de megabytes) para todas as atividades **a cada tecla**. Pré-existente desde a S13 — só apareceu agora porque a busca nunca tinha sido testada num navegador real. Correção em duas frentes: (1) `global-search.tsx` pré-processa o corpus uma vez por mudança de dados, nunca por tecla; (2) `activity-filters.ts` usa `htmlToSearchText` (novo, em `utils.ts` — remove tags inteiras, inclusive `<img src="data:...">`) com cache `WeakMap` por objeto. Nada de busca truncada — o texto digitado pelo usuário permanece integralmente pesquisável
+- [x] **Liquid glass (D18)**: tokens `--glass-*` (só `color-mix` de tokens existentes, nenhum hex novo); fundo do body com manchas radiais suaves de neutros da paleta base; `.panel-card`/`.hero-surface`/`.glass-dark` (sidebar + barra mobile) translúcidos com `backdrop-blur` e brilho interno; menus/selects/diálogos/sheets/busca via regra central por `data-slot` (`--popover` translúcido); toolbar do editor com `.glass-chrome`; fallbacks sólidos para navegador sem `backdrop-filter` e para `prefers-reduced-transparency`; cores semânticas (D8) intocadas
 
 **S16 — detalhe do aceite (PROMPT 2):**
 - [x] **Calendário não exibe concluídos** — `activity-calendar.tsx` filtra prazos cujo objeto está concluído. A conclusão é lida do estado compartilhado (`atividades` do `AppDataProvider`), **não** do snapshot vindo de `prazo_unificado` — é isso que faz "desmarcar volta a aparecer" valer sem refetch e sem botão "Atualizar" (Regra 10). Cobre os 3 tipos de linha: prazo da atividade, item de checklist concluído (`checklist[].concluido`) e `prazoFim` de proposta (segue o status da atividade). Se a atividade ainda não estiver no estado (carregando), cai de volta no status da própria view em vez de sumir com o prazo por engano

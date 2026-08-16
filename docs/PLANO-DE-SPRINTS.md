@@ -88,6 +88,7 @@ A especificação tem 16 pontos de conflito ou lacuna (D16 acrescentado pelo PRO
 | **S14** | Conformação visual (PROMPT 1) | Refatoração retroativa do layout de todas as telas já construídas para a identidade "mobile-desktop", **sem tocar em função** | 1,5–2 dias |
 | **S15** | Remoção de módulos (D17) | Execuções, Registros e Planilhas fora da interface; dados preservados no banco | 1–1,5 dias |
 | **S16** | Correções PROMPT 2 | Concluídos fora do calendário, concluídas ao fim da lista, toolbar fixa do editor, direcionamento do dashboard | 1–1,5 dias |
+| **S17** | Liquid glass (D18) | Vidro translúcido com blur em painéis, sidebar, hero e superfícies flutuantes — visual apenas, zero função | 0,5 dia |
 
 **Total: 25,5 a 30 dias úteis de execução assistida.**
 
@@ -439,6 +440,22 @@ Mini-spec **e decisão de biblioteca de grid** (com ou sem fórmulas; se com, de
 - [ ] Toolbar do editor visível com texto de 3+ telas de altura rolado
 - [ ] Clicar em cada KPI/gráfico do dashboard (com e sem filtro global aplicado) abre Atividades com o filtro correto — **verificado clicando, no navegador**
 - [ ] `typecheck`, `lint`, `build`; `/design-system` idêntico; regressão das telas restantes
+
+---
+
+### S17 — Liquid glass (D18)
+
+**Origem:** pedido do usuário em 2026-08-16 ("quero na aparência um estilo liquid glass"), registrado como **D18** — vidro sobre o tema claro, D1 e D8 intocadas.
+
+**Escopo (visual apenas, zero função):**
+- `globals.css`: tokens de vidro (`--glass-*`, só `color-mix` de tokens existentes); manchas radiais suaves de neutros da paleta base no fundo do body; `.panel-card`, `.hero-surface` e `.glass-dark` (sidebar/barra mobile) translúcidos com `backdrop-blur` e brilho interno; regra por `data-slot` para menus, selects, diálogos, sheets e busca global; `.glass-chrome` para a toolbar fixa do editor
+- Fallbacks obrigatórios: sólido quando não há suporte a `backdrop-filter` e sob `prefers-reduced-transparency`
+
+**Aceite**
+- [ ] Nenhum hex novo fora dos tokens; cores semânticas (status/prioridade/prazo/gráficos) idênticas
+- [ ] Texto legível em todos os painéis de vidro (contraste preservado)
+- [ ] Diff só de estilo/markup — nenhuma lógica, filtro, dado ou rota
+- [ ] `typecheck`, `lint`, `build`; telas verificadas no navegador
 
 ---
 
