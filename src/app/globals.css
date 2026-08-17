@@ -123,13 +123,15 @@
   --negociacao-na: #d8d8d8;
 
   /* Liquid glass (D18) — receita única de vidro, derivada da paleta base.
-     Nenhum hex novo: tudo é mistura de branco/base-1 com transparência. */
-  --glass-panel: color-mix(in srgb, #ffffff 66%, transparent);
-  --glass-panel-strong: color-mix(in srgb, #ffffff 84%, transparent);
-  --glass-dark: color-mix(in srgb, var(--base-1) 84%, transparent);
-  --glass-highlight: color-mix(in srgb, #ffffff 70%, transparent);
-  --glass-border: color-mix(in srgb, #ffffff 50%, transparent);
-  --glass-blur: 18px;
+     Nenhum hex novo: tudo é mistura de branco/base-1 com transparência.
+     Intensificado a pedido do usuário (2026-08-17): mais transparência e
+     mais blur — o blur maior é o que preserva a leitura com menos opacidade. */
+  --glass-panel: color-mix(in srgb, #ffffff 52%, transparent);
+  --glass-panel-strong: color-mix(in srgb, #ffffff 78%, transparent);
+  --glass-dark: color-mix(in srgb, var(--base-1) 74%, transparent);
+  --glass-highlight: color-mix(in srgb, #ffffff 85%, transparent);
+  --glass-border: color-mix(in srgb, #ffffff 62%, transparent);
+  --glass-blur: 26px;
 }
 
 @layer base {
@@ -138,13 +140,16 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Liquid glass (D18): o vidro precisa de algo para refratar — manchas
-       radiais muito suaves nos neutros da paleta base (base-3/base-5) sobre o
-       fundo claro da D1. Neutro de marca, não cor semântica (D8 intacta). */
+    /* Liquid glass (D18): o vidro precisa de algo para refratar — o fundo
+       funciona como o wallpaper de um iPhone: lavagens de cor amplas e
+       suaves nos neutros da paleta base sobre o claro da D1. Neutro de
+       marca, não cor semântica (D8 intacta). Intensificado em 2026-08-17
+       ("a impressão deve ser de estar olhando a tela de um iphone"). */
     background:
-      radial-gradient(1100px 700px at 8% -10%, color-mix(in srgb, var(--base-3) 26%, transparent), transparent 60%),
-      radial-gradient(900px 620px at 108% 12%, color-mix(in srgb, var(--base-5) 70%, transparent), transparent 55%),
-      radial-gradient(1000px 800px at 45% 115%, color-mix(in srgb, var(--base-3) 18%, transparent), transparent 60%),
+      radial-gradient(1200px 800px at 6% -12%, color-mix(in srgb, var(--base-3) 52%, transparent), transparent 62%),
+      radial-gradient(1000px 700px at 110% 8%, color-mix(in srgb, var(--base-5) 95%, transparent), transparent 58%),
+      radial-gradient(900px 700px at 85% 70%, color-mix(in srgb, var(--base-2) 22%, transparent), transparent 60%),
+      radial-gradient(1100px 900px at 30% 115%, color-mix(in srgb, var(--base-3) 38%, transparent), transparent 62%),
       var(--background);
     background-attachment: fixed;
   }
@@ -196,7 +201,7 @@
   background:
     linear-gradient(155deg, color-mix(in srgb, #ffffff 34%, transparent), transparent 45%),
     var(--glass-panel);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.8);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-2xl);
   overflow: hidden;
@@ -212,7 +217,7 @@
   background:
     linear-gradient(165deg, color-mix(in srgb, var(--base-2) 36%, transparent), transparent 55%),
     var(--glass-dark);
-  backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(28px) saturate(1.8);
   box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 14%, transparent);
 }
 
@@ -220,7 +225,7 @@
    (ex.: toolbar fixa do editor de texto rico). */
 .glass-chrome {
   background: var(--glass-panel-strong);
-  backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.8);
 }
 
 /* Superfícies flutuantes (menus, selects, diálogos, sheets, busca global):
@@ -232,7 +237,7 @@
 [data-slot="select-content"],
 [data-slot="dropdown-menu-content"],
 [data-slot="command"] {
-  backdrop-filter: blur(26px) saturate(1.6);
+  backdrop-filter: blur(34px) saturate(1.8);
 }
 
 /* Legibilidade e acessibilidade primeiro (Cap. 3: transparência nunca
@@ -294,7 +299,7 @@
     color-mix(in srgb, var(--base-1) 88%, transparent) 0%,
     color-mix(in srgb, var(--base-2) 86%, transparent) 100%
   );
-  backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(26px) saturate(1.8);
   box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 18%, transparent);
   color: #ffffff;
 }
