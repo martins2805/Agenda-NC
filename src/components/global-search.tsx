@@ -93,14 +93,16 @@ export function GlobalSearch() {
 
   return (
     <>
+      {/* Texto em --foreground pleno: sobre o pill de vidro, o cinza "muted"
+          perdia contraste contra o wallpaper (reclamação real do usuário). */}
       <Button
         type="button"
         variant="outline"
-        className="glass-pill h-8 w-full max-w-xs justify-start gap-2 text-muted-foreground sm:w-64"
+        className="glass-pill h-8 w-full max-w-xs justify-start gap-2 text-foreground sm:w-64"
         onClick={() => setOpen(true)}
       >
         <Search className="size-3.5" />
-        <span className="flex-1 text-left text-xs">Pesquisar atividades...</span>
+        <span className="flex-1 text-left text-xs font-medium">Pesquisar atividades...</span>
         <kbd className="hidden rounded border border-border px-1.5 py-0.5 font-mono text-[10px] sm:inline-block">
           Ctrl K
         </kbd>
