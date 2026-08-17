@@ -96,7 +96,7 @@ export function GlobalSearch() {
       <Button
         type="button"
         variant="outline"
-        className="h-8 w-full max-w-xs justify-start gap-2 text-muted-foreground sm:w-64"
+        className="glass-pill h-8 w-full max-w-xs justify-start gap-2 text-muted-foreground sm:w-64"
         onClick={() => setOpen(true)}
       >
         <Search className="size-3.5" />

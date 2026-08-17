@@ -45,7 +45,7 @@ export function FilterMultiSelect({
           <Button
             variant="outline"
             role="combobox"
-            className="h-auto min-h-9 w-full justify-between font-normal"
+            className="glass-pill h-auto min-h-9 w-full justify-between font-normal"
           />
         }
       >

@@ -124,14 +124,18 @@
 
   /* Liquid glass (D18) — receita única de vidro, derivada da paleta base.
      Nenhum hex novo: tudo é mistura de branco/base-1 com transparência.
-     Intensificado a pedido do usuário (2026-08-17): mais transparência e
-     mais blur — o blur maior é o que preserva a leitura com menos opacidade. */
-  --glass-panel: color-mix(in srgb, #ffffff 52%, transparent);
-  --glass-panel-strong: color-mix(in srgb, #ffffff 78%, transparent);
-  --glass-dark: color-mix(in srgb, var(--base-1) 74%, transparent);
+     Calibrado em 2026-08-17 pelas diretrizes ilustradas do iOS 26 enviadas
+     pelo usuário: vidro forte é material de CONTROLE (barras, botões,
+     pílulas, busca); o CONTEÚDO (cards, listas, gráficos) fica quase sólido
+     e legível sobre o wallpaper — como as listas agrupadas do iOS. */
+  --glass-panel: color-mix(in srgb, #ffffff 88%, transparent);
+  --glass-panel-strong: color-mix(in srgb, #ffffff 92%, transparent);
+  --glass-control: color-mix(in srgb, #ffffff 55%, transparent);
+  --glass-dark: color-mix(in srgb, var(--base-1) 76%, transparent);
   --glass-highlight: color-mix(in srgb, #ffffff 85%, transparent);
   --glass-border: color-mix(in srgb, #ffffff 62%, transparent);
-  --glass-blur: 26px;
+  --glass-blur: 14px;
+  --glass-control-blur: 26px;
 }
 
 @layer base {
@@ -228,6 +232,21 @@
   backdrop-filter: blur(18px) saturate(1.8);
 }
 
+/* iOS 26: controles em pílula/círculo (diretrizes ilustradas, 2026-08-17) —
+   botões viram cápsulas (com ícone, círculos) e gatilhos de filtro/seleção
+   viram pílulas de vidro que refratam o conteúdo rolando por baixo. */
+[data-slot="button"],
+[data-slot="select-trigger"] {
+  border-radius: 999px;
+}
+[data-slot="select-trigger"],
+.glass-pill {
+  border-radius: 999px;
+  border-color: var(--glass-border);
+  background: var(--glass-control);
+  backdrop-filter: blur(var(--glass-control-blur)) saturate(1.8);
+}
+
 /* Superfícies flutuantes (menus, selects, diálogos, sheets, busca global):
    o token --popover já é translúcido — aqui entra o blur que completa o
    vidro. Seletores por data-slot para não tocar componente a componente. */
@@ -253,6 +272,10 @@
   .glass-chrome {
     background: var(--card);
   }
+  [data-slot="select-trigger"],
+  .glass-pill {
+    background: var(--card);
+  }
   :root {
     --popover: #ffffff;
   }
@@ -267,6 +290,11 @@
     backdrop-filter: none;
   }
   .glass-chrome {
+    background: var(--card);
+    backdrop-filter: none;
+  }
+  [data-slot="select-trigger"],
+  .glass-pill {
     background: var(--card);
     backdrop-filter: none;
   }

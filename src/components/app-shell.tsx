@@ -87,7 +87,9 @@ export function AppShell({
         </div>
       </main>
 
-      <nav className="glass-dark fixed inset-x-0 bottom-0 z-40 text-white ring-1 ring-white/10 sm:hidden">
+      {/* Tab bar mobile em cápsula flutuante, inset das bordas — iOS 26
+          ("barra de abas embutida", diretrizes de 2026-08-17). */}
+      <nav className="glass-dark fixed inset-x-4 bottom-3 z-40 overflow-hidden rounded-full text-white ring-1 ring-white/15 sm:hidden">
         <div className="flex">
           {NAV_ITEMS.map((item) => {
             const active = pathname?.startsWith(item.href);
