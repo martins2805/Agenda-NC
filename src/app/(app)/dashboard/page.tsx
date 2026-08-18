@@ -49,34 +49,42 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Hero Section — saudação, atalhos e resumo rápido */}
-      <section className="hero-surface flex flex-col gap-4 p-4 sm:p-5">
-        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+      {/* Cabeçalho estilo iOS "Large Title" (D18, harness v6): o título vive
+          direto sobre o wallpaper — sem laje de hero — com as ações em vidro
+          à direita e o resumo rápido em chips-pílula de vidro, números nas
+          cores semânticas de sempre (D8). Mesmo conteúdo do hero anterior,
+          só a apresentação mudou. */}
+      <section className="flex flex-col gap-4 px-1 pt-1">
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
-            <p className="font-mono text-xs uppercase tracking-wide text-white/70">Agenda NC</p>
-            <h2 className="mt-1 text-lg font-bold tracking-tight sm:text-xl">
+            <p className="font-mono text-xs uppercase tracking-wide text-muted-foreground">Agenda NC</p>
+            <h2 className="mt-0.5 text-3xl font-bold tracking-tight sm:text-4xl">
               Painel de controle
             </h2>
-            <p className="mt-1 text-sm text-white/80">
+            <p className="mt-1.5 text-sm text-muted-foreground">
               Visão viva da operação, com indicadores e calendário.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button className="gap-1.5 bg-white text-[var(--base-1)] hover:bg-white/90" onClick={novaAtividade}>
+            <Button className="gap-1.5" onClick={novaAtividade}>
               <Plus className="size-4" /> Nova Atividade
             </Button>
             <WidgetConfigPanel />
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="flex flex-wrap gap-2.5">
           {[
-            { label: "Atividades", value: filtered.length },
-            { label: "Pendentes", value: pendentes },
-            { label: "Vencidas", value: vencidas },
+            { label: "Atividades", value: filtered.length, cor: "var(--foreground)" },
+            { label: "Pendentes", value: pendentes, cor: "var(--status-pendente)" },
+            { label: "Vencidas", value: vencidas, cor: "var(--prazo-proximo)" },
           ].map((item) => (
-            <div key={item.label} className="rounded-2xl bg-white/10 p-3 backdrop-blur-sm">
-              <p className="text-xs font-medium uppercase tracking-wide text-white/70">{item.label}</p>
-              <p className="mt-1 font-mono text-xl font-bold text-white">{item.value}</p>
+            <div key={item.label} className="glass-pill flex items-baseline gap-2 border px-4 py-2">
+              <span className="font-mono text-lg font-bold" style={{ color: item.cor }}>
+                {item.value}
+              </span>
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {item.label}
+              </span>
             </div>
           ))}
         </div>

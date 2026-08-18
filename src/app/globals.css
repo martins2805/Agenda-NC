@@ -355,32 +355,9 @@
   transition: width 0.35s ease;
 }
 
-/* Faixa superior (hero): degradê da paleta base agora translúcido, com blur
-   e brilho interno — o mesmo vidro escuro da sidebar (D18). */
-.hero-surface {
-  border-radius: var(--radius-3xl);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--base-1) 78%, transparent) 0%,
-    color-mix(in srgb, var(--base-2) 72%, transparent) 100%
-  );
-  backdrop-filter: blur(30px) saturate(2);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 28%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, #000000 25%, transparent);
-  color: #ffffff;
-}
-@supports not (backdrop-filter: blur(1px)) {
-  .hero-surface {
-    background: linear-gradient(135deg, var(--base-1) 0%, var(--base-2) 100%);
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  .hero-surface {
-    background: linear-gradient(135deg, var(--base-1) 0%, var(--base-2) 100%);
-    backdrop-filter: none;
-  }
-}
+/* (D18/harness v6: a faixa "hero" escura do dashboard foi substituída pelo
+   cabeçalho estilo iOS Large Title direto sobre o wallpaper — a classe
+   .hero-surface saiu junto, sem consumidores.) */
 
 .ledger-label {
   font-family: var(--font-mono);
