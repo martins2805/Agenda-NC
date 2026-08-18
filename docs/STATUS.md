@@ -36,7 +36,7 @@ Correção: reordenadas as colunas (novas ao final) em `20260723120000_prazo_uni
 
 | Sprint | Nome | Fechada em | Tag |
 |---|---|---|---|
-| S17 | Liquid glass (D18) + hotfix busca global | 2026-08-16 | — |
+| S17 | Liquid glass (D18) + hotfix busca global — iterado até 2026-08-18 (harness visual, receita v6) | 2026-08-16→18 | — |
 | S16 | Correções do PROMPT 2 | 2026-08-14 — aceite pendente **fechado em produção em 2026-08-16** | — |
 | S15 | Remoção dos módulos Execuções, Registros e Planilhas (D17) | 2026-08-14 | — |
 | S14 | Conformação visual — reverter tema escuro para claro (D16) | 2026-07-22 | — |
@@ -63,6 +63,13 @@ Correção: reordenadas as colunas (novas ao final) em `20260723120000_prazo_uni
 - [x] **Liquid glass (D18)**: tokens `--glass-*` (só `color-mix` de tokens existentes, nenhum hex novo); fundo do body com manchas radiais suaves de neutros da paleta base; `.panel-card`/`.hero-surface`/`.glass-dark` (sidebar + barra mobile) translúcidos com `backdrop-blur` e brilho interno; menus/selects/diálogos/sheets/busca via regra central por `data-slot` (`--popover` translúcido); toolbar do editor com `.glass-chrome`; fallbacks sólidos para navegador sem `backdrop-filter` e para `prefers-reduced-transparency`; cores semânticas (D8) intocadas
 - [x] **Segundo defeito achado e corrigido na verificação em produção (commit `b7a61c3`)**: o primeiro deploy do vidro saiu SEM blur — escrever `backdrop-filter` + `-webkit-backdrop-filter` manualmente fazia o Lightning CSS (minificador do Next) manter só a variante `-webkit-`, que o Chrome atual não suporta mais como alias (`CSS.supports` = false, verificado ao vivo). Removidos os prefixos manuais (o minificador prefixa sozinho a partir da propriedade padrão). Blur confirmado computado em produção: painel 18px, sidebar 22px, hero 20px. **Lição**: nunca escrever prefixo `-webkit-` à mão neste projeto — o minificador descarta a propriedade padrão
 - [x] **Deploy via `railway up`**: o push ao GitHub não disparou o webhook do Railway (deploy automático não criou build novo em ~20 min) — os dois deploys da S17 foram forçados pelo CLI. Se o webhook seguir mudo, checar a conexão GitHub↔Railway no painel
+
+**S17 — iteração visual pós-feedback (2026-08-17/18, receita final v6):**
+- [x] Três rodadas de feedback do usuário com print ("não tem glass nenhum", "ficou horrível", "falta o espelhado") resolvidas com um **harness visual autônomo**: mock do dashboard com o CSS real de produção + screenshots via Chrome headless — 6 versões iteradas sem depender de olhar humano
+- [x] Bugs de contraste corrigidos: texto branco do FilterBar `dark` sobre vidro claro (raiz: comentário antigo "container escuro" — o modo `dark` saiu junto com a laje); texto da busca global de muted → foreground
+- [x] Receita final: rim light nas bordas (não clarão especular — a 1ª tentativa virou névoa e foi revertida); wallpaper com 4 tokens decorativos pastéis (`--wall-1..4`, ver adendo D18 — a paleta base é dessaturada demais para o vidro refratar); painéis 58%/blur 26; KPIs em **vidro tintado** (cor semântica dominante a 84%, D8 intacta); cabeçalho **iOS Large Title** (título text-3xl/4xl direto no wallpaper, sem laje hero — `.hero-surface` removida) replicado em todas as telas; resumo rápido em chips-pílula de vidro
+- [x] Verificado em produção com pixels reais (screenshots): wallpaper refratando através dos painéis, KPIs tintados, títulos grandes, filtros legíveis
+- [x] Webhook GitHub→Railway segue **intermitente** (falhou de novo em 2026-08-18; dois deploys via `railway up`) — verificar a integração no painel do Railway continua pendente
 
 **S16 — detalhe do aceite (PROMPT 2):**
 - [x] **Calendário não exibe concluídos** — `activity-calendar.tsx` filtra prazos cujo objeto está concluído. A conclusão é lida do estado compartilhado (`atividades` do `AppDataProvider`), **não** do snapshot vindo de `prazo_unificado` — é isso que faz "desmarcar volta a aparecer" valer sem refetch e sem botão "Atualizar" (Regra 10). Cobre os 3 tipos de linha: prazo da atividade, item de checklist concluído (`checklist[].concluido`) e `prazoFim` de proposta (segue o status da atividade). Se a atividade ainda não estiver no estado (carregando), cai de volta no status da própria view em vez de sumir com o prazo por engano
