@@ -122,19 +122,27 @@
   --negociacao-aceite: #2e5749;
   --negociacao-na: #d8d8d8;
 
-  /* Liquid glass (D18) — receita única de vidro, derivada da paleta base.
-     Nenhum hex novo: tudo é mistura de branco/base-1 com transparência.
-     Calibrado em 2026-08-17 pelas diretrizes ilustradas do iOS 26 enviadas
-     pelo usuário: vidro forte é material de CONTROLE (barras, botões,
-     pílulas, busca); o CONTEÚDO (cards, listas, gráficos) fica quase sólido
-     e legível sobre o wallpaper — como as listas agrupadas do iOS. */
-  --glass-panel: color-mix(in srgb, #ffffff 76%, transparent);
+  /* Wallpaper (D18, adendo de 2026-08-17): a paleta base é dessaturada
+     demais para o vidro ter o que refratar — iterado num harness visual
+     (screenshots headless) até o vidro aparecer. Quatro pastéis DECORATIVOS
+     que harmonizam com o navy da marca. Nunca carregam significado — a
+     proibição da D8 ("cor só com significado") vale para a paleta
+     SEMÂNTICA; estes existem só como fundo, como o wallpaper de um iPhone. */
+  --wall-1: #9fc3ea; /* azul-céu */
+  --wall-2: #c5b3e6; /* lilás */
+  --wall-3: #f2c9a8; /* pêssego */
+  --wall-4: #a9d8c5; /* menta */
+
+  /* Liquid glass (D18) — receita única de vidro. Valores aprovados no
+     harness visual (mock v5, 2026-08-17): vidro forte em controles, painéis
+     translúcidos o bastante para o wallpaper refratar, rim light nas bordas. */
+  --glass-panel: color-mix(in srgb, #ffffff 58%, transparent);
   --glass-panel-strong: color-mix(in srgb, #ffffff 88%, transparent);
-  --glass-control: color-mix(in srgb, #ffffff 62%, transparent);
-  --glass-dark: color-mix(in srgb, var(--base-1) 76%, transparent);
+  --glass-control: color-mix(in srgb, #ffffff 50%, transparent);
+  --glass-dark: color-mix(in srgb, var(--base-1) 62%, transparent);
   --glass-highlight: color-mix(in srgb, #ffffff 90%, transparent);
   --glass-border: color-mix(in srgb, #ffffff 70%, transparent);
-  --glass-blur: 20px;
+  --glass-blur: 26px;
   --glass-control-blur: 26px;
 
   /* O "espelhado" do vidro do iOS 26 NÃO é um clarão difuso — a tentativa
@@ -150,17 +158,16 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Liquid glass (D18): o vidro precisa de algo para refratar — o fundo
-       funciona como o wallpaper de um iPhone: lavagens de cor amplas e
-       suaves nos neutros da paleta base sobre o claro da D1. Neutro de
-       marca, não cor semântica (D8 intacta). Intensificado em 2026-08-17
-       ("a impressão deve ser de estar olhando a tela de um iphone"). */
+    /* Wallpaper do liquid glass (D18): manchas pastéis (--wall-*) sobre o
+       claro da D1 — é o que aparece refratado através de cada painel de
+       vidro. Composição aprovada no harness visual (mock v4/v5). */
     background:
-      radial-gradient(1200px 800px at 6% -12%, color-mix(in srgb, var(--base-3) 52%, transparent), transparent 62%),
-      radial-gradient(1000px 700px at 110% 8%, color-mix(in srgb, var(--base-5) 95%, transparent), transparent 58%),
-      radial-gradient(900px 700px at 85% 70%, color-mix(in srgb, var(--base-2) 22%, transparent), transparent 60%),
-      radial-gradient(1100px 900px at 30% 115%, color-mix(in srgb, var(--base-3) 38%, transparent), transparent 62%),
-      var(--background);
+      radial-gradient(760px 540px at 22% 8%, color-mix(in srgb, var(--wall-1) 85%, transparent), transparent 64%),
+      radial-gradient(620px 480px at 68% 30%, color-mix(in srgb, var(--wall-2) 70%, transparent), transparent 62%),
+      radial-gradient(640px 480px at 96% 6%, color-mix(in srgb, var(--wall-3) 80%, transparent), transparent 58%),
+      radial-gradient(700px 560px at 8% 78%, color-mix(in srgb, var(--wall-4) 85%, transparent), transparent 62%),
+      radial-gradient(680px 520px at 82% 92%, color-mix(in srgb, var(--wall-1) 65%, transparent), transparent 60%),
+      linear-gradient(160deg, var(--background), color-mix(in srgb, var(--base-3) 22%, var(--background)));
     background-attachment: fixed;
   }
   html {
@@ -209,7 +216,7 @@
 .panel-card {
   position: relative;
   background: var(--glass-panel);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.8);
+  backdrop-filter: blur(var(--glass-blur)) saturate(2);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-2xl);
   overflow: hidden;
@@ -228,12 +235,24 @@
    sendo a cor da barra, agora translúcido sobre o fundo. */
 .glass-dark {
   background:
-    linear-gradient(165deg, color-mix(in srgb, var(--base-2) 36%, transparent), transparent 55%),
+    linear-gradient(165deg, color-mix(in srgb, var(--base-2) 30%, transparent), transparent 55%),
     var(--glass-dark);
-  backdrop-filter: blur(28px) saturate(1.8);
+  backdrop-filter: blur(30px) saturate(2);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, #ffffff 30%, transparent),
     inset 0 -1px 0 color-mix(in srgb, #000000 25%, transparent);
+}
+
+/* Vidro tintado (D18): mantém a cor semântica do indicador (D8) como TINTA
+   do vidro — a cor continua dominante e legível, mas o material refrata o
+   wallpaper como o resto do sistema. O background com a cor vem inline do
+   componente (KpiCard/DualKpi). */
+.glass-tint {
+  backdrop-filter: blur(18px) saturate(1.8);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 26%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, #000000 20%, transparent),
+    0 16px 36px -24px color-mix(in srgb, var(--base-1) 50%, transparent);
 }
 
 /* Vidro utilitário para barras que flutuam sobre conteúdo rolável
@@ -342,10 +361,10 @@
   border-radius: var(--radius-3xl);
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--base-1) 88%, transparent) 0%,
-    color-mix(in srgb, var(--base-2) 86%, transparent) 100%
+    color-mix(in srgb, var(--base-1) 78%, transparent) 0%,
+    color-mix(in srgb, var(--base-2) 72%, transparent) 100%
   );
-  backdrop-filter: blur(26px) saturate(1.8);
+  backdrop-filter: blur(30px) saturate(2);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, #ffffff 28%, transparent),
     inset 0 -1px 0 color-mix(in srgb, #000000 25%, transparent);

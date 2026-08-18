@@ -104,8 +104,10 @@ export function KpiCard({
   return (
     <Link
       href={href}
-      className="flex flex-col justify-between gap-2 rounded-2xl p-4 text-white shadow-[0_16px_36px_-24px_rgba(31,44,67,0.5)] transition-transform hover:-translate-y-0.5"
-      style={{ backgroundColor: color }}
+      className="glass-tint flex flex-col justify-between gap-2 rounded-2xl p-4 text-white transition-transform hover:-translate-y-0.5"
+      // Vidro tintado (D18): a cor semântica (D8) segue dominante (84%),
+      // mas o wallpaper refrata por trás como no resto do sistema.
+      style={{ background: `color-mix(in srgb, ${color} 84%, transparent)` }}
     >
       <span className="text-xs font-bold uppercase tracking-wide text-white/80">{label}</span>
       <span className="font-mono text-xl font-bold">{value}</span>
@@ -126,8 +128,8 @@ export function DualKpi({
 }) {
   return (
     <div
-      className="flex flex-col gap-3 rounded-2xl p-4 text-white shadow-[0_16px_36px_-24px_rgba(31,44,67,0.5)]"
-      style={{ backgroundColor: color }}
+      className="glass-tint flex flex-col gap-3 rounded-2xl p-4 text-white"
+      style={{ background: `color-mix(in srgb, ${color} 84%, transparent)` }}
     >
       <span className="text-xs font-bold uppercase tracking-wide text-white/80">{label}</span>
       <div className="flex items-end justify-between gap-3">
