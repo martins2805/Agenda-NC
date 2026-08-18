@@ -86,7 +86,7 @@ export function atividadeFromDb(a: FullDbAtividade): Atividade {
   return {
     id: a.id,
     empresaId: a.empresaId,
-    unidadeId: a.unidadeId,
+    unidadeIds: a.unidadeIds,
     assunto: a.assunto,
     tipoAtividadeIds: a.tipoAtividadeIds,
     emailConteudo: a.emailConteudo,
@@ -205,7 +205,7 @@ export function atividadeGeralFromDb(
   return {
     id: a.id,
     empresaId: a.empresaId,
-    unidadeId: a.unidadeId,
+    unidadeIds: a.unidadeIds,
     tipoIds: a.tipoIds,
     assunto: a.assunto,
     vinculos: a.vinculos,

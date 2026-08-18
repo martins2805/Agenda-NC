@@ -23,7 +23,7 @@ function atividadeSintetica(status: StatusConclusao, prioridade: Prioridade): At
   return {
     id: `${status}-${prioridade}`,
     empresaId: null,
-    unidadeId: null,
+    unidadeIds: [],
     assunto: "",
     tipoAtividadeIds: [],
     emailConteudo: "",

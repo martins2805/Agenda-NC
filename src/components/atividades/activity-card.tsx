@@ -217,7 +217,7 @@ export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardPro
   const { lookups, deleteAtividade, updateAtividade } = useAppData();
 
   const empresa = lookups.empresa.find((e) => e.id === atividade.empresaId);
-  const unidade = lookups.unidade.find((u) => u.id === atividade.unidadeId);
+  const unidades = lookups.unidade.filter((u) => atividade.unidadeIds.includes(u.id));
   const tipos = lookups.tipoAtividade.filter((t) =>
     atividade.tipoAtividadeIds.includes(t.id)
   );
@@ -257,7 +257,9 @@ export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardPro
             <p className="flex items-center gap-1.5 font-semibold leading-tight">
               <Building2 className="size-3.5 shrink-0 text-[var(--base-1)]" />
               {empresa?.name ?? "Sem empresa"}
-              {unidade && <span className="text-muted-foreground"> · {unidade.name}</span>}
+              {unidades.length > 0 && (
+                <span className="text-muted-foreground"> · {unidades.map((u) => u.name).join(", ")}</span>
+              )}
             </p>
             {/* 2. Assunto (ou Serviço/Produto quando proposta) */}
             {isProposta ? (

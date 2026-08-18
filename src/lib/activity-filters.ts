@@ -71,7 +71,10 @@ function descricaoLimpa(a: Atividade): string {
 
 function toRecord(a: Atividade, lookups: Lookups): FilterableRecord {
   const empresa = lookups.empresa.find((e) => e.id === a.empresaId)?.name ?? "";
-  const unidade = lookups.unidade.find((u) => u.id === a.unidadeId)?.name ?? "";
+  const unidade = lookups.unidade
+    .filter((u) => a.unidadeIds.includes(u.id))
+    .map((u) => u.name)
+    .join(" ");
   const tipos = lookups.tipoAtividade
     .filter((t) => a.tipoAtividadeIds.includes(t.id))
     .map((t) => t.name)
@@ -95,7 +98,7 @@ function toRecord(a: Atividade, lookups: Lookups): FilterableRecord {
 
   return {
     empresaId: a.empresaId,
-    unidadeId: a.unidadeId,
+    unidadeIds: a.unidadeIds,
     tipoIds: a.tipoAtividadeIds,
     status: a.status,
     prioridade: a.prioridade,

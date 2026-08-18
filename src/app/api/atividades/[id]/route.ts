@@ -73,7 +73,7 @@ export async function PATCH(
       where: { id },
       data: {
         empresaId: body.empresaId,
-        unidadeId: body.unidadeId,
+        unidadeIds: body.unidadeIds,
         assunto: body.assunto,
         tipoAtividadeIds: body.tipoAtividadeIds,
         emailConteudo: body.emailConteudo,

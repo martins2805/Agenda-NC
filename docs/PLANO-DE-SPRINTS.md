@@ -502,7 +502,6 @@ Registrado para não virar escopo silencioso no meio de uma sprint:
   - Widgets do dashboard completos: incluir/excluir/editar todos os campos e tamanhos (exige decidir "widget fixo" para a Visão Geral — pendência #9 do STATUS)
   - Configurações: cor configurável de todos os campos, etiquetas, cards e gráficos (hoje só itens de catálogo têm cor)
   - Prazo recorrente para atividade (não existe nenhuma estrutura de recorrência)
-  - Vincular a mesma atividade a mais de uma unidade (`unidadeId` é singular no schema — exige migration N:N)
   - "Calendário básico" e "alterar filtros/campos/etiquetas do cadastro" (Adaptações Matheus) — pedidos sem detalhamento; especificar com o usuário
 - Colunas configuráveis e redimensionáveis na lista (Cap. 5.15, marcado como "futuramente")
 - Módulos Vendas, Comissão, Financeiro, CRM, Clientes (Cap. 1.7)

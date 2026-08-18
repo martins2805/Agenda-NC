@@ -39,7 +39,7 @@ export function ActivityTable({
         <tbody>
           {atividades.map((a) => {
             const empresa = lookups.empresa.find((e) => e.id === a.empresaId);
-            const unidade = lookups.unidade.find((u) => u.id === a.unidadeId);
+            const unidades = lookups.unidade.filter((u) => a.unidadeIds.includes(u.id));
             const tipos = lookups.tipoAtividade.filter((t) =>
               a.tipoAtividadeIds.includes(t.id)
             );
@@ -76,7 +76,9 @@ export function ActivityTable({
                   </button>
                 </td>
                 <td className="px-3 py-2 font-medium">{empresa?.name ?? "—"}</td>
-                <td className="px-3 py-2 text-muted-foreground">{unidade?.name ?? "—"}</td>
+                <td className="px-3 py-2 text-muted-foreground">
+                  {unidades.map((u) => u.name).join(", ") || "—"}
+                </td>
                 <td className="px-3 py-2 text-muted-foreground">
                   {tipos.map((t) => t.name).join(", ") || "—"}
                 </td>

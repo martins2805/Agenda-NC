@@ -197,7 +197,10 @@ export function ActivityCalendar() {
               <ul className="flex flex-col gap-2">
                 {entries.map((entry) => {
                   const empresa = lookups.empresa.find((e) => e.id === entry.empresaId)?.name ?? "Sem empresa";
-                  const unidade = lookups.unidade.find((u) => u.id === entry.unidadeId)?.name;
+                  const unidade = lookups.unidade
+                    .filter((u) => entry.unidadeIds.includes(u.id))
+                    .map((u) => u.name)
+                    .join(", ");
                   const href = `/atividades?open=${entry.objetoId}`;
                   return (
                     <li

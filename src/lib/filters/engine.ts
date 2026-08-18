@@ -10,7 +10,7 @@ import type { OrderBy, PrazoRange } from "./types";
 
 export interface FilterableRecord {
   empresaId: string | null;
-  unidadeId: string | null;
+  unidadeIds: string[];
   tipoIds: string[];
   status: string;
   prioridade: Prioridade;
@@ -32,7 +32,7 @@ export interface EngineFilters {
 export function matchesRecord(record: FilterableRecord, filters: EngineFilters): boolean {
   if (filters.empresaIds.length > 0 && !(record.empresaId && filters.empresaIds.includes(record.empresaId)))
     return false;
-  if (filters.unidadeIds.length > 0 && !(record.unidadeId && filters.unidadeIds.includes(record.unidadeId)))
+  if (filters.unidadeIds.length > 0 && !filters.unidadeIds.some((id) => record.unidadeIds.includes(id)))
     return false;
   if (filters.tipoIds.length > 0 && !filters.tipoIds.some((id) => record.tipoIds.includes(id)))
     return false;

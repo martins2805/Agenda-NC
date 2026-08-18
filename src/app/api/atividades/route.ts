@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       id: body.id,
       userId,
       empresaId: body.empresaId,
-      unidadeId: body.unidadeId,
+      unidadeIds: body.unidadeIds,
       assunto: body.assunto,
       tipoAtividadeIds: body.tipoAtividadeIds,
       emailConteudo: body.emailConteudo,

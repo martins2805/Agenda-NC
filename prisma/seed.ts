@@ -164,8 +164,13 @@ async function main() {
     const id = i === 0 ? "seed-atividade-verificacao" : `seed-atividade-${i}`;
     const empresaIdx = i % EMPRESAS.length;
     const empresaId = empresaIds[empresaIdx];
-    const unidadeId = pick(unidadeIdsPorEmpresa[empresaIdx], i);
     const isVerificacao = i === 0;
+    // Verificação exercita multi-unidade (backlog "vincular a mais de uma
+    // unidade", D19): todas as unidades da empresa 0 (tem 2). Demais seguem
+    // com 1 unidade, como antes.
+    const unidadeIds = isVerificacao
+      ? unidadeIdsPorEmpresa[empresaIdx]
+      : [pick(unidadeIdsPorEmpresa[empresaIdx], i)];
     const temProposta = isVerificacao || i % 3 === 0;
 
     const tipos = isVerificacao
@@ -187,7 +192,7 @@ async function main() {
         id,
         userId,
         empresaId,
-        unidadeId,
+        unidadeIds,
         assunto: isVerificacao ? "Atividade seed de verificação (2 tipos + 3 propostas)" : pick(ASSUNTOS, i),
         tipoAtividadeIds: tipos,
         contato: "",
@@ -218,7 +223,7 @@ async function main() {
         id: `seed-geral-${i}`,
         userId,
         empresaId: empresaIds[empresaIdx],
-        unidadeId: pick(unidadeIdsPorEmpresa[empresaIdx], i),
+        unidadeIds: [pick(unidadeIdsPorEmpresa[empresaIdx], i)],
         tipoIds: [pick(tipoAtividadeGeralIds, i)],
         assunto: `Execução interna #${i + 1}`,
         prazo: i % 3 === 0 ? null : daysFromNow([-5, 2, 10][i % 3]),

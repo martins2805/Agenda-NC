@@ -18,7 +18,7 @@ export interface PrazoUnificadoApiRow {
   origemId: string;
   titulo: string;
   empresaId: string | null;
-  unidadeId: string | null;
+  unidadeIds: string[];
   data: string; // "YYYY-MM-DDTHH:mm"
   prioridade: string | null; // enum cru do banco (ex.: "Medio"); null p/ Registro (sem prioridade)
   status: string | null; // enum cru do banco; null p/ Registro (sem status)
@@ -91,10 +91,13 @@ interface Lookups {
 
 function toRecord(entry: PrazoEntry, lookups: Lookups): FilterableRecord {
   const empresa = lookups.empresa.find((e) => e.id === entry.empresaId)?.name ?? "";
-  const unidade = lookups.unidade.find((u) => u.id === entry.unidadeId)?.name ?? "";
+  const unidade = lookups.unidade
+    .filter((u) => entry.unidadeIds.includes(u.id))
+    .map((u) => u.name)
+    .join(" ");
   return {
     empresaId: entry.empresaId,
-    unidadeId: entry.unidadeId,
+    unidadeIds: entry.unidadeIds,
     tipoIds: entry.tipoAtividadeIds,
     // Placeholders só usados quando o filtro correspondente está inativo — ver
     // os guards em matchesPrazoEntry, que excluem entradas sem status/

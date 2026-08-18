@@ -137,3 +137,13 @@ Preenchida a partir do código já existente no repositório (não é uma escolh
 **Bloqueia:** S17
 **Status:** FECHADA (2026-08-16, pedido do usuário no chat)
 **Adendo (2026-08-17):** após iteração guiada pelo guia ilustrado do iOS 26 e por um harness visual (screenshots headless sobre o CSS de produção), a receita final inclui: (a) rim light nas bordas em vez de clarão especular difuso; (b) controles em pílula/círculo com vidro forte; (c) **quatro tokens decorativos de wallpaper** (`--wall-1..4`: azul-céu `#9fc3ea`, lilás `#c5b3e6`, pêssego `#f2c9a8`, menta `#a9d8c5`) — a paleta base é dessaturada demais para o vidro ter o que refratar. São fundo, nunca significado (a proibição da D8 vale para a paleta semântica); (d) KPIs coloridos como vidro tintado (cor semântica dominante a 84%).
+
+## D19 — Unidade é multi-seleção em Atividade e AtividadeGeral
+**Lacuna:** item de backlog registrado em `docs/PLANO-DE-SPRINTS.md` §7 ("Vincular a mesma atividade a mais de uma unidade — `unidadeId` é singular no schema, exige migration N:N"), pedido pelo usuário em 2026-08-18 ("preciso conseguir colocar mais de uma unidade no mesmo card de atividade"). Mesmo formato de lacuna da D5 (tipo de atividade), mas para Unidade.
+**Decisão (confirmada pelo usuário, 3 perguntas no chat):**
+- Empresa continua única por atividade (Unidade é filha de Empresa, spec 05-atividades.md). O multi-valor é só em Unidade; o seletor de Unidade no cadastro fica restrito às unidades da Empresa escolhida, como já era.
+- Aplica-se a `Atividade` **e** `AtividadeGeral` (mesmo campo `unidadeId` singular nos dois hoje). `AtividadeGeral` não tem CRUD próprio na UI (módulo "Execuções" removido pela D17) — a mudança é só de schema/tipo, sem tela a ajustar.
+- Filtro por Unidade passa a casar por OR: uma atividade aparece se **qualquer uma** das suas unidades bater com o filtro selecionado — mesmo padrão já usado para `tipoAtividadeIds`.
+**Schema:** `Atividade.unidadeId`/`AtividadeGeral.unidadeId` (`String?`) viram `unidadeIds` (`String[]`), mesmo padrão de `tipoAtividadeIds`. Migration `20260818150000_atividade_unidade_multipla` faz backfill (valor único vira array de 1) e recria `prazo_unificado` (coluna `unidade_id` passa a `text[]`, normalizando os lados que continuam escalares — `Registro`/`ChecklistGeralItem` — para array de 0/1 elemento). `Registro.unidadeId` e `Planilha.unidadeId` continuam escalares (fora de escopo, sem pedido do usuário para esses módulos, hoje removidos da UI pela D17).
+**Bloqueia:** nenhuma sprint em andamento — feature isolada, aplicada fora do ritual S1–S17.
+**Status:** FECHADA (2026-08-18, pedido do usuário no chat)

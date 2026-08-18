@@ -52,7 +52,7 @@ function emptyAtividade(): Atividade {
   return {
     id: makeAtividadeId(),
     empresaId: null,
-    unidadeId: null,
+    unidadeIds: [],
     assunto: "",
     tipoAtividadeIds: [],
     emailConteudo: "",
@@ -192,20 +192,30 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
             items={lookups.empresa}
             value={draft.empresaId}
             onChange={(id) =>
-              patch(id === draft.empresaId ? { empresaId: id } : { empresaId: id, unidadeId: null })
+              patch(
+                id === draft.empresaId
+                  ? { empresaId: id }
+                  : {
+                      empresaId: id,
+                      unidadeIds: draft.unidadeIds.filter((uid) => {
+                        const u = lookups.unidade.find((item) => item.id === uid);
+                        return !u?.empresaId || u.empresaId === id;
+                      }),
+                    }
+              )
             }
             onCreate={(name) => addLookupItem("empresa", name)}
             onRename={(id, name) => renameLookupItem("empresa", id, name)}
             onDeactivate={(id) => deactivateLookupItem("empresa", id)}
           />
 
-          <ManagedSelect
+          <ManagedMultiSelect
             label="Unidade"
             items={lookups.unidade.filter(
               (u) => !u.empresaId || u.empresaId === draft.empresaId
             )}
-            value={draft.unidadeId}
-            onChange={(id) => patch({ unidadeId: id })}
+            value={draft.unidadeIds}
+            onChange={(ids) => patch({ unidadeIds: ids })}
             onCreate={(name) => addLookupItem("unidade", name, draft.empresaId)}
             onRename={(id, name) => renameLookupItem("unidade", id, name)}
             onDeactivate={(id) => deactivateLookupItem("unidade", id)}

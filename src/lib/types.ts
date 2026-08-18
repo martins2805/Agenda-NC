@@ -132,7 +132,7 @@ export interface HistoricoEntry {
 export interface Atividade {
   id: string;
   empresaId: string | null;
-  unidadeId: string | null;
+  unidadeIds: string[];
   assunto: string;
   tipoAtividadeIds: string[];
   emailConteudo: string;
@@ -194,7 +194,7 @@ export interface Planilha {
 export interface AtividadeGeral {
   id: string;
   empresaId: string | null;
-  unidadeId: string | null;
+  unidadeIds: string[];
   tipoIds: string[];
   assunto: string;
   vinculos: string;

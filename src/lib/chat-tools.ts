@@ -145,7 +145,7 @@ async function criarAtividade(userId: string, args: Record<string, unknown>) {
       id: crypto.randomUUID(),
       userId,
       empresaId,
-      unidadeId,
+      unidadeIds: unidadeId ? [unidadeId] : [],
       assunto: typeof args.assunto === "string" ? args.assunto : "",
       contato: typeof args.contato === "string" ? args.contato : "",
       prazo: typeof args.prazo === "string" && args.prazo ? new Date(args.prazo) : null,
@@ -173,7 +173,10 @@ async function atualizarAtividade(userId: string, args: Record<string, unknown>)
 
   const data: Record<string, unknown> = {};
   if (args.empresa !== undefined) data.empresaId = await resolveOrCreateLookup(userId, "empresa", String(args.empresa));
-  if (args.unidade !== undefined) data.unidadeId = await resolveOrCreateLookup(userId, "unidade", String(args.unidade));
+  if (args.unidade !== undefined) {
+    const unidadeId = await resolveOrCreateLookup(userId, "unidade", String(args.unidade));
+    data.unidadeIds = unidadeId ? [unidadeId] : [];
+  }
   if (args.assunto !== undefined) data.assunto = String(args.assunto);
   if (args.contato !== undefined) data.contato = String(args.contato);
   if (args.prazo !== undefined) data.prazo = args.prazo ? new Date(String(args.prazo)) : null;

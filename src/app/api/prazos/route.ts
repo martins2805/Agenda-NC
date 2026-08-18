@@ -15,7 +15,7 @@ interface PrazoUnificadoRow {
   origem_id: string;
   titulo: string;
   empresa_id: string | null;
-  unidade_id: string | null;
+  unidade_id: string[] | null;
   data: Date;
   prioridade: string | null;
   status: string | null;
@@ -40,7 +40,7 @@ export async function GET() {
       origemId: r.origem_id,
       titulo: r.titulo,
       empresaId: r.empresa_id,
-      unidadeId: r.unidade_id,
+      unidadeIds: r.unidade_id ?? [],
       data: toLocalDateTimeString(r.data),
       prioridade: r.prioridade,
       status: r.status,

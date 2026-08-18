@@ -69,7 +69,7 @@ model Atividade {
   userId            String
   user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   empresaId         String?
-  unidadeId         String?
+  unidadeIds        String[]
   assunto           String           @default("")
   tipoAtividadeIds  String[]
   emailConteudo     String           @default("")
@@ -97,7 +97,6 @@ model Atividade {
   @@index([userId])
   @@index([deletedAt])
   @@index([userId, empresaId])
-  @@index([userId, unidadeId])
   @@index([userId, status])
   @@index([userId, prioridade])
   @@index([userId, prazo])
@@ -219,7 +218,7 @@ model AtividadeGeral {
   userId      String
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   empresaId   String?
-  unidadeId   String?
+  unidadeIds  String[]
   tipoIds     String[]
   assunto     String           @default("")
   vinculos    String           @default("")

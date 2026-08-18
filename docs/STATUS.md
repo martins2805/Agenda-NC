@@ -36,6 +36,7 @@ Correção: reordenadas as colunas (novas ao final) em `20260723120000_prazo_uni
 
 | Sprint | Nome | Fechada em | Tag |
 |---|---|---|---|
+| D19 | Unidade multi-valor em Atividade e AtividadeGeral (fora do ritual de sprint) | 2026-08-18 (migration aplicada e backfill verificado em produção; UI ainda não vista no navegador) | — |
 | S17 | Liquid glass (D18) + hotfix busca global — iterado até 2026-08-18 (harness visual, receita v6) | 2026-08-16→18 | — |
 | S16 | Correções do PROMPT 2 | 2026-08-14 — aceite pendente **fechado em produção em 2026-08-16** | — |
 | S15 | Remoção dos módulos Execuções, Registros e Planilhas (D17) | 2026-08-14 | — |
@@ -52,6 +53,18 @@ Correção: reordenadas as colunas (novas ao final) em `20260723120000_prazo_uni
 | S11 | Registros | 2026-07-23 | — |
 | S12 | Planilhas | 2026-07-23 | — |
 | S13 | Fechamento | 2026-07-23 | — |
+
+**D19 — detalhe (Unidade multi-valor em Atividade/AtividadeGeral):**
+
+*Pedido do usuário em 2026-08-18 ("preciso conseguir colocar mais de uma unidade no mesmo card de atividade"). Decisão registrada em D19 após 3 perguntas de escopo respondidas no chat (Empresa continua única; aplica a Atividade e AtividadeGeral; filtro por Unidade casa por OR).*
+
+- [x] `Atividade.unidadeId`/`AtividadeGeral.unidadeId` (escalar) viram `unidadeIds` (`String[]`), mesmo padrão de `tipoAtividadeIds` — schema, mapper, motor de filtros (`filters/engine.ts`), adapters (`activity-filters.ts`/`prazo-filters.ts`), rotas de API, `chat-tools.ts`, `knowledge-sync.ts`, seed e o script de consistência do dashboard atualizados
+- [x] Migration `20260818150000_atividade_unidade_multipla` escrita (idempotente, no padrão da S1): dropa e recria `prazo_unificado` (coluna `unidade_id` vira `text[]`, normalizando os lados que continuam escalares — `Registro`, `ChecklistGeralItem`, fora de escopo), com backfill do valor único existente para o primeiro elemento do array
+- [x] Formulário de atividade: seletor de Unidade trocado de `ManagedSelect` para `ManagedMultiSelect` (mesmo componente já usado para Tipo de atividade), restrito às unidades da Empresa escolhida; card, tabela e painel do calendário exibem a lista de unidades (`nome1, nome2`)
+- [x] `typecheck`, `lint` e `build` passam limpos
+- [x] **Migration aplicada em produção** (`npx prisma migrate deploy`, confirmado pelo usuário no chat antes de rodar): `21 migrations found`, `20260818150000_atividade_unidade_multipla` aplicada sem erro
+- [x] **Backfill verificado por consulta direta ao banco de produção** (script `tsx` descartável, sem tocar em nada): das 61 atividades reais, 48 tinham `unidadeId` preenchido — todas vieram como array de 1 elemento com o mesmo id de antes; `SELECT unidade_id FROM prazo_unificado` devolve array (`{"id"}`) nas linhas migradas. Nenhuma atividade perdeu a unidade que já tinha
+- [ ] **Verificação na UI (navegador) pendente** — dado que passou: cadastro/edição de atividade com 2+ unidades da mesma empresa, exibição em card/lista/calendário, filtro por unidade casando por OR. Mesmo bloqueio histórico de acesso a um navegador autenticado das sprints anteriores; reabrir quando houver
 
 **S17 — detalhe do aceite (D18 + verificação em produção de 2026-08-16):**
 

@@ -79,7 +79,7 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
   const a = atividadeFromDb(raw);
   const ids = [
     a.empresaId,
-    a.unidadeId,
+    ...a.unidadeIds,
     ...a.tipoAtividadeIds,
     ...a.propostas.flatMap((p) => [
       ...p.servicoProdutoIds,
@@ -94,7 +94,7 @@ export async function serializeAtividade(raw: FullDbAtividade): Promise<string> 
     `Atividade`,
     `id: ${a.id}`,
     `Empresa: ${name(a.empresaId)}`,
-    `Unidade: ${name(a.unidadeId)}`,
+    `Unidade: ${a.unidadeIds.map(name).filter(Boolean).join(", ")}`,
     `Assunto: ${a.assunto}`,
     `Tipos: ${a.tipoAtividadeIds.map(name).filter(Boolean).join(", ")}`,
     `Contato: ${a.contato}`,
