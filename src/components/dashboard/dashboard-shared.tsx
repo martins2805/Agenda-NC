@@ -90,6 +90,10 @@ export function vencimentoBuckets(list: Atividade[]) {
   ];
 }
 
+// Indicadores no padrão iOS (D18/harness v7, feedback do usuário sobre os
+// cards "laje colorida"): o card é VIDRO CLARO como o resto do sistema e a
+// cor semântica (D8) vive no NÚMERO — como o iOS pinta valores/ícones, nunca
+// o card inteiro.
 export function KpiCard({
   label,
   value,
@@ -104,13 +108,12 @@ export function KpiCard({
   return (
     <Link
       href={href}
-      className="glass-tint flex flex-col justify-between gap-2 rounded-2xl p-4 text-white transition-transform hover:-translate-y-0.5"
-      // Vidro tintado (D18): a cor semântica (D8) segue dominante (84%),
-      // mas o wallpaper refrata por trás como no resto do sistema.
-      style={{ background: `color-mix(in srgb, ${color} 84%, transparent)` }}
+      className="panel-card flex flex-col justify-between gap-2 rounded-2xl p-4 transition-transform hover:-translate-y-0.5"
     >
-      <span className="text-xs font-bold uppercase tracking-wide text-white/80">{label}</span>
-      <span className="font-mono text-xl font-bold">{value}</span>
+      <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className="font-mono text-2xl font-bold" style={{ color }}>
+        {value}
+      </span>
     </Link>
   );
 }
@@ -127,16 +130,15 @@ export function DualKpi({
   color: string;
 }) {
   return (
-    <div
-      className="glass-tint flex flex-col gap-3 rounded-2xl p-4 text-white"
-      style={{ background: `color-mix(in srgb, ${color} 84%, transparent)` }}
-    >
-      <span className="text-xs font-bold uppercase tracking-wide text-white/80">{label}</span>
+    <div className="panel-card flex flex-col gap-3 rounded-2xl p-4">
+      <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{label}</span>
       <div className="flex items-end justify-between gap-3">
         {[left, right].map((side) => (
-          <Link key={side.label} href={side.href} className="flex flex-col hover:opacity-90">
-            <span className="font-mono text-xl font-bold">{side.value}</span>
-            <span className="text-xs font-medium text-white/80">{side.label}</span>
+          <Link key={side.label} href={side.href} className="flex flex-col hover:opacity-80">
+            <span className="font-mono text-2xl font-bold" style={{ color }}>
+              {side.value}
+            </span>
+            <span className="text-xs font-medium text-muted-foreground">{side.label}</span>
           </Link>
         ))}
       </div>
