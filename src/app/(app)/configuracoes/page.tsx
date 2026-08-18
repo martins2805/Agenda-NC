@@ -404,7 +404,7 @@ export default function ConfiguracoesPage() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-bold tracking-tight">Configurações</h1>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Configurações</h1>
         <p className="text-sm text-muted-foreground">
           Catálogos usados nos formulários do sistema. Arquivar um item o remove das listas de
           seleção, mas preserva os registros que já o usam.

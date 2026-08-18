@@ -48,7 +48,7 @@ export default function LixeiraPage() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className="text-xl font-bold tracking-tight">Lixeira</h2>
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Lixeira</h2>
         <p className="mt-1 text-muted-foreground">
           Itens excluídos ficam aqui até serem restaurados ou removidos definitivamente.
         </p>

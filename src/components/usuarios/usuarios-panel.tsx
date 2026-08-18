@@ -101,7 +101,7 @@ export function UsuariosPanel({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Usuários</h2>
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Usuários</h2>
         <p className="mt-1 text-muted-foreground">
           {isAdmin
             ? "Cadastre novas contas de acesso ao Agenda NC. Cada usuário vê apenas os próprios dados."
