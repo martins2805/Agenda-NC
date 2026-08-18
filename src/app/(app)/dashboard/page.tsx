@@ -82,16 +82,15 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Filtros do dashboard: container escuro #1F2C43 em vidro (glass-dark,
-          D18) — precisa ser o vidro ESCURO, não o claro (panel-card), senão
-          o texto branco do modo `dark` do FilterBar fica ilegível sobre um
-          fundo quase branco (bug relatado pelo usuário em 2026-08-17). */}
+      {/* Filtros do dashboard em vidro claro com TEXTO ESCURO — o modo `dark`
+          (texto branco, da época do container sólido #1F2C43) saiu junto com
+          a laje escura: feedback do usuário em 2026-08-17, a laje pesada não
+          parecia vidro e o texto branco sumia sobre vidro claro. */}
       <FilterBar
         filters={filters}
         onChange={setFilters}
         showProduto
-        dark
-        className="glass-dark rounded-2xl border border-white/10 p-4"
+        className="panel-card p-4"
       />
 
       {/* Indicadores/gráficos à esquerda e ao centro (Área 2) + calendário fixo
