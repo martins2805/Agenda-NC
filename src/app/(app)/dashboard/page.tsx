@@ -9,7 +9,6 @@ import { FilterBar } from "@/components/atividades/filter-bar";
 import { ActivityCalendar } from "@/components/atividades/activity-calendar";
 import { ActivityCard } from "@/components/atividades/activity-card";
 import { ActivityForm } from "@/components/atividades/activity-form";
-import { DashboardAnalytics, VisaoGeralWidget } from "@/components/atividades/dashboard-analytics";
 import { DashboardWidgets } from "@/components/dashboard/dashboard-widgets";
 import { WidgetConfigPanel } from "@/components/dashboard/widget-config-panel";
 import {
@@ -105,20 +104,16 @@ export default function DashboardPage() {
           à direita (Área 3), independente dos filtros do dashboard — D2/D3 */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_minmax(320px,380px)]">
         <div className="flex flex-col gap-6">
-          {/* Campos 1-3 (S8) — motor de widgets: ordem/visibilidade/tamanho
-              configuráveis no botão de engrenagem do cabeçalho */}
+          {/* Campos 1-6 — todos pelo motor de widgets desde o PROMPT 3 (1.1):
+              ordem/visibilidade/tamanho configuráveis no botão de engrenagem
+              do cabeçalho, incluindo Propostas, Empresas e Visão geral */}
           <DashboardWidgets filters={filters} atividades={atividades} />
-          {/* Campos 4-5 (S9) — ainda fora do motor de widgets */}
-          <DashboardAnalytics filters={filters} atividades={atividades} />
         </div>
         <div className="flex flex-col gap-3">
           <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Calendário</h3>
           <ActivityCalendar />
         </div>
       </div>
-
-      {/* Campo 6 — Visão geral, largura total, ao final da página (Cap. 4) */}
-      <VisaoGeralWidget filters={filters} atividades={atividades} />
 
       {/* Atividades recentes — largura total */}
       {recentes.length > 0 && (

@@ -36,6 +36,12 @@ Correção: reordenadas as colunas (novas ao final) em `20260723120000_prazo_uni
 
 | Sprint | Nome | Fechada em | Tag |
 |---|---|---|---|
+| P3.1 | Lista de atividades sem supressão de dados (PROMPT 3, item 5.1/5.2) | 2026-08-18 (verificado no navegador autenticado, em 3 larguras) | — |
+| P3.2 | Modalidades de prazo da atividade — entrega, janela e recorrente (PROMPT 3, item 4.x) | 2026-08-18 (migrations aplicadas; janela/recorrência ainda sem uso real) | — |
+| P3.3 | Configuração visual centralizada (PROMPT 3, itens 3.1/3.2/6) | 2026-08-18 (migration aplicada; API verificada no navegador) | — |
+| P3.4 | Dashboard — Campos 4-6 dentro do motor de widgets e restaurar padrão (PROMPT 3, item 1.x) | 2026-08-18 (verificado no navegador: 6 widgets, nenhum indicador perdido) | — |
+| P3.5 | Exibição configurável de Lista e Cards (PROMPT 3, itens 3.3/5.3) | 2026-08-18 (verificado de ponta a ponta: ocultar coluna reflete na lista) | — |
+| P3.6 | Restauração de Registros, Execuções e Planilhas (PROMPT 3, item 2.1 / D20) | **NÃO fechada** — telas e APIs de volta e verificadas; integrações verificadas só por código | — |
 | D19 | Unidade multi-valor em Atividade e AtividadeGeral (fora do ritual de sprint) | 2026-08-18 (migration aplicada e backfill verificado em produção; UI ainda não vista no navegador) | — |
 | S17 | Liquid glass (D18) + hotfix busca global — iterado até 2026-08-18 (harness visual, receita v6) | 2026-08-16→18 | — |
 | S16 | Correções do PROMPT 2 | 2026-08-14 — aceite pendente **fechado em produção em 2026-08-16** | — |
@@ -53,6 +59,84 @@ Correção: reordenadas as colunas (novas ao final) em `20260723120000_prazo_uni
 | S11 | Registros | 2026-07-23 | — |
 | S12 | Planilhas | 2026-07-23 | — |
 | S13 | Fechamento | 2026-07-23 | — |
+
+**P3.6 — detalhe (restauração dos módulos) — ACEITE PENDENTE:**
+
+*D20 (registrada em `docs/DECISOES.md`) revoga a D17, com confirmação do usuário no chat.*
+
+- [x] Os 23 arquivos apagados pela S15 foram restaurados de `git show 95c1e8f^:<caminho>` — páginas, rotas de API e componentes de Registros, Planilhas e Execuções. Nenhuma migration foi necessária: a D17 não tinha derrubado nada no banco
+- [x] **Defasagem de schema corrigida:** o código restaurado é anterior à D19 e usava `unidadeId` escalar em `AtividadeGeral`. Ajustado para `unidadeIds` (com `ManagedMultiSelect`, como na atividade). `Registro`, `Planilha` e `ChecklistGeralItem` continuam escalares, conforme a própria D19 — ao criar um Registro a partir de uma Execução, passa a primeira unidade
+- [x] `app-data-context` reganhou estado, escrita otimista e fábricas de id dos três módulos (~316 linhas)
+- [x] Navegação com os 6 itens; `KIND_ORDER` de volta com `categoriaRegistro`, `categoriaPlanilha`, `tipoAtividadeGeral` e `setorInterno`; lixeira, chat-tools e calendário reintegrados
+- [x] **Bug que a restauração expôs:** o container largo da tela de Atividades (P3.1) usava `pathname.startsWith("/atividades")`, que passou a casar também com `/atividades-gerais`. Trocado por comparação exata
+- [x] **Decisão de mérito na busca global:** o patch reverso conflitava com a correção de performance da S16 (a versão antiga reprocessava HTML pesado a cada tecla e derrubava a aba do navegador em produção). Mantida a versão rápida e estendida à mão para Registros e Planilhas, em vez de aceitar o código antigo
+- [x] `typecheck`, `lint` e `build` passam limpos, com todas as rotas dos três módulos no output do build
+- [x] **Verificado no navegador com dados reais:** `/registros`, `/planilhas` e `/atividades-gerais` renderizam; as APIs devolvem 200 com 5 registros, 1 planilha e 2 execuções; navegação com os 7 itens; `/api/prazos` passou a devolver linhas de `atividadeGeral` (2), que a S15 descartava
+- [ ] **Não verificado no navegador:** busca global cobrindo os três tipos (só verificado por código — a sessão do preview caiu no login antes do teste), abertura/edição de um registro e de uma planilha, o editor Univer, e o calendário exibindo prazo de Execução
+- [ ] **Contagem a conferir:** a auditoria de 2026-08-16 registrou 8 registros e 4 planilhas em produção; a API devolve 5 e 1. A diferença provavelmente é filtro por usuário e/ou `deletedAt`, mas **não foi confirmada**
+
+**P3.4 — detalhe (Dashboard: Campos 4-6 no motor de widgets):**
+
+- [x] `PropostasWidget`, `EmpresasWidget` e `VisaoGeralWidget` viraram widgets registrados. **Nenhum indicador foi removido** — verificado no navegador com dados reais: Total Propostas 24, Propostas Ganhas 5, Atividade x Empresa, Tipo de Produto/Serviço, Produtos/Serviços vinculados, Distribuição por status e por prioridade, todos presentes
+- [x] O despacho `id -> componente` saiu do encadeamento de `if` dentro do motor para um registro (`widget-registry.tsx`). Antes, incluir um widget exigia editar o próprio motor — o oposto do que o comentário dele prometia. Fica separado de `src/lib/dashboard-widgets.ts` porque aquele arquivo é importado pela rota de API (servidor) e não pode arrastar componentes de client
+- [x] `WidgetDefinition` ganhou `descricao` (mostrada como dica no painel) e `tamanhoPadrao`
+- [x] **"Restaurar Dashboard padrão"** (item 1.4) no painel de configuração: volta à composição inicial sem apagar nada, porque a preferência é sobrescrita e o registro continua sendo a fonte de quais widgets existem
+- [x] Verificado no navegador: os 6 widgets renderizam, todos persistidos e visíveis
+- [ ] **Não implementado do item 1.x:** criar widget novo pelo usuário, duplicar o mesmo widget com filtros diferentes e trocar o tipo de gráfico de um dado. Isso exige instância com `config` própria — hoje `WidgetPreferencia` tem `@@unique([userId, widgetId])`, que impede duas instâncias do mesmo widget. A "biblioteca de modelos vazios" (item 1.5) também não existe: o painel lista os widgets que já existem, com descrição, mas não oferece esqueletos para preencher
+
+**P3.5 — detalhe (exibição configurável de Lista e Cards):**
+
+- [x] `src/lib/exibicao-config.ts` descreve os campos de cada modo; a tabela de atividades passou a montar `<thead>`/`<td>` a partir dessa configuração, em vez de JSX fixo
+- [x] Reaproveita a tabela `ConfiguracaoVisual` com chaves namespaced (`lista:` / `card:`) — só precisou de uma coluna `ordem` (migration `20260818200000`, adição pura)
+- [x] Lista: visibilidade **e ordem** configuráveis. Cards: **só visibilidade** — a composição do card é aninhada (não é uma linha plana de células), então reordenar exigiria reescrevê-lo como renderizador de lista de campos. Fica registrado como não feito
+- [x] Colunas estruturais (marcador de conclusão e ações) não se ocultam: sem elas a linha perde a interação, não só a informação. Aparecem com cadeado na tela de configuração
+- [x] Ocultar um campo **não** o remove do cadastro (exigência explícita do item 3.3)
+- [x] **Verificado de ponta a ponta no navegador:** ocultar "Unidade" em Configurações persistiu (`lista:unidade` com `visivel:false`) e a coluna sumiu da lista; ao reativar, voltou. Estado final deixado limpo, sem nada oculto
+- [x] **Bug encontrado e corrigido na verificação:** o primeiro clique devolvia 500. A tela mandava a lista inteira e a rota abria ~34 upserts numa transação só, estourando o timeout de 5s do Prisma contra o banco remoto (`P2028`). Agora o contexto envia **só as chaves que mudaram**, e a transação tem folga de 20s para o caso de reordenação em massa
+
+**P3.2 e P3.3 — detalhe (prazos e configuração visual):**
+
+> As três migrations foram aplicadas em produção em 2026-08-18, com autorização do usuário no chat: `20260818170000_atividade_modalidade_prazo`, `20260818180000_configuracao_visual` e `20260818200000_configuracao_visual_ordem`.
+
+*P3.2 — modalidades de prazo (item 4.1/4.2/4.3):*
+
+- [x] `ModalidadePrazo` (Entrega/Janela/Recorrente) e `RecorrenciaFrequencia` (Diaria/Semanal/Mensal/Anual) no schema; `Atividade` ganha `modalidadePrazo`, `recorrenciaFreq`, `recorrenciaCada` e `recorrenciaAte`. O intervalo ("a cada N") cobre quinzenal/bimestral/semestral sem multiplicar valores de enum
+- [x] **A janela deixou de depender do nome do tipo de atividade.** Antes, `prazoFim` só aparecia quando o tipo se chamava literalmente "Agendamento" (match por string em `activity-form.tsx`); agora é uma escolha explícita do usuário, independente do tipo
+- [x] **Bug corrigido de tabela: `Atividade.prazoFim` nunca entrava em `prazo_unificado`** — a data final da janela era invisível no calendário (só `Proposta.prazoFim` entrava). A janela agora produz duas linhas na view, `janelaInicio` e `janelaFim`
+- [x] Recorrência gerada na própria view por `generate_series`, com horizonte máximo de 2 anos quando não há data de término, e `origem_id` carregando a data da ocorrência para cada uma ter chave própria
+- [x] Migration `20260818170000_atividade_modalidade_prazo`, idempotente, com `DROP VIEW` + `CREATE VIEW` (o bloco de Atividade passa a produzir 1, 2 ou N linhas — `CREATE OR REPLACE` não serve, lição da S1/S7). Backfill converte em `Janela` quem já tinha `prazoFim` preenchido, preservando o dado
+- [x] `prazoFieldsToDb` normaliza os campos conforme a modalidade, para POST e PUT gravarem a mesma coisa e não sobrar resíduo de outra modalidade
+- [x] Prazo dos itens de checklist **intocado** (item 4.3): continua com a lógica existente, independente do prazo da atividade
+- [x] `typecheck`, `lint` e `build` passam limpos
+- [x] **Migration aplicada em produção**; `/api/atividades` e `/api/prazos` respondem 200 com as colunas novas. As 48 atividades reais ficaram todas em `Entrega` (nenhuma tinha `prazoFim`), e a view devolve `atividade`, `checklist` e `proposta` como antes
+- [x] **Defeito encontrado e corrigido antes de qualquer uso**: a primeira versão gerava as ocorrências com `generate_series(timestamp, timestamp, interval)`, que soma sobre o **resultado anterior** — "todo mês" a partir do dia 31 dava 31/01, 28/02 e depois ficava **preso no dia 28 para sempre**. Verificado por consulta ao banco. A migration `20260818190000_prazo_recorrente_sem_deriva` passou a somar N períodos à data original; reverificado: 31/01, 28/02, **31/03**, 30/04, 31/05, 30/06
+- [ ] **Janela e recorrência ainda não exercitadas com dado real** — nenhuma atividade usa essas modalidades, então os ramos `janelaInicio`/`janelaFim`/`recorrente` da view produzem zero linhas até alguém cadastrar uma. Falta cadastrar uma atividade de cada tipo e conferir card, lista e calendário
+
+*P3.3 — configuração visual centralizada (itens 3.1/3.2/6):*
+
+- [x] `src/lib/visual-config.ts` é a fonte única de quais elementos são configuráveis (status, prioridade, prazo, negociação), cada um apontando para o token que **todas as telas já consomem** por `var(--token)`
+- [x] **A aplicação global sai por construção:** configurar redefine o token no `:root` (`VisualConfigStyle`, montado uma vez no shell), então cards, lista, detalhe, dashboard e calendário mudam juntos. Nenhuma tela ganha configuração própria — que é exatamente o que o item 3.2 proíbe
+- [x] Modelo `ConfiguracaoVisual` (por usuário) + rota `/api/configuracao-visual` com GET/PUT/DELETE; o DELETE é o "restaurar padrão" (sem linha, vale o padrão do sistema)
+- [x] Cor escolhida sempre entre tokens existentes, nunca hex livre (Regra 2; mesmo princípio já usado em `LookupCor`)
+- [x] Tamanho das etiquetas por `--badge-escala` + classe `.semantic-badge`, também num ponto só
+- [x] Migration `20260818180000_configuracao_visual` — **só adição de tabela**, nenhuma tabela/coluna/view existente é tocada
+- [x] `typecheck`, `lint` e `build` passam limpos
+- [x] **Migration aplicada**; `/api/configuracao-visual` responde 200 com os 14 elementos resolvidos, e a seção "Aparência dos campos" renderiza na tela de Configurações com os seletores de cor e o botão "Restaurar padrão"
+- [ ] **Troca de cor não foi exercitada de ponta a ponta** — o mecanismo de escrita é o mesmo já validado pela configuração de exibição (mesma rota, mesmo contexto, e o bug de timeout que aparecia nele foi corrigido), mas mudar uma cor e conferir a propagação em card/lista/dashboard/calendário ainda não foi feito
+- [ ] Do item 3.1, ficaram de fora: formato de exibição (etiqueta × texto) e configuração de cor de cards/gráficos/indicadores. O tamanho das etiquetas é global (uma escala só), não por elemento
+
+**P3.1 — detalhe (lista sem supressão de dados):**
+
+*Primeiro passo do PROMPT 3 (PDF de 2026-08-18), itens 5.1 e 5.2: "na visão lista, os dados estão sendo suprimidos na parte direita da página". Plano completo do PROMPT 3 acordado no chat em 6 passos; este é o passo 1.*
+
+- [x] **Causa raiz identificada e corrigida — não era da tabela, era do shell.** `src/components/app-shell.tsx` declarava `<main className="w-full flex-1">` ao lado de uma sidebar fixa de 208px, sem `min-w-0`. Resultado medido em produção local: numa viewport de 1265px, o `main` ia de 208px a **1466px** — ou seja, ~200px de conteúdo ficavam permanentemente fora da tela, **em todas as telas**, não só na lista. Corrigido para `min-w-0 flex-1` (sem `w-full`); o `main` passa a terminar exatamente na borda da viewport
+- [x] **Truncamento silencioso removido** em `src/components/atividades/activity-table.tsx`: a coluna Assunto tinha `max-w-48 truncate` (texto completo só no `title`), violação direta da Regra 7 do CLAUDE.md, apesar de o aceite da S4 estar marcado. Removido `min-w-max` da tabela também — as colunas agora se adaptam ao espaço e o texto quebra linha
+- [x] **Corte invisível corrigido:** `.panel-card` define `overflow: hidden` (globals.css:222), que vencia o `overflow-x-auto` da tabela — o excesso era cortado **sem sequer virar scroll**, exatamente o que o item 5.2 do prompt proíbe. A rolagem passou para uma `div` filha dentro do painel
+- [x] Container mais largo só na tela de Atividades (`max-w-none`); as demais telas mantêm o `max-w-6xl` original, conforme o item 7 do prompt ("não alterar layout de outras telas")
+- [x] `typecheck`, `lint` e `build` passam limpos
+- [x] **Verificado em navegador autenticado contra dados reais (48 atividades)**, por medição de DOM em 3 larguras: em 1585px a tabela cabe inteira (1327px), sem scroll em lugar nenhum; em 1265px a tabela (1208px) rola **dentro do próprio painel**, sem scroll horizontal na página; em ambas, **zero células com conteúdo cortado** (`scrollWidth > clientWidth`) e as 10 colunas presentes. O assunto mais longo passou a ocupar 2 linhas (57px de altura) em vez de ser truncado
+- [x] Dashboard e Configurações reconferidos: container de 1152px agora inteiramente dentro da viewport, sem scroll horizontal
+- [ ] **Print de tela não obtido** — o painel do navegador não estava visível durante a sessão, o que impede a captura; a verificação acima é por medição de DOM, não visual
 
 **D19 — detalhe (Unidade multi-valor em Atividade/AtividadeGeral):**
 

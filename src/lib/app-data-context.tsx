@@ -9,8 +9,17 @@ import {
   useRef,
   useState,
 } from "react";
-import type { Atividade, ChecklistTemplate, LookupItem, LookupKind } from "./types";
+import type {
+  Atividade,
+  AtividadeGeral,
+  ChecklistTemplate,
+  LookupItem,
+  LookupKind,
+  Planilha,
+  Registro,
+} from "./types";
 import type { WidgetPreferenciaResolvida } from "./dashboard-widgets";
+import type { ConfiguracaoVisual } from "./visual-config";
 
 interface LookupState {
   empresa: LookupItem[];
@@ -68,9 +77,15 @@ function applyPending<T extends { id: string }>(
 interface AppDataContextValue {
   lookups: LookupState;
   atividades: Atividade[];
+  atividadesGerais: AtividadeGeral[];
+  registros: Registro[];
+  planilhas: Planilha[];
   checklistTemplates: ChecklistTemplate[];
   widgetPreferencias: WidgetPreferenciaResolvida[];
   updateWidgetPreferencias: (list: WidgetPreferenciaResolvida[]) => void;
+  configuracoesVisuais: ConfiguracaoVisual[];
+  updateConfiguracoesVisuais: (list: ConfiguracaoVisual[]) => void;
+  restaurarConfiguracaoVisualPadrao: () => void;
   loading: boolean;
   dataError: string | null;
   dismissDataError: () => void;
@@ -83,6 +98,15 @@ interface AppDataContextValue {
   addAtividade: (atividade: Atividade) => void;
   updateAtividade: (id: string, patch: Partial<Atividade>) => void;
   deleteAtividade: (id: string) => void;
+  addAtividadeGeral: (atividade: AtividadeGeral) => void;
+  updateAtividadeGeral: (id: string, patch: Partial<AtividadeGeral>) => void;
+  deleteAtividadeGeral: (id: string) => void;
+  addRegistro: (registro: Registro) => void;
+  updateRegistro: (id: string, patch: Partial<Registro>) => void;
+  deleteRegistro: (id: string) => void;
+  addPlanilha: (planilha: Planilha) => void;
+  updatePlanilha: (id: string, patch: Partial<Planilha>) => void;
+  deletePlanilha: (id: string) => void;
   addChecklistTemplate: (template: ChecklistTemplate) => void;
   updateChecklistTemplate: (id: string, template: ChecklistTemplate) => void;
   deleteChecklistTemplate: (id: string) => void;
@@ -119,14 +143,24 @@ function groupLookups(items: (LookupItem & { kind: LookupKind })[]): LookupState
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [lookups, setLookups] = useState<LookupState>(EMPTY_LOOKUPS);
   const [atividades, setAtividades] = useState<Atividade[]>([]);
+  const [atividadesGerais, setAtividadesGerais] = useState<AtividadeGeral[]>([]);
+  const [registros, setRegistros] = useState<Registro[]>([]);
+  const [planilhas, setPlanilhas] = useState<Planilha[]>([]);
   const [checklistTemplates, setChecklistTemplates] = useState<ChecklistTemplate[]>([]);
   const [widgetPreferencias, setWidgetPreferencias] = useState<WidgetPreferenciaResolvida[]>([]);
+  const [configuracoesVisuais, setConfiguracoesVisuais] = useState<ConfiguracaoVisual[]>([]);
   const [dataError, setDataError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Tracks writes that have been applied optimistically but not yet
   // acknowledged by the server, keyed by entity id, per entity type.
   const pendingAtividades = useRef<Map<string, PendingOp<Atividade>>>(new Map());
+  const pendingAtividadesGerais = useRef<Map<string, PendingOp<AtividadeGeral>>>(new Map());
+  const pendingRegistros = useRef<Map<string, PendingOp<Registro>>>(new Map());
+  const pendingPlanilhas = useRef<Map<string, PendingOp<Planilha>>>(new Map());
+  const planilhaSaveTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map()
+  );
 
   // Guards against an older load() response landing after a newer one.
   const loadSeq = useRef(0);
@@ -134,11 +168,24 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const load = useCallback(async () => {
     const seq = ++loadSeq.current;
     try {
-      const [lookupsRes, atividadesRes, checklistTemplatesRes, widgetPreferenciasRes] = await Promise.all([
+      const [
+        lookupsRes,
+        atividadesRes,
+        atividadesGeraisRes,
+        registrosRes,
+        planilhasRes,
+        checklistTemplatesRes,
+        widgetPreferenciasRes,
+        configuracaoVisualRes,
+      ] = await Promise.all([
         fetch("/api/lookups"),
         fetch("/api/atividades"),
+        fetch("/api/atividades-gerais"),
+        fetch("/api/registros"),
+        fetch("/api/planilhas"),
         fetch("/api/checklist-templates"),
         fetch("/api/widget-preferencias"),
+        fetch("/api/configuracao-visual"),
       ]);
 
       if (loadSeq.current !== seq) return;
@@ -153,6 +200,21 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         if (loadSeq.current !== seq) return;
         setAtividades(applyPending(data, pendingAtividades.current));
       }
+      if (atividadesGeraisRes.ok) {
+        const data = await atividadesGeraisRes.json();
+        if (loadSeq.current !== seq) return;
+        setAtividadesGerais(applyPending(data, pendingAtividadesGerais.current));
+      }
+      if (registrosRes.ok) {
+        const data = await registrosRes.json();
+        if (loadSeq.current !== seq) return;
+        setRegistros(applyPending(data, pendingRegistros.current));
+      }
+      if (planilhasRes.ok) {
+        const data = await planilhasRes.json();
+        if (loadSeq.current !== seq) return;
+        setPlanilhas(applyPending(data, pendingPlanilhas.current));
+      }
       if (checklistTemplatesRes.ok) {
         const data = await checklistTemplatesRes.json();
         if (loadSeq.current !== seq) return;
@@ -162,6 +224,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         const data = await widgetPreferenciasRes.json();
         if (loadSeq.current !== seq) return;
         setWidgetPreferencias(data);
+      }
+      if (configuracaoVisualRes.ok) {
+        const data = await configuracaoVisualRes.json();
+        if (loadSeq.current !== seq) return;
+        setConfiguracoesVisuais(data);
       }
     } catch (error) {
       if (loadSeq.current !== seq) return;
@@ -187,6 +254,61 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const dismissDataError = useCallback(() => setDataError(null), []);
+
+  // PROMPT 3 (3.1/3.2): mesma escrita otimista das preferências de widget.
+  //
+  // Envia só as chaves que mudaram. Mandar a lista inteira fazia a rota abrir
+  // ~34 upserts numa transação só e estourar o timeout de 5s do Prisma contra
+  // o banco remoto (P2028) — uma troca de cor custava 34 idas ao banco.
+  const updateConfiguracoesVisuais = useCallback((list: ConfiguracaoVisual[]) => {
+    setConfiguracoesVisuais((previous) => {
+      const anterior = new Map(previous.map((c) => [c.chave, c]));
+      const alteradas = list.filter((c) => {
+        const a = anterior.get(c.chave);
+        return (
+          !a ||
+          a.cor !== c.cor ||
+          a.tamanho !== c.tamanho ||
+          a.visivel !== c.visivel ||
+          a.ordem !== c.ordem
+        );
+      });
+      if (alteradas.length === 0) return previous;
+
+      fetch("/api/configuracao-visual", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(alteradas),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error(`PUT configuracao-visual falhou: ${res.status}`);
+        })
+        .catch((error) => {
+          console.error("Falha ao salvar configuração visual", error);
+          setConfiguracoesVisuais(previous);
+          setDataError("Não foi possível salvar a configuração visual. A alteração foi desfeita.");
+        });
+      return list;
+    });
+  }, []);
+
+  const restaurarConfiguracaoVisualPadrao = useCallback(() => {
+    setConfiguracoesVisuais((previous) => {
+      fetch("/api/configuracao-visual", { method: "DELETE" })
+        .then(async (res) => {
+          if (!res.ok) throw new Error(`DELETE configuracao-visual falhou: ${res.status}`);
+          setConfiguracoesVisuais(await res.json());
+        })
+        .catch((error) => {
+          console.error("Falha ao restaurar a configuração visual padrão", error);
+          setConfiguracoesVisuais(previous);
+          setDataError("Não foi possível restaurar o padrão. A alteração foi desfeita.");
+        });
+      // Otimista: cor/tamanho voltam ao padrão e tudo volta a ficar visível. A
+      // ordem real vem na resposta do DELETE, que devolve o estado resolvido.
+      return previous.map((c) => ({ ...c, cor: null, tamanho: null, visivel: true }));
+    });
+  }, []);
 
   const updateWidgetPreferencias = useCallback((list: WidgetPreferenciaResolvida[]) => {
     setWidgetPreferencias((previous) => {
@@ -391,6 +513,219 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const addAtividadeGeral = useCallback((atividade: AtividadeGeral) => {
+    setAtividadesGerais((prev) => [atividade, ...prev]);
+    pendingAtividadesGerais.current.set(atividade.id, { type: "add", item: atividade });
+    fetch("/api/atividades-gerais", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(atividade),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`POST atividade geral falhou: ${res.status}`);
+      })
+      .catch((error) => {
+        console.error("Falha ao criar atividade geral", error);
+        setAtividadesGerais((prev) => prev.filter((a) => a.id !== atividade.id));
+        setDataError("Nao foi possivel criar a execução. Tente novamente.");
+      })
+      .finally(() => pendingAtividadesGerais.current.delete(atividade.id));
+  }, []);
+
+  const updateAtividadeGeral = useCallback((id: string, patch: Partial<AtividadeGeral>) => {
+    setAtividadesGerais((prev) => {
+      const previous = prev.find((a) => a.id === id);
+      if (!previous) return prev;
+      const next = prev.map((a) => (a.id === id ? { ...a, ...patch } : a));
+      const updated = next.find((a) => a.id === id)!;
+
+      pendingAtividadesGerais.current.set(id, { type: "update", patch });
+      fetch(`/api/atividades-gerais/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error(`PATCH atividade geral falhou: ${res.status}`);
+        })
+        .catch((error) => {
+          console.error("Falha ao atualizar atividade geral", error);
+          setAtividadesGerais((cur) => cur.map((a) => (a.id === id ? previous : a)));
+          setDataError("Nao foi possivel salvar a execução. A edicao foi desfeita.");
+        })
+        .finally(() => pendingAtividadesGerais.current.delete(id));
+
+      return next;
+    });
+  }, []);
+
+  const deleteAtividadeGeral = useCallback((id: string) => {
+    setAtividadesGerais((prev) => {
+      const removed = prev.find((a) => a.id === id);
+      pendingAtividadesGerais.current.set(id, { type: "delete" });
+      fetch(`/api/atividades-gerais/${id}`, { method: "DELETE" })
+        .then((res) => {
+          if (!res.ok) throw new Error(`DELETE atividade geral falhou: ${res.status}`);
+        })
+        .catch((error) => {
+          console.error("Falha ao excluir atividade geral", error);
+          if (removed) {
+            setAtividadesGerais((cur) =>
+              cur.some((a) => a.id === id) ? cur : [removed, ...cur]
+            );
+          }
+          setDataError("Nao foi possivel excluir a execução. Ela foi restaurada.");
+        })
+        .finally(() => pendingAtividadesGerais.current.delete(id));
+
+      return prev.filter((a) => a.id !== id);
+    });
+  }, []);
+
+  const addRegistro = useCallback((registro: Registro) => {
+    setRegistros((prev) => [registro, ...prev]);
+    pendingRegistros.current.set(registro.id, { type: "add", item: registro });
+    fetch("/api/registros", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(registro),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`POST registro falhou: ${res.status}`);
+      })
+      .catch((error) => {
+        console.error("Falha ao criar registro", error);
+        setRegistros((prev) => prev.filter((r) => r.id !== registro.id));
+        setDataError("Não foi possível criar o registro. Tente novamente.");
+      })
+      .finally(() => pendingRegistros.current.delete(registro.id));
+  }, []);
+
+  const updateRegistro = useCallback((id: string, patch: Partial<Registro>) => {
+    setRegistros((prev) => {
+      const previous = prev.find((r) => r.id === id);
+      if (!previous) return prev;
+      const next = prev.map((r) => (r.id === id ? { ...r, ...patch } : r));
+      const updated = next.find((r) => r.id === id)!;
+
+      pendingRegistros.current.set(id, { type: "update", patch });
+      fetch(`/api/registros/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error(`PATCH registro falhou: ${res.status}`);
+        })
+        .catch((error) => {
+          console.error("Falha ao atualizar registro", error);
+          setRegistros((cur) => cur.map((r) => (r.id === id ? previous : r)));
+          setDataError("Não foi possível salvar a alteração no registro. A edição foi desfeita.");
+        })
+        .finally(() => pendingRegistros.current.delete(id));
+
+      return next;
+    });
+  }, []);
+
+  const deleteRegistro = useCallback((id: string) => {
+    setRegistros((prev) => {
+      const removed = prev.find((r) => r.id === id);
+      pendingRegistros.current.set(id, { type: "delete" });
+      fetch(`/api/registros/${id}`, { method: "DELETE" })
+        .then((res) => {
+          if (!res.ok) throw new Error(`DELETE registro falhou: ${res.status}`);
+        })
+        .catch((error) => {
+          console.error("Falha ao excluir registro", error);
+          if (removed) {
+            setRegistros((cur) =>
+              cur.some((r) => r.id === id) ? cur : [removed, ...cur]
+            );
+          }
+          setDataError("Não foi possível excluir o registro. Ele foi restaurado.");
+        })
+        .finally(() => pendingRegistros.current.delete(id));
+
+      return prev.filter((r) => r.id !== id);
+    });
+  }, []);
+
+  const addPlanilha = useCallback((planilha: Planilha) => {
+    setPlanilhas((prev) => [planilha, ...prev]);
+    pendingPlanilhas.current.set(planilha.id, { type: "add", item: planilha });
+    fetch("/api/planilhas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(planilha),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`POST planilha falhou: ${res.status}`);
+      })
+      .catch((error) => {
+        console.error("Falha ao criar planilha", error);
+        setPlanilhas((prev) => prev.filter((p) => p.id !== planilha.id));
+        setDataError("Não foi possível criar a planilha. Tente novamente.");
+      })
+      .finally(() => pendingPlanilhas.current.delete(planilha.id));
+  }, []);
+
+  const updatePlanilha = useCallback((id: string, patch: Partial<Planilha>) => {
+    setPlanilhas((prev) => {
+      const previous = prev.find((p) => p.id === id);
+      if (!previous) return prev;
+      const next = prev.map((p) => (p.id === id ? { ...p, ...patch } : p));
+      const updated = next.find((p) => p.id === id)!;
+
+      pendingPlanilhas.current.set(id, { type: "update", patch });
+      const existingTimer = planilhaSaveTimers.current.get(id);
+      if (existingTimer) clearTimeout(existingTimer);
+      const timer = setTimeout(() => {
+        planilhaSaveTimers.current.delete(id);
+        fetch(`/api/planilhas/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updated),
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error(`PATCH planilha falhou: ${res.status}`);
+          })
+          .catch((error) => {
+            console.error("Falha ao atualizar planilha", error);
+            setPlanilhas((cur) => cur.map((p) => (p.id === id ? previous : p)));
+            setDataError("Não foi possível salvar a alteração na planilha. A edição foi desfeita.");
+          })
+          .finally(() => pendingPlanilhas.current.delete(id));
+      }, 600);
+      planilhaSaveTimers.current.set(id, timer);
+
+      return next;
+    });
+  }, []);
+
+  const deletePlanilha = useCallback((id: string) => {
+    setPlanilhas((prev) => {
+      const removed = prev.find((p) => p.id === id);
+      pendingPlanilhas.current.set(id, { type: "delete" });
+      fetch(`/api/planilhas/${id}`, { method: "DELETE" })
+        .then((res) => {
+          if (!res.ok) throw new Error(`DELETE planilha falhou: ${res.status}`);
+        })
+        .catch((error) => {
+          console.error("Falha ao excluir planilha", error);
+          if (removed) {
+            setPlanilhas((cur) =>
+              cur.some((p) => p.id === id) ? cur : [removed, ...cur]
+            );
+          }
+          setDataError("Não foi possível excluir a planilha. Ela foi restaurada.");
+        })
+        .finally(() => pendingPlanilhas.current.delete(id));
+
+      return prev.filter((p) => p.id !== id);
+    });
+  }, []);
+
   const addChecklistTemplate = useCallback((template: ChecklistTemplate) => {
     setChecklistTemplates((prev) => [...prev, template]);
     fetch("/api/checklist-templates", {
@@ -442,9 +777,15 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     () => ({
       lookups,
       atividades,
+      atividadesGerais,
+      registros,
+      planilhas,
       checklistTemplates,
       widgetPreferencias,
       updateWidgetPreferencias,
+      configuracoesVisuais,
+      updateConfiguracoesVisuais,
+      restaurarConfiguracaoVisualPadrao,
       loading,
       dataError,
       dismissDataError,
@@ -457,6 +798,15 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addAtividade,
       updateAtividade,
       deleteAtividade,
+      addAtividadeGeral,
+      updateAtividadeGeral,
+      deleteAtividadeGeral,
+      addRegistro,
+      updateRegistro,
+      deleteRegistro,
+      addPlanilha,
+      updatePlanilha,
+      deletePlanilha,
       addChecklistTemplate,
       updateChecklistTemplate,
       deleteChecklistTemplate,
@@ -465,9 +815,15 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     [
       lookups,
       atividades,
+      atividadesGerais,
+      registros,
+      planilhas,
       checklistTemplates,
       widgetPreferencias,
       updateWidgetPreferencias,
+      configuracoesVisuais,
+      updateConfiguracoesVisuais,
+      restaurarConfiguracaoVisualPadrao,
       loading,
       dataError,
       dismissDataError,
@@ -480,6 +836,15 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       addAtividade,
       updateAtividade,
       deleteAtividade,
+      addAtividadeGeral,
+      updateAtividadeGeral,
+      deleteAtividadeGeral,
+      addRegistro,
+      updateRegistro,
+      deleteRegistro,
+      addPlanilha,
+      updatePlanilha,
+      deletePlanilha,
       addChecklistTemplate,
       updateChecklistTemplate,
       deleteChecklistTemplate,
@@ -546,5 +911,25 @@ export function makeChecklistTemplateItemId() {
 }
 
 export function makeLinkId() {
+  return makeId();
+}
+
+export function makeAtividadeGeralId() {
+  return makeId();
+}
+
+export function makeChecklistGeralItemId() {
+  return makeId();
+}
+
+export function makeRegistroId() {
+  return makeId();
+}
+
+export function makeRegistroTabId() {
+  return makeId();
+}
+
+export function makePlanilhaId() {
   return makeId();
 }

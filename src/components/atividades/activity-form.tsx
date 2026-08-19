@@ -41,8 +41,22 @@ import {
   makeChecklistItemId,
 } from "@/lib/app-data-context";
 import { applyChecklistTemplate } from "@/lib/checklist-templates";
-import { PRIORIDADE_OPTIONS, STATUS_OPTIONS } from "@/lib/types";
-import type { Atividade, HistoricoEntry } from "@/lib/types";
+import {
+  PRIORIDADE_OPTIONS,
+  STATUS_OPTIONS,
+  MODALIDADE_PRAZO_OPTIONS,
+  MODALIDADE_PRAZO_LABELS,
+  RECORRENCIA_FREQ_OPTIONS,
+  RECORRENCIA_FREQ_LABELS,
+  recorrenciaLabel,
+} from "@/lib/types";
+import { formatLocalDateTime } from "@/lib/calculations";
+import type {
+  Atividade,
+  HistoricoEntry,
+  ModalidadePrazo,
+  RecorrenciaFrequencia,
+} from "@/lib/types";
 
 function findTipoByName(items: { id: string; name: string }[], name: string) {
   return items.find((i) => i.name.toLowerCase() === name.toLowerCase());
@@ -61,6 +75,10 @@ function emptyAtividade(): Atividade {
     contato: "",
     prazo: null,
     prazoFim: null,
+    modalidadePrazo: "Entrega",
+    recorrenciaFreq: null,
+    recorrenciaCada: null,
+    recorrenciaAte: null,
     descricao: "",
     alinhamentos: "",
     status: "Pendente",
@@ -123,14 +141,11 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
   const tipoEmail = findTipoByName(lookups.tipoAtividade, "Email");
   const tipoOportunidade = findTipoByName(lookups.tipoAtividade, "Oportunidade");
   const tipoProposta = findTipoByName(lookups.tipoAtividade, "Proposta");
-  const tipoAgendamento = findTipoByName(lookups.tipoAtividade, "Agendamento");
 
   const showEmail = !!tipoEmail && draft.tipoAtividadeIds.includes(tipoEmail.id);
   const showOportunidade =
     !!tipoOportunidade && draft.tipoAtividadeIds.includes(tipoOportunidade.id);
   const showProposta = !!tipoProposta && draft.tipoAtividadeIds.includes(tipoProposta.id);
-  const showAgendamento =
-    !!tipoAgendamento && draft.tipoAtividadeIds.includes(tipoAgendamento.id);
 
   function patch(p: Partial<Atividade>) {
     setDraft((prev) => ({ ...prev, ...p }));
@@ -304,42 +319,135 @@ export function ActivityForm({ open, onOpenChange, editing, onCreated }: Activit
             />
           </div>
 
-          {showAgendamento ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {/* PROMPT 3 (4.1): modalidade explícita de prazo. Antes, a janela de
+              execução só aparecia quando o tipo de atividade se chamava
+              "Agendamento" — agora é uma escolha do usuário, independente do
+              tipo. Continua sem campo obrigatório (D4). */}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label>Tipo de prazo</Label>
+              <Select
+                value={draft.modalidadePrazo}
+                onValueChange={(v) => patch({ modalidadePrazo: v as ModalidadePrazo })}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecionar tipo de prazo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MODALIDADE_PRAZO_OPTIONS.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {MODALIDADE_PRAZO_LABELS[m]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {draft.modalidadePrazo === "Janela" ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label>Início da janela</Label>
+                  <Input
+                    type="datetime-local"
+                    value={draft.prazo ?? ""}
+                    onChange={(e) =>
+                      patch({
+                        prazo: e.target.value || null,
+                        prazoFim: e.target.value ? draft.prazoFim : null,
+                      })
+                    }
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label>Fim da janela</Label>
+                  <Input
+                    type="datetime-local"
+                    min={draft.prazo ?? undefined}
+                    value={draft.prazoFim ?? ""}
+                    disabled={!draft.prazo}
+                    onChange={(e) => patch({ prazoFim: e.target.value || null })}
+                  />
+                </div>
+              </div>
+            ) : draft.modalidadePrazo === "Recorrente" ? (
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <Label>Primeira ocorrência</Label>
+                    <Input
+                      type="datetime-local"
+                      value={draft.prazo ?? ""}
+                      onChange={(e) => patch({ prazo: e.target.value || null })}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label>Repetir até (opcional)</Label>
+                    <Input
+                      type="datetime-local"
+                      min={draft.prazo ?? undefined}
+                      value={draft.recorrenciaAte ?? ""}
+                      onChange={(e) => patch({ recorrenciaAte: e.target.value || null })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <Label>A cada</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={draft.recorrenciaCada ?? 1}
+                      onChange={(e) =>
+                        patch({ recorrenciaCada: Math.max(Number(e.target.value) || 1, 1) })
+                      }
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label>Periodicidade</Label>
+                    <Select
+                      value={draft.recorrenciaFreq ?? ""}
+                      onValueChange={(v) =>
+                        patch({ recorrenciaFreq: v as RecorrenciaFrequencia })
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecionar periodicidade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {RECORRENCIA_FREQ_OPTIONS.map((f) => (
+                          <SelectItem key={f} value={f}>
+                            {
+                              RECORRENCIA_FREQ_LABELS[f][
+                                (draft.recorrenciaCada ?? 1) === 1 ? "singular" : "plural"
+                              ]
+                            }
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {draft.recorrenciaFreq && (
+                  <p className="text-xs text-muted-foreground">
+                    {recorrenciaLabel(draft.recorrenciaFreq, draft.recorrenciaCada)}
+                    {draft.recorrenciaAte
+                      ? `, até ${formatLocalDateTime(draft.recorrenciaAte)}`
+                      : ", sem data de término (ocorrências geradas por 2 anos)"}
+                    .
+                  </p>
+                )}
+              </div>
+            ) : (
               <div className="flex flex-col gap-1.5">
-                <Label>Prazo inicial</Label>
+                <Label>Prazo</Label>
                 <Input
                   type="datetime-local"
                   value={draft.prazo ?? ""}
-                  onChange={(e) =>
-                    patch({
-                      prazo: e.target.value || null,
-                      prazoFim: e.target.value ? draft.prazoFim : null,
-                    })
-                  }
+                  onChange={(e) => patch({ prazo: e.target.value || null })}
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <Label>Prazo final</Label>
-                <Input
-                  type="datetime-local"
-                  min={draft.prazo ?? undefined}
-                  value={draft.prazoFim ?? ""}
-                  disabled={!draft.prazo}
-                  onChange={(e) => patch({ prazoFim: e.target.value || null })}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              <Label>Prazo</Label>
-              <Input
-                type="datetime-local"
-                value={draft.prazo ?? ""}
-                onChange={(e) => patch({ prazo: e.target.value || null })}
-              />
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="flex flex-col gap-1.5">
             <Label>Descrição da atividade</Label>

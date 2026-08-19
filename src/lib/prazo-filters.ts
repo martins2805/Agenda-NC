@@ -56,9 +56,18 @@ export function prazoEntryFromApi(row: PrazoUnificadoApiRow): PrazoEntry {
 // Consumido só pelo calendário (S15/D17: restrito a objetoTipo "atividade" —
 // Execuções e Registros saíram da interface).
 export function tipoPrazoLabel(entry: Pick<PrazoEntry, "objetoTipo" | "tipoPrazo">): string {
+  // PROMPT 3 (2.1) / D20: Registros e Execuções voltaram ao calendário.
+  if (entry.tipoPrazo === "registro") return "Registro";
   if (entry.tipoPrazo === "proposta") return "Proposta";
-  if (entry.tipoPrazo === "checklist") return "Checklist (Atividade)";
-  return "Atividade";
+  if (entry.tipoPrazo === "checklist") {
+    return entry.objetoTipo === "atividadeGeral" ? "Checklist (Execução)" : "Checklist (Atividade)";
+  }
+  // PROMPT 3 (4.3): a interface tem que deixar clara a diferença entre as
+  // modalidades de prazo da atividade.
+  if (entry.tipoPrazo === "janelaInicio") return "Início da janela";
+  if (entry.tipoPrazo === "janelaFim") return "Fim da janela";
+  if (entry.tipoPrazo === "recorrente") return "Prazo recorrente";
+  return entry.objetoTipo === "atividadeGeral" ? "Execução" : "Atividade";
 }
 
 export interface CalendarFilters {

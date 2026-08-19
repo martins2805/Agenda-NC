@@ -14,12 +14,11 @@ import {
   PRIORIDADE_COLORS,
 } from "@/components/dashboard/dashboard-shared";
 
-// Campos 4-5 (Propostas, Empresas) — Campo 6 (Visão Geral) foi extraído para
-// VisaoGeralWidget nesta mesma arquivo (S9), renderizado em largura total por
-// page.tsx, fora da coluna estreita que os Campos 4-5 dividem com o
-// calendário. Ainda não migrados para o motor de widgets da S8 (ver pendência
-// registrada em STATUS.md — "Visão Geral" tem posição fixa exigida pela spec,
-// o que contradiz a natureza reordenável de um widget).
+// Campos 4-6 (Propostas, Empresas, Visão Geral). Desde o PROMPT 3 (item 1.1)
+// os três são widgets registrados como qualquer outro — entram pelo motor da
+// S8 e ganham ordem, visibilidade e tamanho configuráveis, sem que nenhum
+// indicador tenha sido removido. Por isso cada um exporta só o CONTEÚDO: o
+// título fica por conta do motor, que já renderiza o mesmo `section > h3`.
 
 function VerticalBars({
   title,
@@ -76,16 +75,7 @@ function VerticalBars({
   );
 }
 
-function Lacuna({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-3">
-      <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">{title}</h3>
-      {children}
-    </section>
-  );
-}
-
-export function DashboardAnalytics({
+export function PropostasWidget({
   filters,
   atividades,
 }: {
@@ -103,35 +93,9 @@ export function DashboardAnalytics({
     ? filtered.filter((a) => a.tipoAtividadeIds.includes(propostaTipo.id))
     : [];
 
-  // Lacuna 5 — empresas ordenadas por volume (mais escuro = mais atividades);
-  // da 6ª em diante, agrupadas em "Outros" (D9).
-  const empresaData = rankComOutros(
-    lookups.empresa
-      .filter((e) => e.active)
-      .map((e) => ({ label: e.name, count: filtered.filter((a) => a.empresaId === e.id).length }))
-  );
-
-  // MRR x PS (propostas)
-  const mrrCount = propostas.filter((a) => a.propostas.some((p) => p.tipo === "MRR")).length;
-  const psCount = propostas.filter((a) => a.propostas.some((p) => p.tipo === "PS")).length;
-
-  // Produtos/serviços vinculados a propostas.
-  const produtoData = lookups.servicoProduto
-    .filter((s) => s.active)
-    .map((s) => ({
-      label: s.name,
-      count: propostas.filter((a) => a.propostas.some((p) => p.servicoProdutoIds.includes(s.id))).length,
-    }))
-    .filter((d) => d.count > 0)
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 8)
-    .map((d, i) => ({ ...d, color: BASE_SCALE[Math.min(i, BASE_SCALE.length - 1)] }));
-
   return (
-    <div className="flex flex-col gap-4">
-      {/* Lacuna 4 — Propostas */}
-      <Lacuna title="Propostas">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+    <>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
           <KpiCard label="Total Propostas" value={propostas.length} color="var(--base-2)" href={atividadesHref(filters, propostaExtra)} />
           <KpiCard label="Propostas Urgentes" value={propostas.filter((a) => a.prioridade === "Urgente").length} color="var(--base-2)" href={atividadesHref(filters, { ...propostaExtra, prioridades: ["Urgente"] })} />
           <KpiCard label="Propostas Importantes" value={propostas.filter((a) => a.prioridade === "Importante").length} color="var(--base-2)" href={atividadesHref(filters, { ...propostaExtra, prioridades: ["Importante"] })} />
@@ -144,15 +108,55 @@ export function DashboardAnalytics({
             href={atividadesHref(filters, { ...propostaExtra, statusNegociacao: ["aceite"] })}
           />
         </div>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <VerticalBars title="Propostas x Status" data={statusBuckets(propostas)} />
-          <VerticalBars title="Propostas x Vencimento" data={vencimentoBuckets(propostas)} />
-        </div>
-      </Lacuna>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <VerticalBars title="Propostas x Status" data={statusBuckets(propostas)} />
+        <VerticalBars title="Propostas x Vencimento" data={vencimentoBuckets(propostas)} />
+      </div>
+    </>
+  );
+}
 
-      {/* Lacuna 5 — Empresas */}
-      <Lacuna title="Empresas">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+export function EmpresasWidget({
+  filters,
+  atividades,
+}: {
+  filters: ActivityFilters;
+  atividades: Atividade[];
+}) {
+  const { lookups } = useAppData();
+
+  const propostaTipo = lookups.tipoAtividade.find((t) => t.name.toLowerCase() === "proposta");
+  const propostaExtra = propostaTipo ? { tipoAtividadeIds: [propostaTipo.id] } : {};
+  const filtered = atividades.filter((a) => matchesActivity(a, filters, lookups));
+  const propostas = propostaTipo
+    ? filtered.filter((a) => a.tipoAtividadeIds.includes(propostaTipo.id))
+    : [];
+
+  // Lacuna 5 — empresas ordenadas por volume (mais escuro = mais atividades);
+  // da 6ª em diante, agrupadas em "Outros" (D9).
+  const empresaData = rankComOutros(
+    lookups.empresa
+      .filter((e) => e.active)
+      .map((e) => ({ label: e.name, count: filtered.filter((a) => a.empresaId === e.id).length }))
+  );
+
+  const mrrCount = propostas.filter((a) => a.propostas.some((p) => p.tipo === "MRR")).length;
+  const psCount = propostas.filter((a) => a.propostas.some((p) => p.tipo === "PS")).length;
+
+  const produtoData = lookups.servicoProduto
+    .filter((s) => s.active)
+    .map((s) => ({
+      label: s.name,
+      count: propostas.filter((a) => a.propostas.some((p) => p.servicoProdutoIds.includes(s.id))).length,
+    }))
+    .filter((d) => d.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8)
+    .map((d, i) => ({ ...d, color: BASE_SCALE[Math.min(i, BASE_SCALE.length - 1)] }));
+
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <VerticalBars
               title="Atividade x Empresa"
@@ -166,19 +170,16 @@ export function DashboardAnalytics({
             right={{ label: "PS", value: psCount, href: atividadesHref(filters, { ...propostaExtra, produtoTipos: ["PS"] }) }}
           />
         </div>
-        <VerticalBars
-          title="Produtos/Serviços vinculados"
-          data={produtoData.length ? produtoData : [{ label: "Sem dados", count: 0, color: "var(--base-4)" }]}
-        />
-      </Lacuna>
-    </div>
+      <VerticalBars
+        title="Produtos/Serviços vinculados"
+        data={produtoData.length ? produtoData : [{ label: "Sem dados", count: 0, color: "var(--base-4)" }]}
+      />
+    </>
   );
 }
 
-// Campo 6 — Visão geral do filtro aplicado. Renderizada separada de
-// DashboardAnalytics porque a spec pede largura total, ao final da página
-// (fora da coluna que os Campos 4-5 dividem com o calendário) — ver
-// src/app/(app)/dashboard/page.tsx.
+// Campo 6 — Visão geral do filtro aplicado. A spec pede largura total; isso
+// hoje é o tamanho "largo" do widget, que é o default de quem nunca mexeu.
 export function VisaoGeralWidget({
   filters,
   atividades,
@@ -195,11 +196,9 @@ export function VisaoGeralWidget({
   }));
 
   return (
-    <Lacuna title="Visão geral">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <VerticalBars title="Distribuição por status" data={statusBuckets(filtered)} />
-        <VerticalBars title="Distribuição por prioridade" data={prioridadeData} />
-      </div>
-    </Lacuna>
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <VerticalBars title="Distribuição por status" data={statusBuckets(filtered)} />
+      <VerticalBars title="Distribuição por prioridade" data={prioridadeData} />
+    </div>
   );
 }

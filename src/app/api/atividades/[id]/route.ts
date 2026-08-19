@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { atividadeFromDb, statusToDb, prioridadeToDb } from "@/lib/atividade-mapper";
+import { atividadeFromDb, statusToDb, prioridadeToDb, prazoFieldsToDb } from "@/lib/atividade-mapper";
 import {
   syncKnowledgeChunk,
   deleteKnowledgeChunk,
@@ -79,8 +79,7 @@ export async function PATCH(
         emailConteudo: body.emailConteudo,
         oportunidadeTexto: body.oportunidadeTexto,
         contato: body.contato,
-        prazo: body.prazo ? new Date(body.prazo) : null,
-        prazoFim: body.prazoFim ? new Date(body.prazoFim) : null,
+        ...prazoFieldsToDb(body),
         descricao: body.descricao,
         alinhamentos: body.alinhamentos,
         status: statusToDb(body.status),

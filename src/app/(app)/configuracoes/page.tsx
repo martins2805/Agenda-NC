@@ -17,6 +17,8 @@ import { useAppData } from "@/lib/app-data-context";
 import { LOOKUP_COR_OPTIONS, type LookupCor, type LookupItem, type LookupKind } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { BackupExport } from "@/components/backup-export";
+import { VisualConfigSection } from "@/components/configuracoes/visual-config-section";
+import { ExibicaoConfigSection } from "@/components/configuracoes/exibicao-config-section";
 
 // Tela de catálogos (S3). CRUD com cor, ordem e arquivamento — a mesma
 // fonte que alimenta os selects/multi-selects em todo o resto do sistema
@@ -47,6 +49,12 @@ const KIND_ORDER: LookupKind[] = [
   "servicoProduto",
   "escopo",
   "amostragem",
+  // Voltaram com os módulos (PROMPT 3, 2.1 / D20). Os valores nunca saíram do
+  // enum LookupKind nem do banco — só desta lista.
+  "categoriaRegistro",
+  "categoriaPlanilha",
+  "tipoAtividadeGeral",
+  "setorInterno",
 ];
 
 const COR_SWATCH: Record<LookupCor, string> = {
@@ -412,6 +420,10 @@ export default function ConfiguracoesPage() {
       </div>
 
       <BackupExport />
+
+      <VisualConfigSection />
+
+      <ExibicaoConfigSection />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {KIND_ORDER.map((kind) =>

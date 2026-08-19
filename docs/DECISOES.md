@@ -129,7 +129,7 @@ Preenchida a partir do código já existente no repositório (não é uma escolh
 **Conflito:** a spec (Cap. 1.7, 2.3) define Execuções, Registros e Planilhas como módulos da primeira versão, e as sprints S10–S12 os entregaram. A seção "Adaptações Matheus" do documento consolidado (2026-08-14) pede: "PÁGINAS: Excluir execuções, planilhas e registros".
 **Decisão:** remover os três módulos da interface — páginas, itens de navegação, botões de criação, blocos de vínculo, KPIs do dashboard, fontes do calendário e escopo da busca global. **Sem migration destrutiva:** tabelas, dados e a view `prazo_unificado` permanecem no banco intactos (remoção reversível; eventual `DROP` fica para uma sprint de limpeza futura, com aviso prévio, conforme regra "não rode migration destrutiva sem avisar").
 **Bloqueia:** S15
-**Status:** FECHADA (2026-08-14, confirmada pelo usuário no chat)
+**Status:** ~~FECHADA (2026-08-14)~~ — **REVOGADA pela D20 em 2026-08-18.** Vale só como registro histórico do período em que os módulos ficaram fora da interface.
 
 ## D18 — Estilo visual "liquid glass"
 **Conflito:** a spec (Cap. 3) pede "transparência discreta" e "não utilizar efeito 'vidro' exagerado"; a D16 reverteu um tema escuro de vidro fosco. Em 2026-08-16 o usuário pediu explicitamente "na aparência um estilo liquid glass".
@@ -147,3 +147,12 @@ Preenchida a partir do código já existente no repositório (não é uma escolh
 **Schema:** `Atividade.unidadeId`/`AtividadeGeral.unidadeId` (`String?`) viram `unidadeIds` (`String[]`), mesmo padrão de `tipoAtividadeIds`. Migration `20260818150000_atividade_unidade_multipla` faz backfill (valor único vira array de 1) e recria `prazo_unificado` (coluna `unidade_id` passa a `text[]`, normalizando os lados que continuam escalares — `Registro`/`ChecklistGeralItem` — para array de 0/1 elemento). `Registro.unidadeId` e `Planilha.unidadeId` continuam escalares (fora de escopo, sem pedido do usuário para esses módulos, hoje removidos da UI pela D17).
 **Bloqueia:** nenhuma sprint em andamento — feature isolada, aplicada fora do ritual S1–S17.
 **Status:** FECHADA (2026-08-18, pedido do usuário no chat)
+
+## D20 — Revogação da D17: Registros, Execuções e Planilhas voltam à interface
+**Conflito:** a D17 (2026-08-14) removeu os três módulos da interface, a pedido da seção "Adaptações Matheus". O PROMPT 3 (PDF de 2026-08-18, item 2.1) pede o oposto: "Voltar a disponibilizar na navegação principal as abas: Registros, Execuções, Planilhas — manter toda a lógica e funcionalidades anteriormente desenvolvidas".
+**Decisão (confirmada pelo usuário no chat, 2026-08-18):** revogar a D17. Os três módulos voltam à navegação e à interface. A D17 passa a valer só como registro histórico do período em que ficaram ocultos.
+**Por que isso é viável:** a D17 foi explicitamente **não destrutiva**. Tabelas (`Registro`, `RegistroTab`, `Planilha`, `AtividadeGeral`, `ChecklistGeralItem`), dados reais (8 registros, 4 planilhas, 2 execuções, confirmados em produção em 2026-08-16), valores de `LookupKind`/`VinculoTipo` e os blocos correspondentes da view `prazo_unificado` nunca foram tocados. O código de UI/API deletado é recuperável em `git show 95c1e8f^:<caminho>`.
+**Escopo da restauração:** páginas (`/registros`, `/planilhas`, `/atividades-gerais`), rotas de API dos três módulos, itens de navegação em `app-shell.tsx`, `KIND_ORDER` na tela de Configurações, escopo da busca global, fontes do calendário (hoje filtrado em `objetoTipo === "atividade"`), KPIs do dashboard, seções da lixeira e ferramentas de chat.
+**Atenção herdada da S1:** `ChecklistGeralItem.status` é fisicamente uma coluna enum `StatusConclusao` no banco, embora `schema.prisma` a declare como `String` — foi a causa da primeira queda de produção da S1. Qualquer código restaurado que leia esse campo precisa considerar isso.
+**Bloqueia:** o passo 6 do plano do PROMPT 3.
+**Status:** FECHADA (2026-08-18, confirmada pelo usuário no chat). **Execução ainda não iniciada.**

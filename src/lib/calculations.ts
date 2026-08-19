@@ -1,3 +1,4 @@
+import { recorrenciaLabel } from "./types";
 import type { Atividade } from "./types";
 
 export function diasEmPendencia(atividade: Pick<Atividade, "status" | "createdAt">): number | null {
@@ -92,4 +93,21 @@ export function formatLocalDateTime(value: string): string {
   const datePart = parseLocalDate(value).toLocaleDateString("pt-BR");
   if (!hasTimePart(value)) return datePart;
   return `${datePart} ${value.slice(11, 16)}`;
+}
+
+// PROMPT 3 (4.3): a mesma frase de prazo em card e lista, deixando visível de
+// que modalidade se trata — sem isso, uma janela e uma data única aparecem
+// idênticas na tela.
+export function prazoResumo(a: Atividade): string | null {
+  if (a.modalidadePrazo === "Janela") {
+    if (!a.prazo && !a.prazoFim) return null;
+    const ini = a.prazo ? formatLocalDateTime(a.prazo) : "?";
+    const fim = a.prazoFim ? formatLocalDateTime(a.prazoFim) : "?";
+    return `Janela: ${ini} → ${fim}`;
+  }
+  if (a.modalidadePrazo === "Recorrente") {
+    if (!a.prazo) return null;
+    return `${recorrenciaLabel(a.recorrenciaFreq, a.recorrenciaCada)}, a partir de ${formatLocalDateTime(a.prazo)}`;
+  }
+  return a.prazo ? formatLocalDateTime(a.prazo) : null;
 }

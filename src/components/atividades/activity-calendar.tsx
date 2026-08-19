@@ -86,7 +86,11 @@ export function ActivityCalendar() {
     fetch("/api/prazos")
       .then((res) => (res.ok ? (res.json() as Promise<PrazoUnificadoApiRow[]>) : []))
       .then((rows) =>
-        setPrazos(rows.filter((r) => r.objetoTipo === "atividade").map(prazoEntryFromApi))
+        // PROMPT 3 (2.1) / D20: com os módulos de volta, o calendário volta a
+        // mostrar prazos de Execuções e Registros, não só de Atividades. A
+        // view prazo_unificado sempre continuou produzindo essas linhas — a
+        // S15 apenas as descartava aqui.
+        setPrazos(rows.map(prazoEntryFromApi))
       )
       .catch(() => setPrazos([]));
   }, []);

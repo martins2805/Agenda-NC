@@ -116,6 +116,11 @@
   --prazo-proximo: #bf512c;
   --prazo-vencido: #780001;
 
+  /* Escala das etiquetas semânticas (PROMPT 3, 3.1). Configurável na aba
+     Configurações; 1 = tamanho padrão. Aplicada por .semantic-badge, para o
+     tamanho valer em todas as telas sem cada uma decidir o seu. */
+  --badge-escala: 1;
+
   /* Status de negociação da proposta */
   --negociacao-em-andamento: #da9b2b;
   --negociacao-fup: #bf512c;
@@ -213,6 +218,14 @@
    Cartão-base da interface: vidro translúcido com blur, brilho interno no
    topo (luz refratada) e sombra suave — profundidade em vez de bordas
    marcadas. Usado em painéis de filtro, tabelas e blocos de conteúdo. */
+/* Etiqueta semântica (status, prioridade, prazo, negociação). Existe para o
+   tamanho ser configurável num ponto só — ver --badge-escala. */
+.semantic-badge {
+  font-size: calc(0.75rem * var(--badge-escala));
+  padding-inline: calc(0.625rem * var(--badge-escala));
+  padding-block: calc(0.125rem * var(--badge-escala));
+}
+
 .panel-card {
   position: relative;
   background: var(--glass-panel);

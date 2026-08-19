@@ -22,9 +22,11 @@ import {
   diasEmAtraso,
   formatCurrency,
   formatLocalDateTime,
+  prazoResumo,
 } from "@/lib/calculations";
 import { PRIORIDADE_OPTIONS, STATUS_OPTIONS, STATUS_NEGOCIACAO_LABELS } from "@/lib/types";
 import type { Atividade } from "@/lib/types";
+import { camposVisiveis } from "@/lib/exibicao-config";
 import { cn } from "@/lib/utils";
 import {
   PRIORIDADE_STYLES,
@@ -48,7 +50,7 @@ export function QuickStatusBadge({ atividade }: { atividade: Atividade }) {
           <button
             type="button"
             className={cn(
-              "rounded-full px-2.5 py-0.5 font-medium tracking-wide uppercase transition-opacity hover:opacity-80",
+              "semantic-badge rounded-full font-medium tracking-wide uppercase transition-opacity hover:opacity-80",
               STATUS_STYLES[atividade.status]
             )}
           />
@@ -95,7 +97,7 @@ export function QuickPrioridadeBadge({ atividade }: { atividade: Atividade }) {
           <button
             type="button"
             className={cn(
-              "rounded-full px-2.5 py-0.5 font-medium tracking-wide uppercase transition-opacity hover:opacity-80",
+              "semantic-badge rounded-full font-medium tracking-wide uppercase transition-opacity hover:opacity-80",
               PRIORIDADE_STYLES[atividade.prioridade]
             )}
           />
@@ -163,7 +165,7 @@ function QuickPrazo({ atividade }: { atividade: Atividade }) {
       }}
       className="text-muted-foreground hover:underline"
     >
-      {atividade.prazo ? `Prazo: ${formatLocalDateTime(atividade.prazo)}` : "+ prazo"}
+      {prazoResumo(atividade) ? `Prazo: ${prazoResumo(atividade)}` : "+ prazo"}
     </button>
   );
 }
@@ -214,7 +216,7 @@ interface ActivityCardProps {
 }
 
 export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardProps) {
-  const { lookups, deleteAtividade, updateAtividade } = useAppData();
+  const { lookups, deleteAtividade, updateAtividade, configuracoesVisuais } = useAppData();
 
   const empresa = lookups.empresa.find((e) => e.id === atividade.empresaId);
   const unidades = lookups.unidade.filter((u) => atividade.unidadeIds.includes(u.id));
@@ -236,6 +238,11 @@ export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardPro
   const prazoStatus = atividadePrazoStatus(atividade);
   const concluida = atividade.status === "Concluído";
 
+  // PROMPT 3 (3.3): quais campos aparecem no card vem da aba Configurações.
+  // Ocultar aqui não remove o campo do cadastro — é só exibição.
+  const visiveis = new Set(camposVisiveis("card", configuracoesVisuais).map((c) => c.campo));
+  const mostra = (campo: string) => visiveis.has(campo);
+
 
   return (
     <Card
@@ -254,6 +261,7 @@ export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardPro
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-col gap-0.5">
             {/* 1. Empresa + Unidade */}
+            {mostra("empresa") && (
             <p className="flex items-center gap-1.5 font-semibold leading-tight">
               <Building2 className="size-3.5 shrink-0 text-[var(--base-1)]" />
               {empresa?.name ?? "Sem empresa"}
@@ -261,16 +269,17 @@ export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardPro
                 <span className="text-muted-foreground"> · {unidades.map((u) => u.name).join(", ")}</span>
               )}
             </p>
+            )}
             {/* 2. Assunto (ou Serviço/Produto quando proposta) */}
-            {isProposta ? (
+            {mostra("assunto") && (isProposta ? (
               <ServicoProdutoDestaque atividade={atividade} />
             ) : (
               atividade.assunto && (
                 <p className="text-sm text-muted-foreground">{atividade.assunto}</p>
               )
-            )}
+            ))}
             {/* 3. Contato (menor destaque) */}
-            <QuickContato atividade={atividade} />
+            {mostra("contato") && <QuickContato atividade={atividade} />}
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <button
@@ -319,7 +328,7 @@ export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardPro
         </div>
 
         {/* 4. Tipo de atividade (etiqueta) */}
-        {tipos.length > 0 && (
+        {mostra("tipo") && tipos.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {tipos.map((t) => (
               <Badge key={t.id} variant="outline">
@@ -334,10 +343,10 @@ export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardPro
           className="flex flex-wrap items-center gap-2 font-mono text-[11px]"
           onClick={(e) => e.stopPropagation()}
         >
-          <QuickStatusBadge atividade={atividade} />
-          <QuickPrioridadeBadge atividade={atividade} />
-          {prazoStatus && (
-            <span className={cn("rounded-full px-2.5 py-0.5 font-medium tracking-wide uppercase", PRAZO_STYLES[prazoStatus])}>
+          {mostra("status") && <QuickStatusBadge atividade={atividade} />}
+          {mostra("prioridade") && <QuickPrioridadeBadge atividade={atividade} />}
+          {mostra("prazo") && prazoStatus && (
+            <span className={cn("semantic-badge rounded-full font-medium tracking-wide uppercase", PRAZO_STYLES[prazoStatus])}>
               {PRAZO_LABELS[prazoStatus]}
             </span>
           )}
@@ -348,31 +357,33 @@ export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardPro
             </span>
           )}
           {atraso !== null && (
-            <span className={cn("rounded-full px-2.5 py-0.5 font-medium tracking-wide uppercase", PRAZO_STYLES.vencido)}>
+            <span className={cn("semantic-badge rounded-full font-medium tracking-wide uppercase", PRAZO_STYLES.vencido)}>
               {atraso}d em atraso
             </span>
           )}
-          <QuickPrazo atividade={atividade} />
+          {mostra("prazo") && <QuickPrazo atividade={atividade} />}
         </div>
 
         {/* 7. Informações específicas por tipo */}
-        {isProposta && <PropostaDetalhes atividade={atividade} propostaTotal={propostaTotal} />}
+        {mostra("propostas") && isProposta && (
+          <PropostaDetalhes atividade={atividade} propostaTotal={propostaTotal} />
+        )}
 
-        {!isProposta && atividade.emailConteudo?.trim() &&
+        {mostra("descricao") && !isProposta && atividade.emailConteudo?.trim() &&
           tipos.some((t) => t.name.toLowerCase() === "email") && (
             <p className="line-clamp-2 text-xs text-muted-foreground">
               {atividade.emailConteudo.trim()}
             </p>
           )}
 
-        {!isProposta && atividade.oportunidadeTexto?.trim() &&
+        {mostra("descricao") && !isProposta && atividade.oportunidadeTexto?.trim() &&
           tipos.some((t) => t.name.toLowerCase() === "oportunidade") && (
             <p className="line-clamp-2 text-xs text-muted-foreground">
               {atividade.oportunidadeTexto.trim()}
             </p>
           )}
 
-        {checklistComPrazo.length > 0 && (
+        {mostra("checklist") && checklistComPrazo.length > 0 && (
           <div className="flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
             {checklistComPrazo.map((c) => {
               const status = prazoStatusFor(c.prazo);
@@ -395,7 +406,7 @@ export function ActivityCard({ atividade, onEdit, onDuplicate }: ActivityCardPro
         )}
 
         {/* 8. Índice de conclusão do checklist: barra + quantidade */}
-        {checkTotal > 0 && (
+        {mostra("checklist") && checkTotal > 0 && (
           <div className="flex items-center gap-2">
             <div className="progress-track flex-1">
               <span style={{ width: `${checkPct}%`, background: "var(--base-1)" }} />

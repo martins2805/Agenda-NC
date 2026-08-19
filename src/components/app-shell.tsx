@@ -3,14 +3,29 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, ListChecks, Users, Settings, LogOut } from "lucide-react";
+import {
+  ClipboardCheck,
+  LayoutDashboard,
+  ListChecks,
+  FileText,
+  Table2,
+  Users,
+  Settings,
+  LogOut,
+} from "lucide-react";
 import { logout } from "@/lib/actions";
 import { Button } from "@/components/ui/button";
 import { GlobalSearch } from "@/components/global-search";
+import { VisualConfigStyle } from "@/components/visual-config-style";
 
 const BASE_NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/atividades", label: "Atividades", icon: ListChecks },
+  // PROMPT 3 (2.1) / D20: os três módulos voltaram à navegação. A D17 os havia
+  // tirado daqui em 2026-08-14, sem migration — nada foi perdido no banco.
+  { href: "/atividades-gerais", label: "Execuções", icon: ClipboardCheck },
+  { href: "/registros", label: "Registros", icon: FileText },
+  { href: "/planilhas", label: "Planilhas", icon: Table2 },
   { href: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
@@ -28,6 +43,9 @@ export function AppShell({
 
   return (
     <div className="flex min-h-full">
+      {/* Redefine os tokens semânticos conforme a aba Configurações (PROMPT 3,
+          3.2): um ponto só, valendo para todas as telas do shell. */}
+      <VisualConfigStyle />
       {/* Sidebar sólida na cor da paleta base #1F2C43 com texto branco,
           disponível em todas as telas grandes. */}
       <aside className="sticky top-0 hidden h-screen w-52 shrink-0 flex-col gap-4 p-3 sm:flex">
@@ -75,8 +93,20 @@ export function AppShell({
         </div>
       </aside>
 
-      <main className="w-full flex-1 px-4 pb-24 pt-4 sm:px-6 sm:pb-10">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+      {/* min-w-0 (e sem w-full): sem isso o main soma 100% da viewport à
+          largura da sidebar e joga o conteúdo da direita para fora da tela. */}
+      <main className="min-w-0 flex-1 px-4 pb-24 pt-4 sm:px-6 sm:pb-10">
+        {/* A tela de Atividades usa um container mais largo: a visão em lista
+            exibe todas as colunas sem cortar dados (Regra 7); as demais telas
+            mantêm o max-w-6xl original. */}
+        <div
+          className={cn(
+            "mx-auto flex w-full flex-col gap-4",
+            // Comparação exata: `startsWith` casaria também com
+            // /atividades-gerais, que não precisa da largura extra.
+            pathname === "/atividades" ? "max-w-none" : "max-w-6xl"
+          )}
+        >
           {/* Header mínimo, idêntico em todas as telas — só a busca global
               (Ctrl+K), que cobre Atividades (S13: "busca global de verdade,
               em todos os objetos"; escopo restrito na S15 — ver D17). */}

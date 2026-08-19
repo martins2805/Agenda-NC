@@ -75,6 +75,49 @@ export function prioridadeToDb(prioridade: Prioridade): DbPrioridade {
   return PRIORIDADE_TO_DB[prioridade];
 }
 
+// PROMPT 3 (4.1): normaliza os campos de prazo conforme a modalidade escolhida,
+// para não persistir resíduo de outra modalidade (uma janela cujo fim ficou
+// gravado depois de virar prazo de entrega apareceria na view como se ainda
+// fosse janela). Usado por POST e PUT de /api/atividades, para os dois
+// caminhos gravarem a mesma coisa.
+export function prazoFieldsToDb(a: Atividade) {
+  const inicio = a.prazo ? new Date(a.prazo) : null;
+  const modalidade = a.modalidadePrazo ?? "Entrega";
+
+  if (modalidade === "Janela") {
+    return {
+      modalidadePrazo: "Janela" as const,
+      prazo: inicio,
+      prazoFim: a.prazoFim ? new Date(a.prazoFim) : null,
+      recorrenciaFreq: null,
+      recorrenciaCada: null,
+      recorrenciaAte: null,
+    };
+  }
+
+  if (modalidade === "Recorrente") {
+    return {
+      modalidadePrazo: "Recorrente" as const,
+      prazo: inicio,
+      prazoFim: null,
+      recorrenciaFreq: a.recorrenciaFreq ?? null,
+      // A view usa GREATEST(...,1); guardamos já saneado para o valor exibido
+      // no formulário bater com o que gera as ocorrências.
+      recorrenciaCada: a.recorrenciaFreq ? Math.max(a.recorrenciaCada ?? 1, 1) : null,
+      recorrenciaAte: a.recorrenciaAte ? new Date(a.recorrenciaAte) : null,
+    };
+  }
+
+  return {
+    modalidadePrazo: "Entrega" as const,
+    prazo: inicio,
+    prazoFim: null,
+    recorrenciaFreq: null,
+    recorrenciaCada: null,
+    recorrenciaAte: null,
+  };
+}
+
 type FullDbAtividade = DbAtividade & {
   propostas: DbProposta[];
   checklist: DbChecklistItem[];
@@ -94,6 +137,10 @@ export function atividadeFromDb(a: FullDbAtividade): Atividade {
     contato: a.contato,
     prazo: a.prazo ? toLocalDateTimeString(a.prazo) : null,
     prazoFim: a.prazoFim ? toLocalDateTimeString(a.prazoFim) : null,
+    modalidadePrazo: a.modalidadePrazo,
+    recorrenciaFreq: a.recorrenciaFreq,
+    recorrenciaCada: a.recorrenciaCada,
+    recorrenciaAte: a.recorrenciaAte ? toLocalDateTimeString(a.recorrenciaAte) : null,
     descricao: a.descricao,
     alinhamentos: a.alinhamentos,
     status: STATUS_FROM_DB[a.status],

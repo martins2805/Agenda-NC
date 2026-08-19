@@ -37,6 +37,28 @@ enum Prioridade {
   Baixo
 }
 
+// Modalidade do prazo da atividade (PROMPT 3, item 4.1). As três coexistem —
+// Recorrente não substitui Entrega nem Janela.
+//   Entrega    -> uma única data limite, em `prazo` (comportamento histórico)
+//   Janela     -> período de execução, de `prazo` até `prazoFim`
+//   Recorrente -> ocorrências periódicas a partir de `prazo`, conforme
+//                 recorrenciaFreq/recorrenciaCada, até recorrenciaAte
+enum ModalidadePrazo {
+  Entrega
+  Janela
+  Recorrente
+}
+
+// Unidade de repetição. O intervalo ("a cada N") fica em recorrenciaCada, o
+// que cobre quinzenal (2 semanas), bimestral (2 meses), semestral (6) etc.
+// sem multiplicar valores de enum.
+enum RecorrenciaFrequencia {
+  Diaria
+  Semanal
+  Mensal
+  Anual
+}
+
 enum Role {
   ADMIN
   USER
@@ -77,6 +99,13 @@ model Atividade {
   contato           String           @default("")
   prazo             DateTime?
   prazoFim          DateTime?
+  // PROMPT 3 (4.1): modalidade do prazo. `prazo` é a data única (Entrega), o
+  // início da janela (Janela) ou a âncora da recorrência (Recorrente);
+  // `prazoFim` é o fim da janela.
+  modalidadePrazo   ModalidadePrazo  @default(Entrega)
+  recorrenciaFreq   RecorrenciaFrequencia?
+  recorrenciaCada   Int?             // a cada N períodos (1 = todo período)
+  recorrenciaAte    DateTime?        // fim da recorrência; null = sem término definido
   descricao         String           @default("")
   alinhamentos      String           @default("")
   status            StatusConclusao  @default(Pendente)
@@ -336,12 +365,33 @@ model User {
   anexos           Anexo[]
   historico        Historico[]
   widgetPreferencias WidgetPreferencia[]
+  configuracoesVisuais ConfiguracaoVisual[]
 }
 
 // Preferência de exibição de um widget do Dashboard (S8): ordem, visibilidade
 // e tamanho, por usuário. widgetId é a chave lógica do widget (ver
 // src/lib/dashboard-widgets.ts), não uma FK — widgets são definidos em código,
 // não em banco.
+// PROMPT 3 (3.1/3.2/6): configuração visual de um elemento semântico (status,
+// prioridade, prazo, negociação), por usuário. Uma linha por elemento; campo
+// null significa "usar o padrão do sistema". A aplicação é global por
+// construção — ver src/lib/visual-config.ts.
+model ConfiguracaoVisual {
+  id      String  @id @default(cuid())
+  userId  String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chave   String
+  cor     String? // nome de token (ex.: "base-1"), nunca hex livre
+  tamanho String?
+  visivel Boolean @default(true)
+  // Usado pela configuração de exibição de Lista/Cards (PROMPT 3, 3.3), onde
+  // a ordem dos campos é escolhida pelo usuário. Irrelevante para as cores.
+  ordem   Int     @default(0)
+
+  @@unique([userId, chave])
+  @@index([userId])
+}
+
 model WidgetPreferencia {
   id       String  @id @default(cuid())
   userId   String

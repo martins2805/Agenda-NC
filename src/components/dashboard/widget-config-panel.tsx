@@ -12,7 +12,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { Settings2, GripVertical, Eye, EyeOff } from "lucide-react";
+import { Settings2, GripVertical, Eye, EyeOff, RotateCcw } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,7 @@ import {
 import { useAppData } from "@/lib/app-data-context";
 import {
   resolveWidgetPreferencias,
+  composicaoPadrao,
   WIDGET_DEFINITIONS,
   type WidgetPreferenciaResolvida,
   type WidgetTamanho,
@@ -106,7 +107,23 @@ export function WidgetConfigPanel() {
         <Settings2 className="size-4" />
       </PopoverTrigger>
       <PopoverContent className="w-80 p-2" align="end">
-        <p className="px-1.5 pb-2 text-xs font-medium text-muted-foreground">Widgets do dashboard</p>
+        <div className="flex items-center justify-between gap-2 px-1.5 pb-2">
+          <p className="text-xs font-medium text-muted-foreground">Widgets do dashboard</p>
+          {/* PROMPT 3 (1.4): volta à composição inicial. Não apaga widget
+              nenhum — a preferência é sobrescrita, e o registro continua sendo
+              a fonte de quais widgets existem. */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 text-xs"
+            title="Voltar o dashboard à composição inicial"
+            onClick={() => persist(composicaoPadrao())}
+          >
+            <RotateCcw className="size-3" />
+            Restaurar padrão
+          </Button>
+        </div>
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <div className="flex flex-col gap-1">
             {resolved.map((pref) => {
@@ -117,7 +134,10 @@ export function WidgetConfigPanel() {
                   <DraggableRow id={pref.widgetId}>
                     <div className="flex items-center gap-2 rounded-md border bg-card px-2 py-1.5">
                       <GripVertical className="size-3.5 shrink-0 cursor-grab text-muted-foreground active:cursor-grabbing" />
-                      <span className={`flex-1 truncate text-sm ${!pref.visivel ? "text-muted-foreground" : ""}`}>
+                      <span
+                        className={`flex-1 truncate text-sm ${!pref.visivel ? "text-muted-foreground" : ""}`}
+                        title={def.descricao}
+                      >
                         {def.titulo}
                       </span>
                       <Select value={pref.tamanho} onValueChange={(v) => setTamanho(pref.widgetId, v as WidgetTamanho)}>

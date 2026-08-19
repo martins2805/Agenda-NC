@@ -46,6 +46,52 @@ export const PRIORIDADE_OPTIONS: Prioridade[] = [
   "Baixo",
 ];
 
+// PROMPT 3 (4.1): as três modalidades de prazo da atividade. Coexistem — a
+// recorrente não substitui a de entrega nem a janela.
+export type ModalidadePrazo = "Entrega" | "Janela" | "Recorrente";
+
+export const MODALIDADE_PRAZO_OPTIONS: ModalidadePrazo[] = [
+  "Entrega",
+  "Janela",
+  "Recorrente",
+];
+
+export const MODALIDADE_PRAZO_LABELS: Record<ModalidadePrazo, string> = {
+  Entrega: "Prazo de entrega/execução",
+  Janela: "Janela de execução",
+  Recorrente: "Prazo recorrente",
+};
+
+export type RecorrenciaFrequencia = "Diaria" | "Semanal" | "Mensal" | "Anual";
+
+export const RECORRENCIA_FREQ_OPTIONS: RecorrenciaFrequencia[] = [
+  "Diaria",
+  "Semanal",
+  "Mensal",
+  "Anual",
+];
+
+// Rótulo no singular e no plural: "a cada 1 semana" / "a cada 2 semanas".
+export const RECORRENCIA_FREQ_LABELS: Record<
+  RecorrenciaFrequencia,
+  { singular: string; plural: string }
+> = {
+  Diaria: { singular: "dia", plural: "dias" },
+  Semanal: { singular: "semana", plural: "semanas" },
+  Mensal: { singular: "mês", plural: "meses" },
+  Anual: { singular: "ano", plural: "anos" },
+};
+
+export function recorrenciaLabel(
+  freq: RecorrenciaFrequencia | null,
+  cada: number | null
+): string {
+  if (!freq) return "—";
+  const n = Math.max(cada ?? 1, 1);
+  const { singular, plural } = RECORRENCIA_FREQ_LABELS[freq];
+  return `A cada ${n} ${n === 1 ? singular : plural}`;
+}
+
 export type StatusNegociacao = "em_andamento" | "fup" | "aceite" | "na";
 
 export const STATUS_NEGOCIACAO_LABELS: Record<StatusNegociacao, string> = {
@@ -139,8 +185,12 @@ export interface Atividade {
   oportunidadeTexto: string;
   propostas: Proposta[];
   contato: string;
-  prazo: string | null; // ISO date (prazo inicial para Agendamento)
-  prazoFim: string | null; // prazo final, usado quando o tipo é "Agendamento"
+  prazo: string | null; // data única (Entrega), início da janela ou âncora da recorrência
+  prazoFim: string | null; // fim da janela de execução (modalidade "Janela")
+  modalidadePrazo: ModalidadePrazo;
+  recorrenciaFreq: RecorrenciaFrequencia | null;
+  recorrenciaCada: number | null; // a cada N períodos
+  recorrenciaAte: string | null; // fim da recorrência; null = sem término definido
   descricao: string;
   alinhamentos: string;
   status: StatusConclusao;
